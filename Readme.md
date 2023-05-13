@@ -12,13 +12,23 @@ Notes:
 Question:
 - how deep can the tree search go? How fast is this?
 
+## missing features
 
-
-## Current noticed issues
-
-none, and added some assertions to try to prevent them
-
-- bearing off
-- rolling doubles
-- start
+- show current player's turn
+- show winner
+- showing pieces that have been borne off
+- starting roll
 - doubling cube
+
+
+## Speed
+
+depth of search will in fact be limited by how fast things are!
+
+if the evaluation function is really quick, then no worries
+
+but if it is not, if we need to look deep into a game tree, then generating the moves themselves is actually pretty key!
+
+Qs:
+- how long are we allowed to take to pick move?
+- what are the kinds of search strategies we want to use?

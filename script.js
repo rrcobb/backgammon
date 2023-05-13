@@ -62,16 +62,6 @@ function roll() {
   }
 }
 
-function permute(as, bs) {
-  let results = [];
-  as.forEach((a) => {
-    bs.forEach((b) => {
-      results.push([a, b]);
-    });
-  });
-  return results;
-}
-
 function orderings(rolls) {
   // hack: we know that we only have one ordering if the die are equal, or if there's only one
   if (rolls.length < 2 || rolls[0] == rolls[1]) {
@@ -134,7 +124,6 @@ function validMoves(roll, game) {
     // _or_ the highest one, if all are less than the roll off
     let bears = starts.filter(start => (start + roll == -1) || (start + roll == 24)).map(start => [start, 'home'])
     let furthest = player == "w" ? Math.min(...starts) : Math.max(...starts)
-    console.log({player, furthest, roll, sum: roll + furthest})
     if ((roll + furthest < 0)  || (roll + furthest >= 24)) {
       bears = [[furthest, 'home']]
     }
@@ -160,12 +149,15 @@ function validPlays(game, rolls) {
   let [toTry, ...rest] = rolls
   let results = []
   let moves = validMoves(toTry, game)
+  if (rest.length == 0) {
+    return moves.map(move => [move])
+  }
   for (let move of moves) {
     let imaginedWorld = structuredClone(game)
     update(imaginedWorld, [move]);
-    let plays = validPlays(imaginedWorld, rest)
-    if (plays.length > 0) {
-      for (let play of plays) {
+    let nextPlays = validPlays(imaginedWorld, rest)
+    if (nextPlays.length > 0) {
+      for (let play of nextPlays) {
         results.push([move, ...play])
       }
     } else {
@@ -208,10 +200,18 @@ function update(game, moves) {
   });
 }
 
+const STRATEGIES = {
+  'random': (game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
+  'mcts': (game, moves) => { throw "implement mcts"},
+  'heuristicfn': (game, moves) => { throw "implement heuristic eval fn"}
+}
+
+const STRATEGY = 'random'
+
 // decide on a move among the possible moves, based on the current state of the game
 function choice(game, moves) {
   // todo: implement AI
-  return moves[Math.floor(Math.random() * moves.length)];
+  return STRATEGIES[STRATEGY](game, moves)
 }
 
 function formatMove(move) {
@@ -227,9 +227,17 @@ function log(msg) {
   transcript.value = msg + transcript.value;
 }
 
+// const times = []
 function takeTurn(game) {
   let rolls = roll();
+  // const t0 = performance.now();
   let mvs = orderedValidPlays(game, rolls);
+  // const t1 = performance.now();
+  // console.log(`moves took ${t1 - t0} milliseconds to generate.`);
+  // times.push(t1-t0)
+  // if (times.length % 10 == 0) {
+    // console.log(`avg time: ${times.reduce((m,t) => m + t)/times.length} milliseconds`)
+  // }
   if (mvs.length > 0) {
     let c = choice(game, mvs);
     update(game, c);
