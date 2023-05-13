@@ -1,0 +1,100 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+div#board {
+  border: 2px solid black;
+  height: 376px;
+  width: 652px;
+  background: #fdd;
+  /* font-size: 0; */
+  text-align: center;
+}
+
+div.home {
+  position: absolute;
+  height: 372px;
+  width: 40px;
+  background-color: #c99;
+}
+
+.top, .bottom {
+  display: flex;
+  margin-left: 40px;
+}
+
+.bottom {
+  transform: rotate(180deg);
+}
+
+.bar {
+  display: inline-block;
+  width: 32px;
+  height: 186px;
+  background-color: #c99;
+}
+
+.red {
+  background: #e88;
+}
+
+.gray {
+  background: #bbb;
+}
+
+.angle {
+  display: inline-block;
+  width: 48px;
+  height: 160px;
+  margin-bottom: 26px;
+  clip-path: polygon(0% 0%, 50% 100%, 100% 0%);
+}
+
+.w {
+  background: #eee;
+}
+
+.b {
+  background: #222;
+}
+
+.piece {
+  display: block;
+  border-radius: 100%;
+  width: 19px;
+  height: 19px;
+  margin-left: 14px;
+  margin-bottom: 2px;
+}
+
+.piece:hover {
+  border: 2px solid skyblue;
+  cursor: pointer;
+}
+
+#transcript {
+  width: 600px;
+  height: 800px;
+}
+
+#interface {
+  display: flex;
+}
+
+body {
+  display: flex;
+}
+
+#game {
+  display: flex;
+  flex-direction: column;
+}
+
+#play {
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 4px;
+    font-size: 18px;
+}
