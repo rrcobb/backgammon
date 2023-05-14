@@ -64,7 +64,6 @@ export function log(msg: string) {
   transcript.value = msg + transcript?.value;
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
   let game = newGame();
   render(game);

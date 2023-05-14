@@ -3,7 +3,7 @@
 import { choice } from './strategies'
 import { log } from './render'
 
-type Player = "b" | "w";
+export type Player = "b" | "w";
 
 export interface Game {
   bar: Player[];
@@ -86,7 +86,7 @@ function orderings(rolls: Roll): Array<Roll> {
 
 type Start = 'bar' | number
 type Dest = number | 'home'
-type Move = [Start, Dest]
+export type Move = [Start, Dest]
 
 // check destination is
 //  in-bounds and not blocked
@@ -160,6 +160,12 @@ function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   return ords.flatMap(rls => validPlays(game, rls))
 }
 
+export function safeUpdate(game: Game, moves: Move[]) {
+  let imaginedWorld = structuredClone(game)
+  update(imaginedWorld, moves);
+  return imaginedWorld
+}
+
 // Rolls: list of rolled dies
 // Play: list of start/finish pairs e.g. [(start1, end1), (start2, end2)]
 // returns: list of plays
@@ -172,8 +178,7 @@ function validPlays(game: Game, rolls: Array<Droll>): Move[][] {
     return moves.map(move => [move])
   }
   for (let move of moves) {
-    let imaginedWorld = structuredClone(game)
-    update(imaginedWorld, [move]);
+    let imaginedWorld = safeUpdate(game, [move])
     let nextPlays = validPlays(imaginedWorld, rest)
     if (nextPlays.length > 0) {
       for (let play of nextPlays) {
@@ -187,7 +192,7 @@ function validPlays(game: Game, rolls: Array<Droll>): Move[][] {
 }
 
 // move the pieces
-function update(game: Game, moves: Move[]) {
+export function update(game: Game, moves: Move[]) {
   moves.forEach((m) => {
     let [origin, dest] = m;
     let piece: Player;
@@ -262,6 +267,7 @@ export function takeTurn(game: Game): void {
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
+  log(`\n\n${game.turn}'s turn`)
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
 }
 
