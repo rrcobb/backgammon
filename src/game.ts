@@ -1,11 +1,23 @@
 // backgammon game
-// heuristic search ai
 
-// board
+import { choice } from './strategies'
+import { log } from './render'
+
+type Player = "b" | "w";
+
+export interface Game {
+  bar: Player[];
+  wHome: Player[];
+  bHome: Player[];
+  positions: Player[][];
+  cube: number;
+  turn: Player;
+}
+
 // 24 spaces
 // player w is playing 'forward' in the array
 // player b is playing 'backward' in the array
-const INITIAL = [
+const INITIAL: string[][] = [
   // b homeboard
   ["w", "w"],
   [],
@@ -36,24 +48,24 @@ const INITIAL = [
   ["b", "b"],
 ];
 
-function newGame() {
+export function newGame(): Game {
   return {
     bar: [],
     wHome: [],
     bHome: [],
-    positions: INITIAL.map(a => a.slice()), // quick and dirty deep copy
+    positions: structuredClone(INITIAL),
     cube: 1,
     turn: "w", // TODO: start
   };
 }
 
-let game = newGame();
-
-function die() {
-  return Math.ceil(Math.random() * 6);
+type Droll = 1 | 2 | 3 | 4 | 5 | 6 | -1 | -2 | -3 | -4 | -5 | -6
+function die(): Droll {
+  return Math.ceil(Math.random() * 6) as Droll;
 }
 
-function roll() {
+type Roll = [Droll, Droll] | [Droll, Droll, Droll, Droll]
+function roll(): Roll {
   let [i, j] = [die(), die()];
   if (i == j) {
     return [i,i,i,i];
@@ -62,7 +74,7 @@ function roll() {
   }
 }
 
-function orderings(rolls) {
+function orderings(rolls: Roll): Array<Roll> {
   // hack: we know that we only have one ordering if the die are equal, or if there's only one
   if (rolls.length < 2 || rolls[0] == rolls[1]) {
     return [rolls]
@@ -71,24 +83,31 @@ function orderings(rolls) {
   }
 }
 
+
+type Start = 'bar' | number
+type Dest = number | 'home'
+type Move = [Start, Dest]
+
 // check destination is
 //  in-bounds and not blocked
-function valid(player, move, positions) {
-  return (
-    move[1] >= 0 &&
-      move[1] < 24 && // inbounds
-      (positions[move[1]].length < 2 || positions[move[1]][0] == player)
-  );
+function valid(player: Player, move: Move, positions: Array<Array<Player>>): boolean {
+  if (typeof move[1] == "number") {
+    return (
+      move[1] >= 0 &&
+        move[1] < 24 && // inbounds
+        (positions[move[1]].length < 2 || positions[move[1]][0] == player)
+    );
+  } else {
+    return true // dest is "home", which can't be blocked
+  }
 }
 
-function startingPositions(game) {
-  return game.positions
-    .map((v, i) => [v, i])
-    .filter(([a, i]) => a.length > 0 && a[0] == game.turn)
-    .map(([_, i]) => i);
+function startingPositions(game: Game): number[] {
+  let withIndex: Array<[Player[], number]> = game.positions.map((v: Player[], i: number) => [v, i])
+  return  withIndex.filter(([a, i]) => a.length > 0 && a[0] == game.turn).map(([_, i]) => i);
 }
 
-function isBearingOff(starts, player) {
+function isBearingOff(starts: number[], player: Player): boolean {
   if (starts.length == 0) { return false }
   // can bear off if all pieces are in the nearest section
   if (player == "w") {
@@ -101,13 +120,13 @@ function isBearingOff(starts, player) {
 // Generate all the valid moves given one die roll and a game board.
 // Move: [start, end]
 // returns Array<Move>
-function validMoves(roll, game) {
+function validMoves(roll: Droll, game: Game): Move[] {
   let player = game.turn;
   let barcount = game.bar.filter(p => p == player).length;
     // legal entrances get pieces off the bar first
   if (barcount > 0) {
     const start = player == 'b' ? 24 : -1;
-    let entrance = ['bar', start + roll]
+    let entrance: Move = ['bar', start + roll]
     if (valid(player, entrance, game.positions)) {
       return [entrance]
     } else {
@@ -116,7 +135,7 @@ function validMoves(roll, game) {
   }
 
   let starts = startingPositions(game)
-  let moves = starts.map(p => [p, p + roll])
+  let moves = starts.map(p => [p, p + roll]) as Move[]
   moves = moves.filter(move => valid(player, move, game.positions));
   if (isBearingOff(starts, player)) {
     // can bear off a piece
@@ -127,14 +146,14 @@ function validMoves(roll, game) {
     if ((roll + furthest < 0)  || (roll + furthest >= 24)) {
       bears = [[furthest, 'home']]
     }
-    moves = moves.concat(bears)
+    moves = moves.concat(bears as Move[])
   }
   return moves
 }
 
-function orderedValidPlays(game, rolls) {
+function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   if (game.turn == "b") {
-    rolls = rolls.map(r => -r)
+     rolls = rolls.map(r => -r) as Roll
   }
   // order of moves matters, but only for the case of two different die
   let ords = orderings(rolls)
@@ -144,10 +163,10 @@ function orderedValidPlays(game, rolls) {
 // Rolls: list of rolled dies
 // Play: list of start/finish pairs e.g. [(start1, end1), (start2, end2)]
 // returns: list of plays
-function validPlays(game, rolls) {
+function validPlays(game: Game, rolls: Array<Droll>): Move[][] {
   if (rolls.length == 0) { return [] }
   let [toTry, ...rest] = rolls
-  let results = []
+  let results: Move[][] = []
   let moves = validMoves(toTry, game)
   if (rest.length == 0) {
     return moves.map(move => [move])
@@ -168,15 +187,15 @@ function validPlays(game, rolls) {
 }
 
 // move the pieces
-function update(game, moves) {
+function update(game: Game, moves: Move[]) {
   moves.forEach((m) => {
     let [origin, dest] = m;
-    let piece;
+    let piece: Player;
     if (origin == "bar") {
       // if moving in from the bar, remove one of that color from the bar
       piece = game.bar.splice(game.bar.indexOf(game.turn), 1)[0];
     } else {
-      piece = game.positions[origin].pop();
+      piece = game.positions[origin].pop() as Player;
     }
 
     // TODO: remove assertion
@@ -192,52 +211,41 @@ function update(game, moves) {
     // if it's a hit, move whatever's in dest to the bar
     let hit = game.positions[dest].length > 0 && game.positions[dest][0] != game.turn;
     if (hit) {
-      pieceHit = game.positions[dest].pop()
-      game.bar.push(pieceHit);
+      let pieceHit = game.positions[dest].pop()
+      if (pieceHit) {
+        game.bar.push(pieceHit);
+      }
     }
 
     game.positions[dest].push(piece);
   });
 }
 
-const STRATEGIES = {
-  'random': (game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
-  'mcts': (game, moves) => { throw "implement mcts"},
-  'heuristicfn': (game, moves) => { throw "implement heuristic eval fn"}
+function formatStart(s: Start): string {
+  if (typeof s == 'number') {
+    return (s + 1).toString()
+  } else {
+    return s
+  }
+}
+function formatDest(d: Dest): string {
+  if (typeof d == 'number') {
+    return (d + 1).toString()
+  } else {
+    return d
+  }
+}
+function formatMove(move: Move): string {
+  return `${formatStart(move[0])}>${formatDest(move[1])}`;
 }
 
-const STRATEGY = 'random'
-
-// decide on a move among the possible moves, based on the current state of the game
-function choice(game, moves) {
-  // todo: implement AI
-  return STRATEGIES[STRATEGY](game, moves)
+function formatTurn(player: Player, roll: Roll, moves: Move[]): string {
+  return `\n${player} rolled ${roll}\n ${moves.map(formatMove).join(', ')}\n`
 }
 
-function formatMove(move) {
-  return `${isNaN(move[0]) ? move[0] : move[0] + 1}>${isNaN(move[1]) ? move[1] : move[1] + 1}`;
-}
-
-function formatTurn(player, roll, move, availableMoves) {
-  return `\n${player} rolled ${roll}\n ${move.map(formatMove).join(', ')}\n`
-}
-
-const transcript = document.getElementById("transcript");
-function log(msg) {
-  transcript.value = msg + transcript.value;
-}
-
-// const times = []
-function takeTurn(game) {
+export function takeTurn(game: Game): void {
   let rolls = roll();
-  // const t0 = performance.now();
   let mvs = orderedValidPlays(game, rolls);
-  // const t1 = performance.now();
-  // console.log(`moves took ${t1 - t0} milliseconds to generate.`);
-  // times.push(t1-t0)
-  // if (times.length % 10 == 0) {
-    // console.log(`avg time: ${times.reduce((m,t) => m + t)/times.length} milliseconds`)
-  // }
   if (mvs.length > 0) {
     let c = choice(game, mvs);
     update(game, c);
@@ -250,77 +258,10 @@ function takeTurn(game) {
     if (game.wHome.length > 0) {
       log(`wHome: ${game.wHome.length}\n`)
     }
-    log(formatTurn(game.turn, rolls, c, mvs));
+    log(formatTurn(game.turn, rolls, c));
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
 }
 
-function render(game) {
-  let board = document.getElementById("board");
-  board.innerHTML = "";
-  let home = document.createElement("div");
-  home.classList.add("home");
-  let top = document.createElement("div");
-  top.classList.add("top");
-  let bottom = document.createElement("div");
-  bottom.classList.add("bottom");
-  board.appendChild(home);
-  board.appendChild(top);
-  board.appendChild(bottom);
-
-  game.positions.forEach((v, i) => {
-    let triangle = document.createElement("div");
-    triangle.classList.add("angle");
-    if (i % 2 == 0) {
-      triangle.classList.add("red");
-    } else {
-      triangle.classList.add("gray");
-    }
-    if (i <= 11) {
-      top.appendChild(triangle);
-    } else {
-      bottom.appendChild(triangle);
-    }
-
-    // The Bar
-    if (i == 6 || i === 18) {
-      let bar = document.createElement("div");
-      bar.classList.add("bar");
-      i == 6 && game.bar.forEach((p) => {
-        let piece = document.createElement("span");
-        piece.classList.add("piece");
-        piece.classList.add(p);
-        bar.appendChild(piece);
-      });
-
-      triangle.parentElement.insertBefore(bar, triangle);
-    }
-
-    triangle.innerText += `${i + 1}`;
-
-    v.forEach((p) => {
-      let piece = document.createElement("span");
-      piece.classList.add("piece");
-      piece.classList.add(p);
-      triangle.appendChild(piece);
-    });
-  });
-}
-
-render(game);
-document.getElementById("play").addEventListener("click", () => {
-  takeTurn(game);
-  // TODO: remove assertion
-  game.positions.forEach(p => console.assert(p.length == 0 || p.reduce((m,v) => m == v && v), {msg: "constraint violated: two pieces of different colors", game}))
-  render(game);
-});
-document.getElementById("ten").addEventListener("click", () => {
-  for (let i = 0; i<10; i++) { takeTurn(game); }
-  render(game);
-});
-document.getElementById("new").addEventListener("click", () => {
-  game = newGame();
-  render(game);
-});

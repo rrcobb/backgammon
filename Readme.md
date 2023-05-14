@@ -21,14 +21,16 @@ Question:
 - doubling cube
 
 
+- interactive mode? play against the AI?
+
 ## Speed
 
-depth of search will in fact be limited by how fast things are!
+- depth of search will in fact be limited by how fast things are!
+- if the evaluation function is really quick, then no worries
+- but if it is not, if we need to look deep into a game tree, then generating the moves themselves is actually pretty key!
 
-if the evaluation function is really quick, then no worries
-
-but if it is not, if we need to look deep into a game tree, then generating the moves themselves is actually pretty key!
+Is there low-hanging fruit for making things faster? e.g. representation changes to stop all the array shuffling
 
 Qs:
-- how long are we allowed to take to pick move?
+- how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
