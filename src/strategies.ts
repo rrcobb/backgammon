@@ -1,23 +1,24 @@
 import { Game, Move, Player, safeUpdate } from './game';
 
-type Strategy = (game: Game, moves: Move[][]) => Move[];
+export type StrategyName = 'random' | 'evaluate' // | 'mcts' | 'expectimax' | 'neural'
+export type Strategy = (game: Game, moves: Move[][]) => Move[];
 type StrategySet = {
-  [name: string]: Strategy
-}
+  [name in StrategyName]: Strategy;
+};
 
-const STRATEGIES: StrategySet = {
+export const STRATEGIES: StrategySet = {
   'random': (_game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
-  'mcts': (_game, moves) => { throw "implement mcts"},
-  'evaluate': chooseMove,
-  'a*-minimax': (_game, moves) => { throw "implement heuristic eval fn"}
+  'evaluate': chooseMove, // effectively depth-0 expectimax, no actual searching
+  // TODO implement alternative strategies
+  // 'mcts': (_game, moves) => { throw "implement mcts"},
+  // 'expectimax': (_game, moves) => { throw "implement expectimax"},
+  // 'neural': (_game, moves) => { throw "implement neural-net" },
 }
-
-const STRATEGY = 'evaluate'
 
 // decide on a move among the possible moves, based on the current state of the game
 export function choice(game: Game, moves: Move[][]): Move[] {
-  // todo: implement AI
-  return STRATEGIES[STRATEGY](game, moves)
+  let strat = game.turn == "w" ? game.wStrategy : game.bStrategy
+  return STRATEGIES[strat](game, moves)
 }
 
 function chooseMove(game: Game, moves: Move[][]): Move[] {

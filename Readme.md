@@ -34,3 +34,9 @@ Is there low-hanging fruit for making things faster? e.g. representation changes
 Qs:
 - how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
+
+
+
+## Reading
+
+- [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)

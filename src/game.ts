@@ -1,6 +1,6 @@
 // backgammon game
 
-import { choice } from './strategies'
+import { choice, StrategyName } from './strategies'
 import { log } from './render'
 
 export type Player = "b" | "w";
@@ -12,6 +12,8 @@ export interface Game {
   positions: Player[][];
   cube: number;
   turn: Player;
+  wStrategy: StrategyName,
+  bStrategy: StrategyName,
 }
 
 // 24 spaces
@@ -55,6 +57,8 @@ export function newGame(): Game {
     bHome: [],
     positions: structuredClone(INITIAL),
     cube: 1,
+    wStrategy: "random",
+    bStrategy: "evaluate",
     turn: "w", // TODO: start
   };
 }

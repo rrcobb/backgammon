@@ -1,4 +1,5 @@
 import { Game, newGame, takeTurn } from './game';
+import { STRATEGIES } from './strategies';
 
 function render(game: Game): void {
   let board = document.getElementById("board");
