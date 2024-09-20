@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "node build.js",
+    "build": "bun build.js",
+    "watch": "watchexec bun build.js",
     "check": "tsc --noEmit src/* --target es2022"
   },
   "dependencies": {

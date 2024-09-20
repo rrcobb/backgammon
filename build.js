@@ -9,4 +9,4 @@
      define: {
        'process.env.NODE_ENV': '"production"'
      }
-   }).catch(() => process.exit(1));
+   }).then(() => console.log("built to dest/")).catch(() => process.exit(1));

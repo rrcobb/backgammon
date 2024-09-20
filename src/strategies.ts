@@ -1,6 +1,6 @@
 import { Game, Move, Player, safeUpdate } from './game';
 
-export type StrategyName = 'random' | 'evaluate' // | 'mcts' | 'expectimax' | 'neural'
+export type StrategyName = 'random' | 'evaluate' // | 'expectimax'  | 'mcts' | 'neural'
 export type Strategy = (game: Game, moves: Move[][]) => Move[];
 type StrategySet = {
   [name in StrategyName]: Strategy;
@@ -10,8 +10,8 @@ export const STRATEGIES: StrategySet = {
   'random': (_game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
   'evaluate': chooseMove, // effectively depth-0 expectimax, no actual searching
   // TODO implement alternative strategies
-  // 'mcts': (_game, moves) => { throw "implement mcts"},
   // 'expectimax': (_game, moves) => { throw "implement expectimax"},
+  // 'mcts': (_game, moves) => { throw "implement mcts"},
   // 'neural': (_game, moves) => { throw "implement neural-net" },
 }
 
@@ -37,7 +37,7 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
 }
 
 // Backgammon move evaluation function
-// It attempts to make blocks, make and keep primes, hit the opponent's pieces,
+// It attempts to make points, make and keep primes, hit the opponent's pieces,
 // and when possible, not leave vulnerable blots, especially ones that are likely to be hit
 // and closer to the player's home board.
 
@@ -77,11 +77,11 @@ function blocksAndPrimes(next: Game): number {
   // points for each block
   score += myBlocks.length * BLOCK_VALUE
 
-  // more points for blocks closer to the golden prime
+  // score higher for points closer to the golden prime
   let golden = next.turn == "w" ? 18 : 5;
-  score += myBlocks.reduce((total, block) => total += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE/(Math.abs(golden - block) + 1)))
+  score += myBlocks.reduce((total, block) => total += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE/(Math.abs(golden - block) + 1)), 0)
 
-  // more points for blocks in sequence (primes)
+  // score higher for points in sequence (primes)
   let runs: number[] = myBlocks.reduce((rs, block: number) => {
     let run: number[] = rs[rs.length] || []
     if (run[run.length] + 1 == block) {
@@ -92,8 +92,8 @@ function blocksAndPrimes(next: Game): number {
     return rs
   }, [] as number[][]).map(a => a.length)
 
-  // PRIME_VALUE ^ (length -1) points
-  score += runs.reduce(length => PRIME_VALUE ** (length - 1))
+  // PRIME_VALUE ^ (length -1)
+  score += runs.reduce(length => PRIME_VALUE ** (length - 1), 0)
 
   return score
 }

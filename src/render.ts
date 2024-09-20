@@ -65,12 +65,19 @@ export function log(msg: string) {
   transcript.value = msg + transcript?.value;
 }
 
+function disableTurns() {
+  (document.getElementById("play") as HTMLButtonElement).disabled = true;
+  (document.getElementById("ten") as HTMLButtonElement).disabled = true;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   let game = newGame();
   render(game);
 
   document.getElementById("play")?.addEventListener("click", () => {
-    takeTurn(game);
+    let finished = takeTurn(game);
+
+    if (finished) { disableTurns(); }
 
     // TODO: remove assertion
     // validate that all the pieces in a position are the same player
@@ -80,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { msg: "constraint violated: two pieces of different colors", game }
       )
     })
+
     render(game);
   });
 

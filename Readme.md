@@ -19,9 +19,8 @@ Question:
 - showing pieces that have been borne off
 - starting roll
 - doubling cube
-
-
 - interactive mode? play against the AI?
+- scorekeeping between games
 
 ## Speed
 
@@ -29,13 +28,17 @@ Question:
 - if the evaluation function is really quick, then no worries
 - but if it is not, if we need to look deep into a game tree, then generating the moves themselves is actually pretty key!
 
-Is there low-hanging fruit for making things faster? e.g. representation changes to stop all the array shuffling
+Is there low-hanging fruit for making things faster?
+- representation changes to stop all the array shuffling
+- reimplement in a compiled lang / interface to the js API of the game
 
 Qs:
 - how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
 
+## Testing
 
+it'd be a nice thing to do, to fuzz-test the different games
 
 ## Reading
 

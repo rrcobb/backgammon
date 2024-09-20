@@ -252,7 +252,27 @@ function formatTurn(player: Player, roll: Roll, moves: Move[]): string {
   return `\n${player} rolled ${roll}\n ${moves.map(formatMove).join(', ')}\n`
 }
 
-export function takeTurn(game: Game): void {
+function gameover(game: Game): Player | false {
+  if (game.bHome.length == 15) {
+    return 'b';
+  } else if (game.wHome.length == 15) {
+    return 'w';
+  } else {
+    return false
+  }
+}
+
+function checkWinner(game: Game): boolean {
+  let winner = gameover(game);
+  if (winner) { 
+    log(winner + ' wins! Game over.\n');
+    return true
+  }
+}
+
+export function takeTurn(game: Game): boolean {
+  if (checkWinner(game)) { return true }
+
   let rolls = roll();
   let mvs = orderedValidPlays(game, rolls);
   if (mvs.length > 0) {
@@ -271,7 +291,9 @@ export function takeTurn(game: Game): void {
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
+  if (checkWinner(game)) { return true }
   log(`\n\n${game.turn}'s turn`)
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
+  return false
 }
 
