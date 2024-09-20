@@ -1,10 +1,10 @@
 // allow compressing and decompressing game states
 // allow compressing/decompressing a series of moves -- a game history
 // reading and writing these to files
-
 import { Player, Game, newGame } from './game'
 
-type GameBinary = ArrayBuffer;
+type TurnBinary = ArrayBuffer;
+type GameHistory = ArrayBuffer;
 type GameCompressed = ArrayBuffer;
 
 // Bit Representation
@@ -18,7 +18,7 @@ const PLAYER_MASK = 0b10000;
 const WHITE = 0b1;
 const BLACK = 0b0;
 
-function toBinary(game: Game): GameBinary {
+export function toBinary(game: Game): TurnBinary {
   const buffer = new ArrayBuffer(GAME_BYTES);
   const view = new DataView(buffer);
   let byteIndex = 0;
@@ -52,7 +52,7 @@ function toBinary(game: Game): GameBinary {
   return buffer;
 }
 
-function fromBinary(binary: GameBinary): Game {
+export function fromBinary(binary: TurnBinary): Game {
   const view = new DataView(binary);
   let game = newGame(); // default to a new game's settings
   let byteIndex = 0;
@@ -92,13 +92,27 @@ function fromBinary(binary: GameBinary): Game {
   return game
 }
 
-// Compression: Huffman tree
-// function compress(binary: GameBinary): GameCompressed {}
-// function decompress(compressed: GameCompressed): GameBinary {}
+export function gameHistory(turns: TurnBinary[]): GameHistory {
+  if (turns.length > 0 && turns[0].byteLength != GAME_BYTES) { throw new Error("turns bytelength is wrong") }
 
-let test = newGame();
-console.log(test);
-let compressed = toBinary(test);
-console.log(compressed);
-let decomp = fromBinary(compressed);
-console.log(decomp);
+  let totalByteLength = turns.length * GAME_BYTES;
+  let history = new ArrayBuffer(totalByteLength);
+  let view = new Uint8Array(history);
+  let offset = 0;
+  for (let t of turns) {
+    view.set(new Uint8Array(t), offset);
+    offset += GAME_BYTES;
+  }
+
+  return view;
+}
+
+// Compression
+// uses bun's zlib deflate
+export function compress(binary: ArrayBuffer): ArrayBuffer {
+  return Bun.deflateSync(binary)
+}
+
+export function decompress(compressed: ArrayBuffer): ArrayBuffer {
+  return Bun.inflateSync(compressed)
+}
