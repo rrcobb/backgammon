@@ -61,7 +61,7 @@ function render(game: Game): void {
 }
 
 const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
-export function log(msg: string) {
+function log(msg: string) {
   transcript.value = msg + transcript?.value;
 }
 
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   render(game);
 
   document.getElementById("play")?.addEventListener("click", () => {
-    let finished = takeTurn(game);
+    let finished = takeTurn(game, log);
 
     if (finished) { disableTurns(); }
 
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById("ten")?.addEventListener("click", () => {
-    for (let i = 0; i < 10; i++) { takeTurn(game); }
+    for (let i = 0; i < 10; i++) { takeTurn(game, log); }
     render(game);
   });
 

@@ -36,10 +36,26 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
   return bestMove
 }
 
-// Backgammon move evaluation function
+// #########
+// ## Backgammon evaluation function
+// #########
+//
 // It attempts to make points, make and keep primes, hit the opponent's pieces,
 // and when possible, not leave vulnerable blots, especially ones that are likely to be hit
 // and closer to the player's home board.
+//
+// TODO: use the recommended starts table
+// TODO: custom bearing-off function?
+//   may not actually matter
+//   fill an empty spot, instead of stacking
+
+// TODO Risk level
+// - settable
+// - behind: increase risk-taking
+// - if you have a good defensive prime: increase risk-taking with other pieces
+// - affect willingness to leave a blot
+// - affect willingness to hit your opponent, if it would leave you vulnerable
+// returns a numeric score
 
 // Tunable constants
 const BAR_VALUE = 12;
@@ -50,13 +66,12 @@ const GOLDEN_DISTANCE = 5;
 const PRIME_VALUE = 1;
 const BLOT_COST = 2;
 
-// returns a numeric score
 function evaluate(game: Game, moves: Move[]): number {
   let g = safeUpdate(game, moves);
 
   let score = 0;
-  // make blocks and primes
-  score += blocksAndPrimes(g)
+  // make points and primes
+  score += pointsAndPrimes(g)
   // try to hit your opponent
   score += hitOpponent(g)
   // try to get pieces home
@@ -67,22 +82,22 @@ function evaluate(game: Game, moves: Move[]): number {
   return score
 }
 
-function blocksAndPrimes(next: Game): number {
-  let myBlocks = next.positions
+function pointsAndPrimes(next: Game): number {
+  let myPoints = next.positions
     .map((a, i) => [a, i] as [Player[], number])
-    .filter(([a, i]) => (a[0] == next.turn) && a.length >= 2) // my blocks
+    .filter(([a, i]) => (a[0] == next.turn) && a.length >= 2) // my points
     .map(([_, i]) => i)
 
   let score = 0
   // points for each block
-  score += myBlocks.length * BLOCK_VALUE
+  score += myPoints.length * BLOCK_VALUE
 
   // score higher for points closer to the golden prime
   let golden = next.turn == "w" ? 18 : 5;
-  score += myBlocks.reduce((total, block) => total += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE/(Math.abs(golden - block) + 1)), 0)
+  score += myPoints.reduce((total, block) => total += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE/(Math.abs(golden - block) + 1)), 0)
 
   // score higher for points in sequence (primes)
-  let runs: number[] = myBlocks.reduce((rs, block: number) => {
+  let runs: number[] = myPoints.reduce((rs, block: number) => {
     let run: number[] = rs[rs.length] || []
     if (run[run.length] + 1 == block) {
       run.push(block)
@@ -106,10 +121,10 @@ function blots(next: Game): number {
   // don't leave a blot
   return -(myBlots.length * BLOT_COST)
   // TODO
-    // - if you have to leave one, leave it in places harder to reach
-    // - or, further back in your board
-    // - or, if you are beyond the last piece in your opponent
-    // - unless you expect to hit your opponent soon
+  // - if you have to leave a blot, leave it in places harder to reach
+  // - or, further back in your board
+  // - or, if you are beyond the last piece in your opponent
+  // - unless you expect to hit your opponent soon
 }
 
 function home(next: Game): number {
@@ -124,23 +139,3 @@ function hitOpponent(next: Game) {
   // how good is it to send the opponent to the bar?
   return nextcount * BAR_VALUE;
 }
-
-// #########
-// ## Backgammon evaluation function
-// #########
-
-// TODO: use the recommended starts table
-// TODO: custom bearing-off function?
-  // - may not actually matter
-  // fill an empty spot, instead of stacking
-
-// TODO Risk level
-// - settable
-// - behind: increase risk-taking
-// - if you have a good defensive prime: increase risk-taking with other pieces
-// - affect willingness to leave a blot
-// - affect willingness to hit your opponent, if it would leave you vulnerable
-
-// Rob's evaluation function
-// dumb, just pip-count
-// try to search into the future...

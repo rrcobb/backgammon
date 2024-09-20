@@ -1,8 +1,6 @@
 // backgammon game
 
 import { choice, StrategyName } from './strategies'
-import { log } from './render'
-
 export type Player = "b" | "w";
 
 export interface Game {
@@ -59,7 +57,7 @@ export function newGame(): Game {
     cube: 1,
     wStrategy: "random",
     bStrategy: "evaluate",
-    turn: "w", // TODO: start
+    turn: "w", // TODO: implement the start of the game / first roll
   };
 }
 
@@ -262,7 +260,9 @@ function gameover(game: Game): Player | false {
   }
 }
 
-function checkWinner(game: Game): boolean {
+type Log = (string) => void
+
+function checkWinner(game: Game, log: Log): boolean {
   let winner = gameover(game);
   if (winner) { 
     log(winner + ' wins! Game over.\n');
@@ -270,8 +270,8 @@ function checkWinner(game: Game): boolean {
   }
 }
 
-export function takeTurn(game: Game): boolean {
-  if (checkWinner(game)) { return true }
+export function takeTurn(game: Game, log: Log): boolean {
+  if (checkWinner(game, log)) { return true }
 
   let rolls = roll();
   let mvs = orderedValidPlays(game, rolls);
@@ -291,9 +291,8 @@ export function takeTurn(game: Game): boolean {
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
-  if (checkWinner(game)) { return true }
+  if (checkWinner(game, log)) { return true }
   log(`\n\n${game.turn}'s turn`)
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
   return false
 }
-

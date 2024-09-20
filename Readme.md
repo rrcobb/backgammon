@@ -36,9 +36,11 @@ Qs:
 - how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
 
-## Testing
+## Testing and Evaluation
 
-it'd be a nice thing to do, to fuzz-test the different games
+It'd be a nice thing to do, to fuzz-test the different games
+
+We also need ways of measuring different strategies against each other, for comparison.
 
 ## Reading
 
