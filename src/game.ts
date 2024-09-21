@@ -17,7 +17,7 @@ export interface Game {
 // 24 spaces
 // player w is playing 'forward' in the array
 // player b is playing 'backward' in the array
-const INITIAL: string[][] = [
+const INITIAL: Player[][] = [
   // b homeboard
   ["w", "w"],
   [],
@@ -49,15 +49,17 @@ const INITIAL: string[][] = [
 ];
 
 export function newGame(): Game {
+    // TODO: implement the start of the game / first roll
+  let first: Player = Math.random() > 0.5 ? "w": "b";  // :/ flip a coin for first
   return {
     bar: [],
     wHome: [],
     bHome: [],
     positions: structuredClone(INITIAL),
     cube: 1,
-    wStrategy: "random",
+    wStrategy: "evaluate",
     bStrategy: "evaluate",
-    turn: "w", // TODO: implement the start of the game / first roll
+    turn: first,
   };
 }
 
@@ -69,12 +71,21 @@ function die(): Droll {
 type Roll = [Droll, Droll] | [Droll, Droll, Droll, Droll]
 function roll(): Roll {
   let [i, j] = [die(), die()];
+  return cleanRoll(i,j);
+}
+
+function cleanRoll<T>(i: T, j: T): [T,T] | [T,T,T,T] {
   if (i == j) {
     return [i,i,i,i];
   } else {
     return [i,j];
   }
 }
+
+const dice: Droll[] = [1,2,3,4,5,6]
+export const allRolls: Roll[] = (function() {
+  return dice.flatMap(d1 => dice.map(d2 => [d1, d2])).map(([i,j]) => cleanRoll(i,j))
+})();
 
 function orderings(rolls: Roll): Array<Roll> {
   // hack: we know that we only have one ordering if the die are equal, or if there's only one
@@ -153,7 +164,7 @@ function validMoves(roll: Droll, game: Game): Move[] {
   return moves
 }
 
-function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
+export function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   if (game.turn == "b") {
      rolls = rolls.map(r => -r) as Roll
   }
@@ -250,7 +261,9 @@ function formatTurn(player: Player, roll: Roll, moves: Move[]): string {
   return `\n${player} rolled ${roll}\n ${moves.map(formatMove).join(', ')}\n`
 }
 
-function gameover(game: Game): Player | false {
+export type Win = Player | false
+
+export function checkWinner(game: Game): Win {
   if (game.bHome.length == 15) {
     return 'b';
   } else if (game.wHome.length == 15) {
@@ -262,16 +275,12 @@ function gameover(game: Game): Player | false {
 
 type Log = (string) => void
 
-function checkWinner(game: Game, log: Log): boolean {
-  let winner = gameover(game);
+export function takeTurn(game: Game, log: Log): Win {
+  let winner = checkWinner(game);
   if (winner) { 
     log(winner + ' wins! Game over.\n');
-    return true
+    return winner
   }
-}
-
-export function takeTurn(game: Game, log: Log): boolean {
-  if (checkWinner(game, log)) { return true }
 
   let rolls = roll();
   let mvs = orderedValidPlays(game, rolls);
@@ -291,7 +300,13 @@ export function takeTurn(game: Game, log: Log): boolean {
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
-  if (checkWinner(game, log)) { return true }
+
+  winner = checkWinner(game);
+  if (winner) { 
+    log(winner + ' wins! Game over.\n');
+    return winner
+  }
+
   log(`\n\n${game.turn}'s turn`)
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
   return false

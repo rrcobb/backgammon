@@ -1,6 +1,6 @@
-import { Game, Move, Player, safeUpdate } from './game';
+import { Game, Move, Player, safeUpdate, orderedValidPlays, allRolls, checkWinner } from './game';
 
-export type StrategyName = 'random' | 'evaluate' // | 'expectimax'  | 'mcts' | 'neural'
+export type StrategyName = 'random' | 'evaluate' | 'expectimax' //  | 'mcts' | 'neural'
 export type Strategy = (game: Game, moves: Move[][]) => Move[];
 type StrategySet = {
   [name in StrategyName]: Strategy;
@@ -9,8 +9,8 @@ type StrategySet = {
 export const STRATEGIES: StrategySet = {
   'random': (_game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
   'evaluate': chooseMove, // effectively depth-0 expectimax, no actual searching
+  'expectimax': expectimax,
   // TODO implement alternative strategies
-  // 'expectimax': (_game, moves) => { throw "implement expectimax"},
   // 'mcts': (_game, moves) => { throw "implement mcts"},
   // 'neural': (_game, moves) => { throw "implement neural-net" },
 }
@@ -25,7 +25,6 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
   // This function chooses the best move statically, based on the current backgammon game state.
   let [bestMove, ...rest] = moves;
   let bestScore = evaluate(game, moves[0]);
-
   for (let move of rest) {
     let score = evaluate(game, move)
     if (score > bestScore) {
@@ -34,6 +33,36 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
     }
   }
   return bestMove
+}
+
+function _expectimax(game: Game, moves: Move[][], depth: number): [Move[], number] {
+  // base case for recursion -- just use the evaluation function for the scores
+  let scores;
+  if (depth == 0) {
+    scores = moves.map(move => evaluate(game, move))
+  } else {
+    // depth > 0
+    scores = moves.map(move => {
+      let nextGame = safeUpdate(game, move);
+      let rollScores = [];
+      for (let roll of allRolls) {
+        let legalMoves = orderedValidPlays(nextGame, roll);
+        let [move, score] = _expectimax(nextGame, legalMoves, depth - 1);
+        rollScores.push(score)
+      }
+      return rollScores.reduce((sum, score) => sum+score) / rollScores.length;
+    })
+  }
+
+  const bestScore = Math.min(...scores);
+  const bestIndex = scores.indexOf(bestScore);
+  return [moves[bestIndex] || [], bestScore];
+}
+
+const LOOKAHEAD_DEPTH = 1; // depth is tunable
+function expectimax(game: Game, moves: Move[][]): Move[] {
+  let [move, score] = _expectimax(game, moves, LOOKAHEAD_DEPTH); 
+  return move
 }
 
 // #########
@@ -59,7 +88,7 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
 
 // Tunable constants
 const BAR_VALUE = 12;
-const HOME_VALUE = 1;
+const HOME_VALUE = 3;
 const BLOCK_VALUE = 2;
 const GOLDEN_VALUE = 2;
 const GOLDEN_DISTANCE = 5;
@@ -67,8 +96,13 @@ const PRIME_VALUE = 1;
 const BLOT_COST = 2;
 
 function evaluate(game: Game, moves: Move[]): number {
+  let ME = game.turn;
   let g = safeUpdate(game, moves);
 
+  let winner = checkWinner(g);
+  if (winner) {
+    return winner == ME ? 1 : 0;
+  }
   let score = 0;
   // make points and primes
   score += pointsAndPrimes(g)
@@ -79,7 +113,7 @@ function evaluate(game: Game, moves: Move[]): number {
   // don't leave vulnerable blots
   score += blots(g)
 
-  return score
+  return Math.tanh(score / 50)
 }
 
 function pointsAndPrimes(next: Game): number {

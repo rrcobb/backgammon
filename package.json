@@ -2,12 +2,13 @@
   "scripts": {
     "build": "bun build.js",
     "watch": "watchexec bun build.js",
-    "check": "tsc --noEmit src/* --target es2022"
+    "check": "tsc --skipLibCheck --noEmit src/* --target es2022"
   },
   "dependencies": {
     "esbuild": "0.17.19"
   },
   "devDependencies": {
+    "@types/bun": "^1.1.10",
     "typescript": "^5.0.4"
   }
 }

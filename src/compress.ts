@@ -4,8 +4,7 @@
 import { Player, Game, newGame } from './game'
 
 type TurnBinary = ArrayBuffer;
-type GameHistory = ArrayBuffer;
-type GameCompressed = ArrayBuffer;
+type GameHistory = Uint8Array;
 
 // Bit Representation
 // Inferred: home/borne off pieces, dice
@@ -109,10 +108,10 @@ export function gameHistory(turns: TurnBinary[]): GameHistory {
 
 // Compression
 // uses bun's zlib deflate
-export function compress(binary: ArrayBuffer): ArrayBuffer {
+export function compress(binary: ArrayBuffer): Uint8Array {
   return Bun.deflateSync(binary)
 }
 
-export function decompress(compressed: ArrayBuffer): ArrayBuffer {
+export function decompress(compressed: Uint8Array): Uint8Array {
   return Bun.inflateSync(compressed)
 }
