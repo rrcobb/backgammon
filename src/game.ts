@@ -1,6 +1,7 @@
 // backgammon game
 
-import { choice, StrategyName } from './strategies'
+import { choice, StrategyName, measure, memoize } from './strategies'
+import { toBinary } from './compress'
 export type Player = "b" | "w";
 
 export interface Game {
@@ -58,7 +59,7 @@ export function newGame(): Game {
     positions: structuredClone(INITIAL),
     cube: 1,
     wStrategy: "evaluate",
-    bStrategy: "evaluate",
+    bStrategy: "expectimax",
     turn: first,
   };
 }
@@ -173,11 +174,25 @@ export function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   return ords.flatMap(rls => validPlays(game, rls))
 }
 
-export function safeUpdate(game: Game, moves: Move[]) {
-  let imaginedWorld = structuredClone(game)
-  update(imaginedWorld, moves);
-  return imaginedWorld
+const encoder = new TextEncoder();
+const makeKey = (game, moves) => {
+  let bin = toBinary(game)
+  let result = ''
+  for (var i = 0, itemLen = bin.length; i < itemLen; result += bin[i++]);
+  result += '|'
+  let movesArr = new Uint8Array(moves.flat());
+  for (var i = 0, itemLen = movesArr.length; i < itemLen; result += movesArr[i++]);
+  return result
 }
+
+const sc = measure(structuredClone)
+
+export const safeUpdate = measure(memoize(
+  function safeUpdate(game: Game, moves: Move[]) {
+    let imaginedWorld = sc(game)
+    update(imaginedWorld, moves);
+    return imaginedWorld
+  }, measure(makeKey, 'makeKey'), 'safeUpdate'), 'safeUpdate');
 
 // Rolls: list of rolled dies
 // Play: list of start/finish pairs e.g. [(start1, end1), (start2, end2)]
@@ -205,10 +220,11 @@ function validPlays(game: Game, rolls: Array<Droll>): Move[][] {
 }
 
 // move the pieces
-export function update(game: Game, moves: Move[]) {
+// touches bar, home, and positions
+export const update = measure(function update(game: Game, moves: Move[]) {
   moves.forEach((m) => {
     let [origin, dest] = m;
-    let piece: Player;
+    let piece: Player = null;
     if (origin == "bar") {
       // if moving in from the bar, remove one of that color from the bar
       piece = game.bar.splice(game.bar.indexOf(game.turn), 1)[0];
@@ -216,8 +232,7 @@ export function update(game: Game, moves: Move[]) {
       piece = game.positions[origin].pop() as Player;
     }
 
-    // TODO: remove assertion
-    console.assert(piece == game.turn, { move: m, moves, turn: game.turn, positions: game.positions})
+    console.assert(piece == game.turn, "mismatch:" + `piece ${piece} + game.turn ${game.turn}` + JSON.stringify({ piece: piece, move: m, moves, turn: game.turn, positions: game.positions}))
 
     // if bearing off, move to home
     if (dest == "home") {
@@ -237,7 +252,7 @@ export function update(game: Game, moves: Move[]) {
 
     game.positions[dest].push(piece);
   });
-}
+})
 
 function formatStart(s: Start): string {
   if (typeof s == 'number') {
@@ -300,6 +315,8 @@ export function takeTurn(game: Game, log: Log): Win {
   } else {
     log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
   }
+  log(`\n\n${game.turn}'s turn`)
+  game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
 
   winner = checkWinner(game);
   if (winner) { 
@@ -307,7 +324,5 @@ export function takeTurn(game: Game, log: Log): Win {
     return winner
   }
 
-  log(`\n\n${game.turn}'s turn`)
-  game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
   return false
 }

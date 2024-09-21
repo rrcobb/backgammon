@@ -3,7 +3,7 @@
 // reading and writing these to files
 import { Player, Game, newGame } from './game'
 
-type TurnBinary = ArrayBuffer;
+type TurnBinary = Uint8Array;
 type GameHistory = Uint8Array;
 
 // Bit Representation
@@ -18,19 +18,19 @@ const WHITE = 0b1;
 const BLACK = 0b0;
 
 export function toBinary(game: Game): TurnBinary {
-  const buffer = new ArrayBuffer(GAME_BYTES);
-  const view = new DataView(buffer);
+  const result = new Uint8Array(GAME_BYTES);
   let byteIndex = 0;
 
   // Whose turn: a whole darn byte
-  let turnByte = game.turn == 'w' ? WHITE : BLACK;
-  view.setUint8(byteIndex++, turnByte);
+  let currentTurn = game.turn;
+  let turnByte = currentTurn === 'w' ? WHITE : BLACK;
+  result[byteIndex++] = turnByte;
 
   // bar: 4 bits white, then 4 bits black
-  let whitebar = game.bar.filter(p => p == 'w').length;
-  let blackbar = game.bar.filter(p => p == 'b').length;
-  let barByte = whitebar << 4 + blackbar;
-  view.setUint8(byteIndex++, barByte);
+  let whitebar = game.bar.filter(p => p === 'w').length;
+  let blackbar = game.bar.filter(p => p === 'b').length;
+  let barByte = (whitebar << 4) + blackbar;
+  result[byteIndex++] = barByte;
  
   // doubling cube
   // TODO
@@ -38,17 +38,14 @@ export function toBinary(game: Game): TurnBinary {
   byteIndex++
 
   // Positions
-  game.positions.forEach(p => {
-    let byte;
-    if (p.length > 0) {
-      byte = p[0] == 'w' ? (WHITE << 4) | p.length : p.length;
-    } else {
-      byte = 0
-    }
-    view.setUint8(byteIndex++, byte)
-  });
+  for (let i = 0; i < game.positions.length; i++) {
+    const p = game.positions[i];
+    result[byteIndex++] = p.length > 0
+      ? (p[0] === 'w' ? WHITE : BLACK) << 4 | p.length
+      : 0;
+  }
 
-  return buffer;
+  return result;
 }
 
 export function fromBinary(binary: TurnBinary): Game {

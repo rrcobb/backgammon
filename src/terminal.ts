@@ -1,7 +1,13 @@
 import { newGame, takeTurn, Win, allRolls } from './game'
 import { toBinary, gameHistory, compress, decompress } from './compress'
+import { runtimeStats } from './strategies'
 
 const MEASURE_PERF = true;
+
+let totalStart
+if (MEASURE_PERF) {
+  totalStart = performance.now();
+}
 
 function doGame() {
   let game = newGame();
@@ -20,6 +26,7 @@ function doGame() {
     }
     turns.push(toBinary(game));
     if (winner) break;
+    if (performance.now() - totalStart > 10000) break;
   }
   return { gameHistory: gameHistory(turns), winner, turnTimes };
 }
@@ -41,10 +48,7 @@ Number.prototype.times = function (fn) {
   }
 };
 
-let totalStart
-if (MEASURE_PERF) {
-  totalStart = performance.now();
-}
+
 
 const wins = [];
 
@@ -65,7 +69,7 @@ function playMany(n: number) {
       totalTurns += turnTimes.length;
       wins.push(winner)
 
-      if (i === 0) {
+      if (i === 0 && false) {
         console.log(`First game stats:
         Winner: ${winner}
         Turns: ${turnTimes.length}
@@ -87,17 +91,30 @@ function playMany(n: number) {
     const bStrat = newGame().bStrategy;
 
     console.log(`Overall stats:
-    Total time: ${totalTime} ms
-    Average game time: ${averageGameTime} ms
+    Total time: ${totalTime.toFixed(2)} ms
+    Average game time: ${averageGameTime.toFixed(2)} ms
     Total turns: ${totalTurns}
     Average turns: ${totalTurns/gameTimes.length}
-    Average turn time: ${averageTurnTime} ms
-    White (${wStrat}): ${wWins}
-    Black (${bStrat}): ${bWins}`);
+    Average turn time: ${averageTurnTime.toFixed(2)} ms
+    `);
+    // White (${wStrat}): ${wWins}
+    // Black (${bStrat}): ${bWins}
   }
 }
 
-(1).times(() => playMany(50));
+(1).times(() => playMany(1));
+
+console.log(`Function stats:`)
+for (let f in runtimeStats) {
+  let calls = runtimeStats[f]
+  let total = calls.reduce((a,b) => a+b,0)
+  let count = calls.length;
+  let avg = total / count;
+  console.log(f, `: ${count} calls, ${avg.toFixed(4)}ms on average, ${total.toFixed(2)}ms in total`)
+  if (calls.cacheMisses) {
+    console.log(`\tmissed cache ${calls.cacheMisses}/${count} on calls (${(100*calls.cacheMisses/count).toFixed(3)}% miss)`);
+  }
+}
 
 // histories.forEach(h => {
 //   let compressed = compress(h);

@@ -26,7 +26,17 @@ Question:
 
 - depth of search will in fact be limited by how fast things are!
 - if the evaluation function is really quick, then no worries
-- but if it is not, if we need to look deep into a game tree, then generating the moves themselves is actually pretty key!
+  - checkpoint: evaluation is about half an ms
+  - we do... how many evaluations per expectimax level?
+    - 36 rolls, several moves per roll (3? 5?)
+    - so, 36 times the average work... or 17.5ms per turn
+    - for a game of ~80 turns, it should be about 1600ms, so 1.6s
+    - but instead, it's... much longer -- close to 4s per turn, 283s!
+    - what's happening?
+    - way more calls than I thought?
+- after some perf attention, things are faster, though not fast
+- evaluating the game state hundreds of thousands of time is slow!
+- changing the representation to the compressed version for manipulation is likely better for speed too
 
 Is there low-hanging fruit for making things faster?
 - representation changes to stop all the array shuffling

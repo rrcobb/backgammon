@@ -6,13 +6,41 @@ type StrategySet = {
   [name in StrategyName]: Strategy;
 };
 
-export const STRATEGIES: StrategySet = {
-  'random': (_game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
-  'evaluate': chooseMove, // effectively depth-0 expectimax, no actual searching
-  'expectimax': expectimax,
-  // TODO implement alternative strategies
-  // 'mcts': (_game, moves) => { throw "implement mcts"},
-  // 'neural': (_game, moves) => { throw "implement neural-net" },
+export const runtimeStats = {
+  "makeKey": [],
+  "safeUpdate": [],
+  "evaluate": [],
+  "_em": [],
+  "expectimax": [],
+}
+
+export function measure(fn, name=undefined, doit=true) {
+  if (!doit) { return fn }
+  runtimeStats[name || fn.name] = [];
+  return (...args) => {
+    const start = performance.now();
+    const result = fn(...args) 
+    const end = performance.now();
+    runtimeStats[name || fn.name].push(end - start)
+    return result
+  }
+}
+
+export function memoize(fn, keyfn, name) {
+  let cache = {}
+  return (...args) => {
+    let key = keyfn(...args);
+    if (cache[key]) {
+      return cache[key];
+    } else {
+      if (runtimeStats[name]) {
+        runtimeStats[name].cacheMisses = (runtimeStats[name].cacheMisses || 0) + 1
+      }
+      let result = fn(...args);
+      cache[key] = result;
+      return result;
+    }
+  }
 }
 
 // decide on a move among the possible moves, based on the current state of the game
@@ -35,35 +63,50 @@ function chooseMove(game: Game, moves: Move[][]): Move[] {
   return bestMove
 }
 
-function _expectimax(game: Game, moves: Move[][], depth: number): [Move[], number] {
-  // base case for recursion -- just use the evaluation function for the scores
-  let scores;
-  if (depth == 0) {
-    scores = moves.map(move => evaluate(game, move))
+const randomN = (arr, n) => {
+  if (arr.length <= n) {
+    return arr
   } else {
-    // depth > 0
-    scores = moves.map(move => {
-      let nextGame = safeUpdate(game, move);
-      let rollScores = [];
-      for (let roll of allRolls) {
-        let legalMoves = orderedValidPlays(nextGame, roll);
-        let [move, score] = _expectimax(nextGame, legalMoves, depth - 1);
-        rollScores.push(score)
-      }
-      return rollScores.reduce((sum, score) => sum+score) / rollScores.length;
-    })
+    return arr.slice().sort((a,b) => 0.5 > Math.random()).slice(0,n)
   }
-
-  const bestScore = Math.min(...scores);
-  const bestIndex = scores.indexOf(bestScore);
-  return [moves[bestIndex] || [], bestScore];
 }
 
 const LOOKAHEAD_DEPTH = 1; // depth is tunable
-function expectimax(game: Game, moves: Move[][]): Move[] {
+const ROLL_PRUNING = 4; // take all the rolls (faster if more rolls are pruned)
+
+const _expectimax = measure(function _em(game: Game, moves: Move[][], depth: number): [Move[], number] {
+  let scores;
+  let bestFun;
+  if (depth == 0) {
+    // base case for recursion -- just use the evaluation function for the scores
+    scores = moves.map(move => evaluate(game, move))
+    // always maximizing the evaluation in the base case
+    bestFun = Math.max
+  } else {
+    // depth > 0, so look deeper into the game tree
+    scores = moves.map(move => {
+      let nextGame = safeUpdate(game, move);
+      let rollScores = [];
+      for (let roll of randomN(allRolls, 36)) {
+        let legalMoves = orderedValidPlays(nextGame, roll);
+        let [move, score] = _expectimax(nextGame, legalMoves, depth - 1);
+        rollScores.push(score);
+      }
+      return rollScores.reduce((sum, score) => sum+score) / rollScores.length;
+    })
+    // always minimize the score of your opponent
+    bestFun = Math.min;
+  }
+
+  const bestScore = bestFun(...scores);
+  const bestIndex = scores.indexOf(bestScore);
+  return [moves[bestIndex] || [], bestScore];
+})
+
+const expectimax = measure(function expectimax(game: Game, moves: Move[][]): Move[] {
   let [move, score] = _expectimax(game, moves, LOOKAHEAD_DEPTH); 
   return move
-}
+})
 
 // #########
 // ## Backgammon evaluation function
@@ -95,71 +138,68 @@ const GOLDEN_DISTANCE = 5;
 const PRIME_VALUE = 1;
 const BLOT_COST = 2;
 
-function evaluate(game: Game, moves: Move[]): number {
-  let ME = game.turn;
-  let g = safeUpdate(game, moves);
+const GOLDEN_WHITE = 18;
+const GOLDEN_BLACK = 5;
+const PRIME_VALUES = [0, 0, 1, 2, 4, 8, 16];
 
-  let winner = checkWinner(g);
+const evaluate = measure(function evaluate(game: Game, moves: Move[]): number {
+  const ME = game.turn;
+  const g = safeUpdate(game, moves);
+  const winner = checkWinner(g);
   if (winner) {
     return winner == ME ? 1 : 0;
   }
   let score = 0;
-  // make points and primes
   score += pointsAndPrimes(g)
-  // try to hit your opponent
   score += hitOpponent(g)
-  // try to get pieces home
   score += home(g)
-  // don't leave vulnerable blots
   score += blots(g)
-
   return Math.tanh(score / 50)
-}
+})
 
-function pointsAndPrimes(next: Game): number {
-  let myPoints = next.positions
-    .map((a, i) => [a, i] as [Player[], number])
-    .filter(([a, i]) => (a[0] == next.turn) && a.length >= 2) // my points
-    .map(([_, i]) => i)
+const pointsAndPrimes = measure(function pnp(next: Game): number {
+  const myPoints: number[] = [];
+  let score = 0;
+  const golden = next.turn === "w" ? GOLDEN_WHITE : GOLDEN_BLACK;
 
-  let score = 0
-  // points for each block
-  score += myPoints.length * BLOCK_VALUE
-
-  // score higher for points closer to the golden prime
-  let golden = next.turn == "w" ? 18 : 5;
-  score += myPoints.reduce((total, block) => total += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE/(Math.abs(golden - block) + 1)), 0)
-
-  // score higher for points in sequence (primes)
-  let runs: number[] = myPoints.reduce((rs, block: number) => {
-    let run: number[] = rs[rs.length] || []
-    if (run[run.length] + 1 == block) {
-      run.push(block)
-    } else {
-      rs.push([block])
+  for (let i = 0; i < next.positions.length; i++) {
+    const position = next.positions[i];
+    if (position[0] === next.turn && position.length >= 2) {
+      myPoints.push(i);
+      score += BLOCK_VALUE;
+      score += GOLDEN_VALUE * Math.floor(GOLDEN_DISTANCE / (Math.abs(golden - i) + 1));
     }
-    return rs
-  }, [] as number[][]).map(a => a.length)
+  }
 
-  // PRIME_VALUE ^ (length -1)
-  score += runs.reduce(length => PRIME_VALUE ** (length - 1), 0)
+  let currentRun = 1;
+  for (let i = 1; i < myPoints.length; i++) {
+    if (myPoints[i] === myPoints[i - 1] + 1) {
+      currentRun++;
+    } else {
+      score += PRIME_VALUES[Math.min(currentRun, 6)];
+      currentRun = 1;
+    }
+  }
+  score += PRIME_VALUES[Math.min(currentRun, 6)];
 
-  return score
-}
+  return score;
+}, 'pointsAndPrimes', false)
 
-function blots(next: Game): number {
-  let myBlots = next.positions.map((a, i) => [a, i] as [Player[], number])
-    .filter(([a, i]) => a[0] == next.turn && a.length == 1) // my blots
-    .map(([_, i]) => i)
 
-  // don't leave a blot
-  return -(myBlots.length * BLOT_COST)
+const blots = measure(function blots(next: Game): number {
+  let blotCount = 0;
+  for (const position of next.positions) {
+    if (position[0] === next.turn && position.length === 1) {
+      blotCount++;
+    }
+  }
+  return -(blotCount * BLOT_COST);
   // TODO
   // - if you have to leave a blot, leave it in places harder to reach
   // - or, further back in your board
   // - or, if you are beyond the last piece in your opponent
   // - unless you expect to hit your opponent soon
-}
+}, 'blots', false)
 
 function home(next: Game): number {
   let h = next.turn == "w" ? "wHome" : "bHome";
@@ -168,8 +208,14 @@ function home(next: Game): number {
 }
 
 function hitOpponent(next: Game) {
-  // how many of the opponents pieces will move to the bar?
-  let nextcount = next.bar.filter(p => p !== next.turn).length
-  // how good is it to send the opponent to the bar?
-  return nextcount * BAR_VALUE;
+  return next.bar.filter(p => p !== next.turn).length * BAR_VALUE;
+}
+
+export const STRATEGIES: StrategySet = {
+  'random': (_game, moves) =>  moves[Math.floor(Math.random() * moves.length)],
+  'evaluate': chooseMove, // effectively depth-0 expectimax, no actual searching
+  'expectimax': expectimax,
+  // TODO implement alternative strategies
+  // 'mcts': (_game, moves) => { throw "implement mcts"},
+  // 'neural': (_game, moves) => { throw "implement neural-net" },
 }
