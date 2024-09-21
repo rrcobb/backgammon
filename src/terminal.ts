@@ -2,8 +2,8 @@ import { newGame, takeTurn, Win, allRolls } from './game'
 import { toBinary, gameHistory, compress, decompress } from './compress'
 import { runtimeStats } from './strategies'
 
-const MEASURE_PERF = true;
 
+const MEASURE_PERF = true;
 let totalStart
 if (MEASURE_PERF) {
   totalStart = performance.now();

@@ -6,6 +6,7 @@ type StrategySet = {
   [name in StrategyName]: Strategy;
 };
 
+// note: double-defined, here and in ./terminal
 export const runtimeStats = {
   "makeKey": [],
   "safeUpdate": [],
