@@ -1,7 +1,6 @@
 // backgammon game
 
-import { choice, StrategyName, measure, memoize } from './strategies'
-import { toBinary } from './compress'
+import { choice, StrategyName, measure, memoize, makeKey } from './strategies'
 export type Player = "b" | "w";
 
 export interface Game {
@@ -174,17 +173,6 @@ export function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   return ords.flatMap(rls => validPlays(game, rls))
 }
 
-const encoder = new TextEncoder();
-const makeKey = (game, moves) => {
-  let bin = toBinary(game)
-  let result = ''
-  for (var i = 0, itemLen = bin.length; i < itemLen; result += bin[i++]);
-  result += '|'
-  let movesArr = new Uint8Array(moves.flat());
-  for (var i = 0, itemLen = movesArr.length; i < itemLen; result += movesArr[i++]);
-  return result
-}
-
 const sc = measure(structuredClone)
 
 export const safeUpdate = measure(memoize(
@@ -192,7 +180,7 @@ export const safeUpdate = measure(memoize(
     let imaginedWorld = sc(game)
     update(imaginedWorld, moves);
     return imaginedWorld
-  }, measure(makeKey, 'makeKey'), 'safeUpdate'), 'safeUpdate');
+  }, makeKey, 'safeUpdate'), 'safeUpdate');
 
 // Rolls: list of rolled dies
 // Play: list of start/finish pairs e.g. [(start1, end1), (start2, end2)]

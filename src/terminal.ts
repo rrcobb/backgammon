@@ -3,11 +3,7 @@ import { toBinary, gameHistory, compress, decompress } from './compress'
 import { runtimeStats } from './strategies'
 
 
-const MEASURE_PERF = true;
-let totalStart
-if (MEASURE_PERF) {
-  totalStart = performance.now();
-}
+
 
 function doGame() {
   let game = newGame();
@@ -26,7 +22,7 @@ function doGame() {
     }
     turns.push(toBinary(game));
     if (winner) break;
-    if (performance.now() - totalStart > 10000) break;
+    // if (TIME_LIMIT && performance.now() - totalStart > TIME_LIMIT) break;
   }
   return { gameHistory: gameHistory(turns), winner, turnTimes };
 }
@@ -81,8 +77,7 @@ function playMany(n: number) {
 
   if (MEASURE_PERF) {
     const totalEnd = performance.now();
-
-    const totalTime = totalEnd - totalStart;
+    totalTime = totalEnd - totalStart;
     const averageGameTime = gameTimes.reduce((a, b) => a + b, 0) / gameTimes.length;
     const averageTurnTime = totalTime / totalTurns;
     const wWins = wins.filter(v => v == 'w').length;
@@ -96,25 +91,36 @@ function playMany(n: number) {
     Total turns: ${totalTurns}
     Average turns: ${totalTurns/gameTimes.length}
     Average turn time: ${averageTurnTime.toFixed(2)} ms
+    White (${wStrat}): ${wWins}
+    Black (${bStrat}): ${bWins}
     `);
-    // White (${wStrat}): ${wWins}
-    // Black (${bStrat}): ${bWins}
   }
 }
 
-(1).times(() => playMany(1));
+var MEASURE_PERF = true;
+var totalStart, totalTime;
+if (MEASURE_PERF) {
+  totalStart = performance.now();
+}
+var TIME_LIMIT = 10000; // ms
+(1).times(() => playMany(5));
 
 console.log(`Function stats:`)
+let loglines = []
 for (let f in runtimeStats) {
   let calls = runtimeStats[f]
   let total = calls.reduce((a,b) => a+b,0)
   let count = calls.length;
   let avg = total / count;
-  console.log(f, `: ${count} calls, ${avg.toFixed(4)}ms on average, ${total.toFixed(2)}ms in total`)
+  let text = `(${(100*total/totalTime).toFixed(2)}%) [${f}]: ${count} calls, ${avg.toFixed(4)}ms avg, ${total.toFixed(2)}ms total`
   if (calls.cacheMisses) {
-    console.log(`\tmissed cache ${calls.cacheMisses}/${count} on calls (${(100*calls.cacheMisses/count).toFixed(3)}% miss)`);
+    text += `\n\tmissed cache ${calls.cacheMisses}/${count} on calls (${(100*calls.cacheMisses/count).toFixed(3)}% miss)`;
   }
+  loglines.push([total,  text]);
 }
+// print sorted by total time
+loglines.sort(([sizea, _],[sizeb, __]) => sizea - sizeb);
+loglines.forEach(([size, text]) => console.log(text));
 
 // histories.forEach(h => {
 //   let compressed = compress(h);

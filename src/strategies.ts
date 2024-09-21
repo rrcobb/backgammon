@@ -1,4 +1,5 @@
 import { Game, Move, Player, safeUpdate, orderedValidPlays, allRolls, checkWinner } from './game';
+import { toBinary } from './compress'
 
 export type StrategyName = 'random' | 'evaluate' | 'expectimax' //  | 'mcts' | 'neural'
 export type Strategy = (game: Game, moves: Move[][]) => Move[];
@@ -6,12 +7,10 @@ type StrategySet = {
   [name in StrategyName]: Strategy;
 };
 
-// note: double-defined, here and in ./terminal
 export const runtimeStats = {
   "makeKey": [],
   "safeUpdate": [],
   "evaluate": [],
-  "_em": [],
   "expectimax": [],
 }
 
@@ -27,7 +26,18 @@ export function measure(fn, name=undefined, doit=true) {
   }
 }
 
-export function memoize(fn, keyfn, name) {
+export const makeKey = measure((game: Game, moves: Move[]) => {
+  let bin = toBinary(game)
+  let result = ''
+  for (var i = 0, itemLen = bin.length; i < itemLen; result += bin[i++]);
+  result += '|'
+  let movesArr = new Uint8Array(moves.flat());
+  for (var i = 0, itemLen = movesArr.length; i < itemLen; result += movesArr[i++]);
+  return result
+}, 'makeKey')
+
+export function memoize(fn, keyfn, name, skip=false) {
+  if (skip) { return fn }
   let cache = {}
   return (...args) => {
     let key = keyfn(...args);
@@ -75,7 +85,7 @@ const randomN = (arr, n) => {
 const LOOKAHEAD_DEPTH = 1; // depth is tunable
 const ROLL_PRUNING = 4; // take all the rolls (faster if more rolls are pruned)
 
-const _expectimax = measure(function _em(game: Game, moves: Move[][], depth: number): [Move[], number] {
+const _expectimax = measure(function em(game: Game, moves: Move[][], depth: number): [Move[], number] {
   let scores;
   let bestFun;
   if (depth == 0) {
@@ -102,7 +112,7 @@ const _expectimax = measure(function _em(game: Game, moves: Move[][], depth: num
   const bestScore = bestFun(...scores);
   const bestIndex = scores.indexOf(bestScore);
   return [moves[bestIndex] || [], bestScore];
-})
+}, '_expectimax')
 
 const expectimax = measure(function expectimax(game: Game, moves: Move[][]): Move[] {
   let [move, score] = _expectimax(game, moves, LOOKAHEAD_DEPTH); 
@@ -143,7 +153,7 @@ const GOLDEN_WHITE = 18;
 const GOLDEN_BLACK = 5;
 const PRIME_VALUES = [0, 0, 1, 2, 4, 8, 16];
 
-const evaluate = measure(function evaluate(game: Game, moves: Move[]): number {
+const evaluate = measure(memoize(function evaluate(game: Game, moves: Move[]): number {
   const ME = game.turn;
   const g = safeUpdate(game, moves);
   const winner = checkWinner(g);
@@ -156,7 +166,7 @@ const evaluate = measure(function evaluate(game: Game, moves: Move[]): number {
   score += home(g)
   score += blots(g)
   return Math.tanh(score / 50)
-})
+}, makeKey, 'evaluate', false), 'evaluate')
 
 const pointsAndPrimes = measure(function pnp(next: Game): number {
   const myPoints: number[] = [];
