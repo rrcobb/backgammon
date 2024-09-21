@@ -83,7 +83,7 @@ const randomN = (arr, n) => {
 }
 
 const LOOKAHEAD_DEPTH = 1; // depth is tunable
-const ROLL_PRUNING = 4; // take all the rolls (faster if more rolls are pruned)
+const ROLL_PRUNING = 36; // take only this many rolls (faster if more rolls are pruned, e.g. lower values)
 
 const _expectimax = measure(function em(game: Game, moves: Move[][], depth: number): [Move[], number] {
   let scores;
@@ -112,7 +112,7 @@ const _expectimax = measure(function em(game: Game, moves: Move[][], depth: numb
   const bestScore = bestFun(...scores);
   const bestIndex = scores.indexOf(bestScore);
   return [moves[bestIndex] || [], bestScore];
-}, '_expectimax')
+}, '_expectimax', false)
 
 const expectimax = measure(function expectimax(game: Game, moves: Move[][]): Move[] {
   let [move, score] = _expectimax(game, moves, LOOKAHEAD_DEPTH); 

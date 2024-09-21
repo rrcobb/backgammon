@@ -2,9 +2,6 @@ import { newGame, takeTurn, Win, allRolls } from './game'
 import { toBinary, gameHistory, compress, decompress } from './compress'
 import { runtimeStats } from './strategies'
 
-
-
-
 function doGame() {
   let game = newGame();
   let turns = [];
@@ -22,7 +19,7 @@ function doGame() {
     }
     turns.push(toBinary(game));
     if (winner) break;
-    // if (TIME_LIMIT && performance.now() - totalStart > TIME_LIMIT) break;
+    if (TIME_LIMIT && performance.now() - totalStart > TIME_LIMIT) break;
   }
   return { gameHistory: gameHistory(turns), winner, turnTimes };
 }
@@ -103,7 +100,7 @@ if (MEASURE_PERF) {
   totalStart = performance.now();
 }
 var TIME_LIMIT = 10000; // ms
-(1).times(() => playMany(5));
+(1).times(() => playMany(1));
 
 console.log(`Function stats:`)
 let loglines = []
