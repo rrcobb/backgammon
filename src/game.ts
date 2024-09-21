@@ -102,7 +102,7 @@ type Dest = number | 'home'
 export type Move = [Start, Dest]
 
 // check destination is
-//  in-bounds and not blocked
+// in-bounds and not blocked
 function valid(player: Player, move: Move, positions: Array<Array<Player>>): boolean {
   if (typeof move[1] == "number") {
     return (
