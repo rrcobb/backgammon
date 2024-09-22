@@ -5,7 +5,7 @@ export const BLACK = 0b00100000;
 export const BAR   = 0b01000000;
 export const HOME  = 0b10000000;
 
-type Player = WHITE | BLACK;
+type Player = typeof WHITE | typeof BLACK;
 
 export interface Game {
   // home and bars are really each a half a byte
@@ -26,27 +26,35 @@ export interface Game {
 // white is playing from index 0 towards the end of the array
 const INITIAL_POSITIONS: Game['positions'] = new Uint8Array(
   [
-    // black's home board
-    WHITE | 2,
-    0, 0, 0, 0,
-    BLACK | 5,
-    // black's bar
-    0,
-    BLACK | 3,
-    0, 0, 0,
-    WHITE | 5,
-    //
-    BLACK | 5,
-    0, 0, 0,
+               // v black's home board
+    WHITE | 2, // 0
+    0,         // 1
+    0,         // 2
+    0,         // 3
+    0,         // 4
+    BLACK | 5, // 5
+               // v black's bar
+    0,         // 6
+    BLACK | 3, // 7
+    0,         // 8
+    0,         // 9
+    0,         // 10
+    WHITE | 5, // 11
+               //
+    BLACK | 5, // 12
+    0,         // 13
+    0,         // 14
+    0,         // 15
     WHITE | 3, // 16
-    0, // 17
-    // white's home board
+    0,         // 17
+               // ^ white's bar
+               // v white's home board
     WHITE | 5, // 18
-    0, // 19
-    0, // 20
-    0, // 21
-    0, // 22
-    BLACK | 2 // 23
+    0,         // 19
+    0,         // 20
+    0,         // 21
+    0,         // 22
+    BLACK | 2  // 23
   ]
 );
 
@@ -74,12 +82,10 @@ function checkWinner(game: Game) {
   return false;
 }
 
-
-
 type Die = 1 | 2 | 3 | 4 | 5 | 6;
-type Roll = [DIE, DIE]
-function roll(): ROLL {
-  return [Math.ceil(Math.random() * 6) as DIE, Math.ceil(Math.random() * 6) as DIE]
+type Roll = [Die, Die]
+function roll(): Roll {
+  return [Math.ceil(Math.random() * 6) as Die, Math.ceil(Math.random() * 6) as Die]
 }
 const dice = [1,2,3,4,5,6];
 const ALL_ROLLS = (function() {
@@ -87,8 +93,8 @@ const ALL_ROLLS = (function() {
 })();
 
 type Slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
-type Start = BAR | Slot;
-type Dest = HOME | Slot;
+type Start = typeof BAR | Slot;
+type Dest = typeof HOME | Slot;
 type Movement = [Start, Dest] | null; // null: no valid options
 type Play = [Movement, Movement]
 type DoublePlay = [Movement, Movement, Movement, Movement]
@@ -130,10 +136,15 @@ function check(game: Game, dest: Dest, opponent: Player): boolean {
 }
 
 const min = (a, b) => a >= b ? a : b;
+function checkDest(dest: number): dest is Dest {
+  return dest >= 0 && dest < 24;
+}
 
-// returns: plays and the updated game state
-export function validMoves(game: Game, r: Roll): [Move, Game][] {
-  const results: [Play[], Game, Die[]] = [];
+// returns: series of plays and the updated game state
+type Result = [Move, Game]
+type TempResult = [Movement[], Game, Die[]]
+export function validMoves(game: Game, r: Roll): Result[] {
+  const results: TempResult[] = [];
   // doubles act twice
   const doubles = r[0] == r[1]; 
   let rolls = doubles ? [r[0], r[0], r[0], r[0]]: r;
@@ -143,7 +154,6 @@ export function validMoves(game: Game, r: Roll): [Move, Game][] {
   const direction = (player == BLACK) ? -1 : 1;
   const homeboard = (player == BLACK) ? 0 : 23;
   const enter = (player == BLACK) ? 23 : 0;
-
   
   /***********************
    * Bearing Off
@@ -161,21 +171,24 @@ export function validMoves(game: Game, r: Roll): [Move, Game][] {
     for (let i in rolls) {
       const roll = rolls[i];
       const dest = (roll - 1) * direction + enter;
+      if (!checkDest(dest)) {
+        throw new Error(`${dest} is not a valid dest. Roll was ${roll}`);
+      }
       if (check(game, dest, opponent)) {
         const next = cloneGame(game);
-        const movement = [BAR, dest];
+        const movement: Movement = [BAR, dest];
         if (doubles) {
           // push as many as 4 from the bar
           const count = min(4, bar)
-          const play = [];
+          const plays: Movement[] = [];
           for (let i = 0; i < count; i++) {
-            play.push(movement);
+            plays.push(movement);
             apply(next, movement, player, opponent);
             rolls.pop() // the roll is used up 
           }
           // there's only one version of doubles: move off the bar
           // if there are some die left and the bar is clear, we'll play more
-          results.push([play, next, rolls]) 
+          results.push([plays, next, rolls]) 
           break;
         } else {
           if (results.length && bar > 1) {
@@ -183,7 +196,7 @@ export function validMoves(game: Game, r: Roll): [Move, Game][] {
             const [[m1], next1, _] = results[0];
             const next2 = cloneGame(next1);
             apply(next2, movement, player, opponent);
-            const moveBothOff = [[m1, movement], next2] 
+            const moveBothOff: Result = [[m1, movement], next2] 
             return [moveBothOff]; // no other moves are possible
           }
 
@@ -193,19 +206,26 @@ export function validMoves(game: Game, r: Roll): [Move, Game][] {
         }
       }
     }
+
     // check that we've cleared everything off the bar
     if (results.length) { // results can only have 0 or 1 length here
       const next = results[0][1];  // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
       if (nextbar) {
         // bar is still there, we can only use one move
-        return [[results[0][0][0], null], results[0][1]];
+        const move: Move = [results[0][0][0], null];
+        const g: Game = results[0][1];
+        const result: Result = [move, g];
+        return [result];
       } else {
         // can only use the remaining rolls
         rolls = results[0][2];
       }
     } else {
-      return [[null, null], game] // no move is possible
+      // no move is possible
+      const nullMove: Move = [null, null]
+      const result: Result = [nullMove, game]
+      return [result] 
     }
   }
 
@@ -216,7 +236,7 @@ export function validMoves(game: Game, r: Roll): [Move, Game][] {
   // filter out the moves with unused rolls, unless there are none that use all the rolls
   // rule is: you have to use the max number of rolls possible
 
-  return results
+  return [];
 }
 
 // bearing off if home + homeboard total 15 pieces

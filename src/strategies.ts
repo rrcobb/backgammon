@@ -31,7 +31,7 @@ export const makeKey = measure((game: Game, moves: Move[]) => {
   let result = ''
   for (var i = 0, itemLen = bin.length; i < itemLen; result += bin[i++]);
   result += '|'
-  let movesArr = new Uint8Array(moves.flat());
+  let movesArr = moves.flat();
   for (var i = 0, itemLen = movesArr.length; i < itemLen; result += movesArr[i++]);
   return result
 }, 'makeKey')

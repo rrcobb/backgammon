@@ -48,16 +48,15 @@ export function toBinary(game: Game): TurnBinary {
   return result;
 }
 
-export function fromBinary(binary: TurnBinary): Game {
-  const view = new DataView(binary);
+export function fromBinary(view: TurnBinary): Game {
   let game = newGame(); // default to a new game's settings
   let byteIndex = 0;
   // turn - byte 1
-  game.turn = view.getUint8(byteIndex++) == WHITE ? 'w' : 'b';
+  game.turn = view[byteIndex++] == WHITE ? 'w' : 'b';
 
   // bar: doesn't perfectly roundtrip
   // the Game representation can mix the order of black and white in the bar -- maybe that's weird
-  let barByte = view.getUint8(byteIndex++);
+  let barByte = view[byteIndex++];
   let blackBarCount = barByte & 0b11110000; // mask off white 
   let whiteBarCount = barByte >> 4; // top 4 bits
   game.bar = [...new Array(blackBarCount).fill('b'), ...new Array(whiteBarCount).fill('w')]
@@ -70,7 +69,7 @@ export function fromBinary(binary: TurnBinary): Game {
   // positions
   game.positions = (new Array(24).fill(null)).map(_ => []);
   for (let pos of game.positions) {
-    let byte = view.getUint8(byteIndex++);
+    let byte = view[byteIndex++];
     let player = (byte & PLAYER_MASK) >> 4 == WHITE ? 'w' : 'b';
     let count = byte & (~PLAYER_MASK);
     pos.push(...Array(count).fill(player))
@@ -92,8 +91,7 @@ export function gameHistory(turns: TurnBinary[]): GameHistory {
   if (turns.length > 0 && turns[0].byteLength != GAME_BYTES) { throw new Error("turns bytelength is wrong") }
 
   let totalByteLength = turns.length * GAME_BYTES;
-  let history = new ArrayBuffer(totalByteLength);
-  let view = new Uint8Array(history);
+  let view = new Uint8Array(totalByteLength);
   let offset = 0;
   for (let t of turns) {
     view.set(new Uint8Array(t), offset);
@@ -105,7 +103,7 @@ export function gameHistory(turns: TurnBinary[]): GameHistory {
 
 // Compression
 // uses bun's zlib deflate
-export function compress(binary: ArrayBuffer): Uint8Array {
+export function compress(binary: Uint8Array): Uint8Array {
   return Bun.deflateSync(binary)
 }
 
