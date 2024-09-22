@@ -99,8 +99,6 @@ update : 2131404 calls, 0.0037ms on average, 7845.88ms in total
 
 The real fix is likely to be to the representation; we want to be working on a Uint8Array instead of an array of arrays of strings.
 
-We should just pause, fix, and test.
-
 ## Testing and Evaluation
 
 It'd be a nice thing to do, to fuzz-test the different games
@@ -110,6 +108,14 @@ We also need ways of measuring different strategies against each other, for comp
 For one thing: expectimax is losing to the depth-0 evaluation function, so I've probably got the implementation wrong. For one thing, the evaluation function does not know/care about which player is calling it; for another, we're not min/maxing correctly; there's also likely some other sources of error. When running pure evaluate against itself, white wins more than expected; that seems wrong.
 
 There's also likely some other issues with the way updates and keys work.. I'm seeing a few errors on my asserts, which shouldn't happen.
+
+## improved impl
+
+hurrah for testing!
+
+lots of subtle bugs in the ordering of the handling of different parts of the game. Tests helped find and fix them. The code is a bit of a hairball (see src/backgammon.ts:validMoves).
+
+Still to do: more testing, implement bearing-off.
 
 ## Reading
 
