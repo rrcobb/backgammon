@@ -117,6 +117,14 @@ lots of subtle bugs in the ordering of the handling of different parts of the ga
 
 Still to do: more testing, implement bearing-off.
 
+Benchmarking. Additional speedups.
+
+Further speedups:
+- bar and home currently reference string properties in the game object. Could likely speed up those accesses if we didn't do that (since we have to switch on strings, and we have a number, which always copies instead of passing as a reference)
+- we create and keep around a lot of duplicate game objects. might not be needed
+- walking through every result to add further steps to it seems potentially slow; maybe we could keep a list of positions with pieces, and check that instead? Maybe we could check through the rolls, and then subsequently re-check with the positions that the rolls give us access to. Maybe that's the same as we have now?
+- handle doubles specially, so it's not in our core loop?
+
 ## Reading
 
 - [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)

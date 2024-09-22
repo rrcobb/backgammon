@@ -1,5 +1,5 @@
 import {test, expect, describe} from "bun:test"
-import { BAR, BLACK, WHITE, newGame, validMoves, apply, cloneGame} from '../src/backgammon.ts';
+import { BAR, HOME, BLACK, WHITE, newGame, validMoves, apply, cloneGame} from '../src/backgammon.ts';
 
 function blackToEnter(): Game { // fiction: black has two on the bar, and white has made 3 points
   let game = newGame();
@@ -105,6 +105,74 @@ describe("black with several options", () => {
         [[12, 10], [10,8], [7,5], [7,5]],
         [[12, 10],[7,5], [7,5], [7,5]],
         [[12, 10], [10,8], [8,6], [6,4]],
+      ])
+    );
+  })
+
+  test("roll of [3,1], black has 14 ways to play it", () => {
+    let roll = [3,1]
+    expect(game).toEqual(blackWithSeveralMoves());
+    let moves = validMoves(game, roll);
+    expect(moves.length).toEqual(14);
+    expect(setify(moves.map(([m, _]) => m))).toEqual(
+      setify([ 
+        [[23,20],[20,19]],
+        [[12,9],[9,8]],
+        [[23,20],[7,6]],
+        [[12,9],[7,6]],
+        [[7,4],[7,6]],
+        [[7,6],[7,4]],
+        [[23,20],[5,4]],
+        [[12,9],[5,4]],
+        [[7,4],[5,4]],
+        [[7,6],[5,2]],
+        [[5,2],[5,4]],
+        [[5,4],[5,2]],
+        [[5,4],[4,1]],
+        [[5,2],[2,1]],
+      ])
+    );
+  })
+});
+
+function whiteToBearOff(): Game {
+  let game = newGame();
+  game.positions[0] = 0;
+  game.positions[11] = 0;
+  game.positions[16] = 0;
+  game.positions[18] = 0;
+  game.positions[19] = WHITE | 5;
+  game.positions[20] = WHITE | 5;
+  game.positions[21] = WHITE | 5;
+  game.turn = WHITE;
+  return game;
+}
+
+
+describe("white bearing off", () => {
+  let game = whiteToBearOff();
+
+  test("with [5,4] can bear off two (only)", () => {
+    let roll = [5,4];
+    let moves = validMoves(game, roll);
+    expect(moves.length).toEqual(2);
+    expect(setify(moves.map(([m, _]) => m))).toEqual(
+      setify([
+        [[19, HOME], [20, HOME]],
+        [[20, HOME], [19, HOME]],
+      ])
+    );
+  })
+
+  test("with [6,5] can bear off 5 and any other", () => {
+    let roll = [6,5];
+    let moves = validMoves(game, roll);
+    expect(moves.length).toEqual(3);
+    expect(setify(moves.map(([m, _]) => m))).toEqual(
+      setify([
+        [[19, HOME], [19, HOME]],
+        [[20, HOME], [19, HOME]],
+        [[21, HOME], [19, HOME]],
       ])
     );
   })
