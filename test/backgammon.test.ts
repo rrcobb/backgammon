@@ -74,10 +74,12 @@ describe("black with several options", () => {
     expect(
       moves
       .map(([movements, _]) => movements))
-      .toEqual([
+      .toEqual([ 
+        // annoying: this is dependent on the ordering of the results
+        // could turn these into sets if we wanted
         [[5,4], [7,5]],
-        [[5,4], [12,10]],
         [[7,6], [7,5]],
+        [[5,4], [12,10]],
         [[7,6], [12,10]],
       ]);
   })

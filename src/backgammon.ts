@@ -100,6 +100,8 @@ type Play = [Movement, Movement]
 type DoublePlay = [Movement, Movement, Movement, Movement]
 type Move = Play | DoublePlay
 
+const nullMove: Move = [null, null]
+
 export function apply(game: Game, movement: Movement, player: Player, opponent: Player) {
   let [start, dest] = movement;
   // move off the bar
@@ -129,14 +131,20 @@ export function apply(game: Game, movement: Movement, player: Player, opponent: 
 // - it's home
 // - if it's not the opponent's slot
 // - if it's an opponent's blot
-function check(game: Game, dest: Dest, opponent: Player): boolean {
+function checkDest(game: Game, dest: Dest, opponent: Player): boolean {
   if (dest == HOME) { return true }
   const current = game.positions[dest];
   return (current & opponent) == 0 || current == (opponent | 1)
 }
 
+// is this a valid start?
+// - it has one of player's pieces
+function checkStart(game: Game, start: Start, player: Player): boolean {
+  return (game.positions[start] & player) == player
+}
+
 const min = (a, b) => a >= b ? a : b;
-function checkDest(dest: number): dest is Dest {
+function isDest(dest: number): dest is Dest {
   return dest >= 0 && dest < 24;
 }
 
@@ -154,7 +162,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
   const direction = (player == BLACK) ? -1 : 1;
   const homeboard = (player == BLACK) ? 0 : 23;
   const enter = (player == BLACK) ? 23 : 0;
-  
+
   /***********************
    * Bearing Off
    ********************/
@@ -171,10 +179,10 @@ export function validMoves(game: Game, r: Roll): Result[] {
     for (let i in rolls) {
       const roll = rolls[i];
       const dest = (roll - 1) * direction + enter;
-      if (!checkDest(dest)) {
+      if (!isDest(dest)) {
         throw new Error(`${dest} is not a valid dest. Roll was ${roll}`);
       }
-      if (check(game, dest, opponent)) {
+      if (checkDest(game, dest, opponent)) {
         const next = cloneGame(game);
         const movement: Movement = [BAR, dest];
         if (doubles) {
@@ -207,7 +215,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
       }
     }
 
-    // check that we've cleared everything off the bar
+    // is the bar cleared
     if (results.length) { // results can only have 0 or 1 length here
       const next = results[0][1];  // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
@@ -223,20 +231,67 @@ export function validMoves(game: Game, r: Roll): Result[] {
       }
     } else {
       // no move is possible
-      const nullMove: Move = [null, null]
       const result: Result = [nullMove, game]
       return [result] 
     }
   }
 
+  let minRollsRemaining = rolls.length;
+  
   // iterate through the positions
-  // try to use each of the rolls
-  // if the roll is unused in the results, add a step that uses it
+  for (let start = 0 as Start; start < 23; start++) {
+    // if the position is owned by the player
+    if (checkStart(game, start, player)) {
+      const startPieces = game.positions[start] ^ player;
+      //  try to use each of the rolls
+      for (var j = 0; j < rolls.length; j++) {
+        const roll = rolls[j];
+        const dest = start + (roll * direction);
+        if (!isDest(dest)) continue; // confirm dest is in range
 
-  // filter out the moves with unused rolls, unless there are none that use all the rolls
-  // rule is: you have to use the max number of rolls possible
+        if (checkDest(game, dest, opponent)) { // is the target valid?
+          const next = cloneGame(game);
+          const movement: Movement = [start, dest];
+          apply(next, movement, player, opponent);
+          const remaining = rolls.slice();
+          remaining.splice(j, 1);
+          const result: TempResult = [[movement], game, remaining]
+          if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
 
-  return [];
+          // if this roll is available in previous results, add a tempresult with an added step
+          for (let prev of results) {
+            // check available
+            let rollidx = prev[2].indexOf(roll)
+            if (rollidx == -1) { continue } // not found; roll is already used
+            // add movement
+            const moves: Movement[] = [...prev[0], movement]
+            const next = cloneGame(prev[1])
+            // apply the move to the game
+            apply(next, movement, player, opponent)
+            // remove the roll from the available rolls
+            const available = prev[2].slice();
+            available.splice(rollidx, 1);
+            results.push([moves, next, available]);
+            if (available.length < minRollsRemaining) { minRollsRemaining = available.length }
+          }
+          // stick just this roll's result at the end
+          results.push(result);
+        }
+      }
+    }
+  }
+
+  // filter out the moves with unused rolls
+  // unless there are none that use all the rolls
+  // rule is: you have to leave the min number of rolls leftover
+  const final = [];
+  for (var k = 0; k < results.length; k++) {
+    const [m, g, available] = results[k];
+    if (available.length <= minRollsRemaining) {
+      final.push([m,g])
+    }
+  }
+  return final;
 }
 
 // bearing off if home + homeboard total 15 pieces
