@@ -187,7 +187,8 @@ export function validMoves(game: Game, r: Roll): Result[] {
   let rolls = doubles ? [r[0], r[0], r[0], r[0]]: r;
   const player = game.turn;
   const opponent = (player == BLACK) ? WHITE : BLACK;
-  // player direction
+
+  // players play in opposite directions
   const direction = (player == BLACK) ? -1 : 1;
   const end = (player == BLACK) ? 0 : 23;
   const enter = (player == BLACK) ? 23 : 0;
@@ -245,7 +246,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
       const next = results[0][1];  // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
       if (nextbar) {
-        // bar is still there, we can only use one move
+        // still pieces on the bar, we can only use one move
         const move: Move = [results[0][0][0], null];
         const g: Game = results[0][1];
         const result: Result = [move, g];
@@ -269,83 +270,27 @@ export function validMoves(game: Game, r: Roll): Result[] {
  
   // iterate through the positions
   for (let start = enter as Start; start != end; start += direction) {
-    // if the position is owned by the player
-    if (checkStart(game, start, player)) {
-      const startPieces = game.positions[start] ^ player;
-      //  try to use each of the rolls
-      for (var j = 0; j < rolls.length; j++) {
-        const roll = rolls[j];
-        const dest = start + (roll * direction);
-        if (!isDest(dest)) continue; // confirm dest is in range
-        if (checkDest(game, dest, opponent)) { // is the target valid?
-          addMovement([start, dest], [], game, rolls, seen, results, j);
-        }
-      }
-    }
+    boardMoves([], game, rolls, start, player, opponent, direction, seen, results);
 
     // duplicate the above, but for all of the existing results
     for (let prev of results) {
-      let [m, g, rollsAvailable] = prev;
-      if (checkStart(g, start, player)) {
-        for (var j = 0; j < rollsAvailable.length; j++) {
-          const roll = rollsAvailable[j];
-          const dest = start + (roll * direction);
-          if (!isDest(dest)) continue; // confirm dest is in range
-          if (checkDest(g, dest, opponent)) { // is the target valid?
-            addMovement([start, dest], m, g, rollsAvailable, seen, results, j);
-          }
-        }
-      }
+      let [m, g, available] = prev;
+      boardMoves(m, g, available, start, player, opponent, direction, seen, results); 
     }
   }
 
   /********************
    * Bearing Off
    ********************/
-  if (isBearingOff(player, game)) {
-    // For each roll:
-    for (let i = 0; i < rolls.length; i++) {
-      const roll = rolls[i];
-      const bearsOff: Start = (end + direction) - (roll * direction) as Start;
-      // is the roll exactly what's needed to take a piece off?
-      if (game.positions[bearsOff] & player) { 
-        addMovement([bearsOff, HOME], [], game, rolls, seen, results, i);
-      } else { // we aren't a direct hit
-        // if the largest spot is smaller than the roll
-        for (let h = homeboard as Start; h != end; h += direction) {
-          if (game.positions[h] & player) {
-            if ((direction * bearsOff) > (direction * h)) break;
-            // we can bear off any of these
-            addMovement([h, HOME], [], game, rolls, seen, results, i);
-          }
-        }
-      }
-    }
-  }
+  bearOff([], game, rolls, player, homeboard, end, direction, seen, results);
 
   // check again for any of the results
   for (let result of results) {
     let [m, g, available] = result;
-    if (isBearingOff(player, g)) {
-      for (let i = 0; i < available.length; i++) {
-        const roll = available[i];
-        const bearsOff: Start = (end + direction) - (roll * direction) as Start;
-        if (g.positions[bearsOff] & player) { 
-          addMovement([bearsOff, HOME], m, g, available, seen, results, i);
-        } else {
-          for (let h = homeboard as Start; h != end; h += direction) {
-            if (g.positions[h] & player) {
-              if ((direction * bearsOff) < (direction * h)) break;
-              addMovement([h, HOME], m, g, available, seen, results, i); 
-            }
-          }
-        }
-      }
-    }
+    bearOff(m, g, available, player, homeboard, end, direction, seen, results);
   }
 
-  // filter out moves that don't use the max number of rolls
-  // also filter out duplicates
+  // shape results and filter out moves that don't use the max number of rolls
   const final = [];
   for (var k = 0; k < results.length; k++) {
     const [m, g, available] = results[k];
@@ -354,6 +299,39 @@ export function validMoves(game: Game, r: Roll): Result[] {
     }
   }
   return final;
+}
+
+function boardMoves(m, g, rolls, start, player, opponent, direction, seen, results) {
+  // if the position is owned by the player
+  if (checkStart(g, start, player)) {
+    for (var j = 0; j < rolls.length; j++) {
+      const roll = rolls[j];
+      const dest = start + (roll * direction);
+      if (!isDest(dest)) continue; // confirm dest is in range
+      if (checkDest(g, dest, opponent)) { // is the target valid?
+        addMovement([start, dest], m, g, rolls, seen, results, j);
+      }
+    }
+  }
+}
+
+function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) {
+  if (isBearingOff(player, g)) {
+    for (let i = 0; i < rolls.length; i++) {
+      const roll = rolls[i];
+      const bearsOff: Start = (end + direction) - (roll * direction) as Start;
+      if (g.positions[bearsOff] & player) { 
+        addMovement([bearsOff, HOME], m, g, rolls, seen, results, i);
+      } else {
+        for (let h = homeboard as Start; h != end; h += direction) {
+          if (g.positions[h] & player) {
+            if ((direction * bearsOff) > (direction * h)) break;
+            addMovement([h, HOME], m, g, rolls, seen, results, i); 
+          }
+        }
+      }
+    }
+  }
 }
 
 function addMovement(movement, movements, game, available, seen, results, rollIndex): number {
