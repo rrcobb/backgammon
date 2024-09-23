@@ -1,4 +1,4 @@
-import { run, bench, compact, group } from "mitata"
+import { run, bench, compact, summary, group } from "mitata"
 import { newGame, cloneGame, movesString, movesStringCustom, validMoves, checkWinner, generateRoll, takeTurn, WHITE, BLACK } from '../src/backgammon.ts'
 
 compact(() => {
@@ -13,16 +13,6 @@ compact(() => {
     let roll = generateRoll();
     validMoves(initial, roll);
   });
-
-  group(() => {
-    bench("newgame", () => {
-      const game = newGame();
-    });
-
-    bench("cloneGame", () => {
-      cloneGame(initial);
-    });
-  })
 });
 
 await run();

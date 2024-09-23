@@ -12,6 +12,10 @@ Notes:
 Question:
 - how deep can the tree search go? How fast is this?
 
+## Reading
+
+- [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)
+
 ## missing features
 
 - show current player's turn
@@ -35,7 +39,7 @@ Qs:
 - how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
 
-## Perf Log
+## Perf Log: Implementation 1 (strings in arrays)
 
 checkpoint 1: evaluation is about half an ms
   - we do... how many evaluations per expectimax level?
@@ -99,35 +103,47 @@ update : 2131404 calls, 0.0037ms on average, 7845.88ms in total
 
 The real fix is likely to be to the representation; we want to be working on a Uint8Array instead of an array of arrays of strings.
 
-## Testing and Evaluation
-
-It'd be a nice thing to do, to fuzz-test the different games
-
-We also need ways of measuring different strategies against each other, for comparison.
+There's also likely some other issues with the way updates and keys work.. I'm seeing a few errors on my asserts, which shouldn't happen.
 
 For one thing: expectimax is losing to the depth-0 evaluation function, so I've probably got the implementation wrong. For one thing, the evaluation function does not know/care about which player is calling it; for another, we're not min/maxing correctly; there's also likely some other sources of error. When running pure evaluate against itself, white wins more than expected; that seems wrong.
 
-There's also likely some other issues with the way updates and keys work.. I'm seeing a few errors on my asserts, which shouldn't happen.
+## Evaluation
 
-## improved impl
+We also need ways of measuring different strategies against each other, for comparison.
 
-hurrah for testing!
+bench/game.ts measures some naive strategies against each other in speed terms... which is sort of like a real evaluation, since shorter games should be faster...
+
+## improved implementation: binary board positions, using Uint8array, separate home and bar ints
 
 lots of subtle bugs in the ordering of the handling of different parts of the game. Tests helped find and fix them. The code is a bit of a hairball (see src/backgammon.ts:validMoves).
 
-Refactoring first!
+Tests first, then benchmarking, then refactoring.
+
+Refactoring!
 - so nice to refactor under test
 - hopefully, refactoring will enable some isolation of hotspots so that we can speed up more carefully
 
 Benchmarking. Additional speedups.
 
 Further speedups:
-- bar and home currently reference string properties in the game object. Could likely speed up those accesses if we didn't do that (since we have to switch on strings, and we have a number, which always copies instead of passing as a reference)
+- bar and home currently reference string properties in the game object. Could likely speed up those accesses if we didn't do that. Since we have to switch on strings, and we have a number, which always copies instead of passing as a reference.
 - we create and keep around a lot of duplicate game objects. might not be needed
 - walking through every result to add further steps to it seems potentially slow; maybe we could keep a list of positions with pieces, and check that instead? Maybe we could check through the rolls, and then subsequently re-check with the positions that the rolls give us access to. Maybe that's the same as we have now?
 - handle doubles specially, so it's not in our core loop?
 
+## Testing 
+
+hurrah for testing!
+
+Using bun test is really nice. 
+
+The tests run in 26ms, give me high confidence, and are (relatively) easy to write. I mostly have to think about what moves are actually valid, not anything else.
+
+It'd be a nice thing to do, to fuzz-test the game logic and ensure some invariants hold. e.g. no matter how many moves are played, we never reach an invalid state.
+
 ## benchmarking
+
+mitata is nice, though the docs aren't much.
 
 there's something funny about the game! I think sometimes it gets hung on some situation, and is deadlocked? some games take 1e7 rolls, but it's pretty rare. Shows up in the benchmarking.
 
@@ -135,6 +151,32 @@ Usually, the benchmark finds that a full game takes about 3ms to run. However, s
 
 Also... choosing the moves seems like it takes a lot of the time? like, random is much slower than first option.
 
-## Reading
+There's some neat little tricks... clone is much faster if we just make a new object with a literal syntax instead of spreading or structuredCloning or object.assign. like, lots faster!
 
-- [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)
+games typically run in ~3ms, but I think sometimes get stuck taking much longer. like, the range is very wide, and the mean is driven by high outliers that take many turns to complete.
+
+```
+$ bun bench/game.ts
+clk: ~3.53 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+first valid option        2.41 ms/iter   2.00 ms  █
+                (629.17 µs … 44.03 ms)  24.64 ms ▇█▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+second valid option      80.31 ms/iter 109.45 ms           █
+                 (1.30 ms … 123.72 ms) 119.78 ms █▁▁▁▁▁▁▁▁▁█▁▁▁█▁▁▁█▁▁
+random option             8.42 ms/iter   5.87 ms  █
+                  (1.49 ms … 40.78 ms)  38.48 ms ██▇▂▃▂▁▁▂▁▁▁▁▁▁▁▃▃▂▂▁
+pseudorandom option      13.52 ms/iter   7.41 ms █▇
+                  (1.31 ms … 59.48 ms)  57.50 ms ██▃▂▂▁▁▁▁▁▁▁▁▁▁▁▃▅▃▁▁
+
+summary
+  first valid option
+   3.5x faster than random option
+   5.62x faster than pseudorandom option
+   33.36x faster than second valid option
+```
+
+

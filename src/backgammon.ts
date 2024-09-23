@@ -1,5 +1,4 @@
 // binary game representation
-// plus fast functions for updating the game
 export const WHITE = 0b00010000;
 export const BLACK = 0b00100000;
 export const BAR   = 0b01000000;
@@ -70,6 +69,20 @@ export function newGame(): Game {
   }
 }
 
+// everything is a primitive except the positions typedarray
+// copy for uint8array is relatively cheap
+export function cloneGame(game: Game): Game {
+  return {
+    bBar: game.bBar,
+    wBar: game.wBar,
+    bHome: game.bHome,
+    wHome: game.wHome,
+    turn: game.turn,
+    positions: new Uint8Array(game.positions),
+    cube: game.cube,
+  }
+}
+
 // for use as a set key
 // see bench/keys
 function movesKey(moves: Movement[]) {
@@ -83,12 +96,6 @@ function movesKey(moves: Movement[]) {
   return result;
 }
 
-// everything is a primitive except the positions typedarray
-// copy is relatively cheap
-export function cloneGame(game: Game): Game {
-  return {...game, positions: new Uint8Array(game.positions)}
-}
-
 export function checkWinner(game: Game) {
   if (game.bHome == 15) return BLACK;
   if (game.wHome == 15) return WHITE;
@@ -100,8 +107,9 @@ type Roll = [Die, Die]
 export function generateRoll(): Roll {
   return [Math.ceil(Math.random() * 6) as Die, Math.ceil(Math.random() * 6) as Die]
 }
-const dice = [1,2,3,4,5,6];
-const ALL_ROLLS = (function() {
+
+export const dice: Die[] = [1,2,3,4,5,6];
+export const ALL_ROLLS: Roll[] = (function() {
   return dice.flatMap(d1 => dice.map(d2 => [d1,d2]))
 })();
 
