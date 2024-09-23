@@ -71,8 +71,16 @@ export function newGame(): Game {
 }
 
 // for use as a set key
-export function movesString(moves: Movement[]) {
-  return JSON.stringify(moves);
+// see bench/keys
+function movesKey(moves: Movement[]) {
+  let result = "";
+  for (let i = 0; i < moves.length; i++) {
+    for (let j = 0; j < moves[i].length; j++) {
+      result += moves[i][j]
+    }
+    result += "|"
+  }
+  return result;
 }
 
 // everything is a primitive except the positions typedarray
@@ -81,7 +89,7 @@ export function cloneGame(game: Game): Game {
   return {...game, positions: new Uint8Array(game.positions)}
 }
 
-function checkWinner(game: Game) {
+export function checkWinner(game: Game) {
   if (game.bHome == 15) return BLACK;
   if (game.wHome == 15) return WHITE;
   return false;
@@ -89,7 +97,7 @@ function checkWinner(game: Game) {
 
 type Die = 1 | 2 | 3 | 4 | 5 | 6;
 type Roll = [Die, Die]
-function roll(): Roll {
+export function generateRoll(): Roll {
   return [Math.ceil(Math.random() * 6) as Die, Math.ceil(Math.random() * 6) as Die]
 }
 const dice = [1,2,3,4,5,6];
@@ -190,8 +198,8 @@ export function validMoves(game: Game, r: Roll): Result[] {
         throw new Error(`${dest} is not a valid dest. Roll was ${roll}`);
       }
       if (checkDest(game, dest, opponent)) {
-        const next = cloneGame(game);
         const movement: Movement = [BAR, dest];
+        const next = cloneGame(game);
         if (doubles) {
           // push as many as 4 from the bar
           const count = min(4, bar)
@@ -284,7 +292,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
           if (checkDest(g, dest, opponent)) { // is the target valid?
             const movement: Movement = [start, dest];
             const moves: Movement[] = [...prev[0], movement]
-            const key = movesString(moves);
+            const key = movesKey(moves);
             if (seen.has(key)) continue
             seen.add(key);
             const next = cloneGame(g)
@@ -312,7 +320,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
       if (game.positions[bearsOff] & player) { 
         const movement: Movement = [bearsOff, HOME];
         const moves = [movement];
-        const key = movesString(moves);
+        const key = movesKey(moves);
         if (seen.has(key)) continue;
         seen.add(key);
         const next = cloneGame(game);
@@ -329,7 +337,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
             // we can bear off any of these
             const movement: Movement = [h, HOME];
             const moves: Movement[] = [movement];
-            const key = movesString(moves);
+            const key = movesKey(moves);
             if (seen.has(key)) continue;
             seen.add(key);
             const next = cloneGame(game);
@@ -354,7 +362,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
         if (g.positions[bearsOff] & player) { 
           const movement: Movement = [bearsOff, HOME];
           const moves: Movement[] = [...m, movement];
-          const key = movesString(moves);
+          const key = movesKey(moves);
           if (seen.has(key)) continue;
           seen.add(key);
           const next = cloneGame(g);
@@ -369,7 +377,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
               if ((direction * bearsOff) < (direction * h)) break;
               const movement: Movement = [h, HOME];
               const moves: Movement[] = [...m, movement];
-              const key = movesString(moves);
+              const key = movesKey(moves);
               if (seen.has(key)) continue;
               seen.add(key);
               const next = cloneGame(g);
@@ -415,4 +423,13 @@ function isBearingOff(player: Player, game: Game) {
     pieceCount += (slot & player) ? (slot ^ player) : 0; 
   }
   return 15 ==  pieceCount;
+}
+
+type Strategy = (options: Result[]) => Result;
+export function takeTurn(game: Game, roll: Roll, strategy: Strategy): Game {
+  const options = validMoves(game, roll);
+  const choice = strategy(options);  
+  let next = choice ? choice[1] : game;
+  next.turn = (game.turn == BLACK) ? WHITE : BLACK;
+  return next;
 }

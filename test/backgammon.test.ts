@@ -1,5 +1,5 @@
 import {test, expect, describe} from "bun:test"
-import { BAR, HOME, BLACK, WHITE, newGame, validMoves, apply, cloneGame} from '../src/backgammon.ts';
+import { BAR, HOME, BLACK, WHITE, newGame, validMoves, apply, cloneGame, checkWinner, generateRoll, takeTurn } from '../src/backgammon.ts';
 
 function blackToEnter(): Game { // fiction: black has two on the bar, and white has made 3 points
   let game = newGame();
@@ -176,4 +176,19 @@ describe("white bearing off", () => {
       ])
     );
   })
+});
+
+
+describe("a complete game by picking the first valid move", () => {
+  test("eventually finishes", () => {
+    const s = (options: Result[]) => options && options[0];
+    let game = newGame();
+    game.turn = WHITE;
+    let turnCount = 0;
+    while(!checkWinner(game)) {
+      const roll = generateRoll();
+      game = takeTurn(game, roll, s);
+    }
+    expect(checkWinner(game)).toBeTruthy()
+  });
 });

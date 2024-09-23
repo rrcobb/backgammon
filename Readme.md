@@ -115,7 +115,9 @@ hurrah for testing!
 
 lots of subtle bugs in the ordering of the handling of different parts of the game. Tests helped find and fix them. The code is a bit of a hairball (see src/backgammon.ts:validMoves).
 
-Still to do: more testing, implement bearing-off.
+Refactoring first!
+- so nice to refactor under test
+- hopefully, refactoring will enable some isolation of hotspots so that we can speed up more carefully
 
 Benchmarking. Additional speedups.
 
@@ -124,6 +126,14 @@ Further speedups:
 - we create and keep around a lot of duplicate game objects. might not be needed
 - walking through every result to add further steps to it seems potentially slow; maybe we could keep a list of positions with pieces, and check that instead? Maybe we could check through the rolls, and then subsequently re-check with the positions that the rolls give us access to. Maybe that's the same as we have now?
 - handle doubles specially, so it's not in our core loop?
+
+## benchmarking
+
+there's something funny about the game! I think sometimes it gets hung on some situation, and is deadlocked? some games take 1e7 rolls, but it's pretty rare. Shows up in the benchmarking.
+
+Usually, the benchmark finds that a full game takes about 3ms to run. However, sometimes it is much longer! If the game is allowed to take lots more turns, it's possible for it to run quite a long time.
+
+Also... choosing the moves seems like it takes a lot of the time? like, random is much slower than first option.
 
 ## Reading
 
