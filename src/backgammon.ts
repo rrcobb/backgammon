@@ -110,7 +110,7 @@ export function generateRoll(): Roll {
 
 export const dice: Die[] = [1,2,3,4,5,6];
 export const ALL_ROLLS: Roll[] = (function() {
-  return dice.flatMap(d1 => dice.map(d2 => [d1,d2]))
+  return dice.flatMap(d1 => dice.map(d2 => ([d1,d2] as Roll)))
 })();
 
 type Slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
@@ -123,12 +123,13 @@ type Move = Play | DoublePlay
 
 const nullMove: Move = [null, null]
 
-export function apply(game: Game, movement: Movement, player: Player, opponent: Player): void {
+export function apply(game: Game, movement: Movement): void {
   let [start, dest] = movement;
+  const player = game.turn;
+  const opponent = (player == BLACK) ? WHITE : BLACK;
   if (start == BAR) {
     // move off the bar
-    let bar = player == BLACK ? 'bBar' : 'wBar';
-    game[bar]--;
+    player == BLACK ? game.bBar-- : game.wBar--;
   } else {
     // move from the start
     let val = game.positions[start]
@@ -141,14 +142,12 @@ export function apply(game: Game, movement: Movement, player: Player, opponent: 
   
   // move to home?
   if (dest == HOME) {
-    let home = player == BLACK ? 'bHome' : 'wHome'
-    game[home]++;
+    player == BLACK ? game.bHome++ : game.wHome++
   } else {
     let current = game.positions[dest]
     // hit a blot? send opponent to bar
     if (current == (opponent | 1)) {
-      let bar = opponent == BLACK ? 'bBar' : 'wBar';
-      game[bar]++;
+      opponent == BLACK ? game.bBar++ : game.wBar++;
       game.positions[dest] = (player | 1);
     } else {
       game.positions[dest] = (player | current + 1);
@@ -180,9 +179,9 @@ function isDest(dest: number): dest is Dest {
 // returns: series of plays and the updated game state
 type Result = [Move, Game]
 type TempResult = [Movement[], Game, Die[]]
+type ResultArray = TempResult[] & { minRollsRemaining: number } 
 
 export function validMoves(game: Game, r: Roll): Result[] {
-  const results: TempResult[] = [];
   // doubles act twice
   const doubles = r[0] == r[1]; 
   let rolls = doubles ? [r[0], r[0], r[0], r[0]]: r;
@@ -193,6 +192,10 @@ export function validMoves(game: Game, r: Roll): Result[] {
   const end = (player == BLACK) ? 0 : 23;
   const enter = (player == BLACK) ? 23 : 0;
   const homeboard = (player == BLACK) ? 5 : 18;
+
+  const results: ResultArray = ([] as ResultArray)
+  // track the max rolls we've used / min rolls available we've seen
+  results.minRollsRemaining = rolls.length;
 
   /***********************
    * Move off the Bar
@@ -214,7 +217,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
           const plays: Movement[] = [];
           for (let i = 0; i < count; i++) {
             plays.push(movement);
-            apply(next, movement, player, opponent);
+            apply(next, movement);
             rolls.pop() // the roll is used up 
           }
           // there's only one version of doubles: move off the bar
@@ -226,12 +229,12 @@ export function validMoves(game: Game, r: Roll): Result[] {
             // the first die also allowed us off the bar, and we still have a piece on the bar
             const [[m1], next1, _] = results[0];
             const next2 = cloneGame(next1);
-            apply(next2, movement, player, opponent);
+            apply(next2, movement);
             const moveBothOff: Result = [[m1, movement], next2] 
             return [moveBothOff]; // no other moves are possible
           }
 
-          apply(next, movement, player, opponent);
+          apply(next, movement);
           // push this roll, with the other roll still available
           results.push([[movement], next, [rolls[i ? 0 : 1]]]) 
         }
@@ -261,8 +264,6 @@ export function validMoves(game: Game, r: Roll): Result[] {
   /**********************************
    * Moves to normal positions
    **********************************/
-  // track the max rolls we've used / min rolls available we've seen
-  let minRollsRemaining = rolls.length;
   // ignore exact sequences of moves we've seen
   const seen = new Set();
  
@@ -277,14 +278,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
         const dest = start + (roll * direction);
         if (!isDest(dest)) continue; // confirm dest is in range
         if (checkDest(game, dest, opponent)) { // is the target valid?
-          const next = cloneGame(game);
-          const movement: Movement = [start, dest];
-          apply(next, movement, player, opponent);
-          const remaining = rolls.slice();
-          remaining.splice(j, 1);
-          const result: TempResult = [[movement], next, remaining]
-          if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
-          results.push(result);
+          addMovement([start, dest], [], game, rolls, seen, results, j);
         }
       }
     }
@@ -298,18 +292,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
           const dest = start + (roll * direction);
           if (!isDest(dest)) continue; // confirm dest is in range
           if (checkDest(g, dest, opponent)) { // is the target valid?
-            const movement: Movement = [start, dest];
-            const moves: Movement[] = [...prev[0], movement]
-            const key = movesKey(moves);
-            if (seen.has(key)) continue
-            seen.add(key);
-            const next = cloneGame(g)
-            apply(next, movement, player, opponent)
-            // remove the roll from the available rolls
-            const remaining = rollsAvailable.slice();
-            remaining.splice(j, 1);
-            results.push([moves, next, remaining]);
-            if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
+            addMovement([start, dest], m, g, rollsAvailable, seen, results, j);
           }
         }
       }
@@ -326,34 +309,14 @@ export function validMoves(game: Game, r: Roll): Result[] {
       const bearsOff: Start = (end + direction) - (roll * direction) as Start;
       // is the roll exactly what's needed to take a piece off?
       if (game.positions[bearsOff] & player) { 
-        const movement: Movement = [bearsOff, HOME];
-        const moves = [movement];
-        const key = movesKey(moves);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const next = cloneGame(game);
-        apply(next, movement, player, opponent);
-        const remaining = rolls.slice();
-        remaining.splice(i, 1);
-        results.push([moves, next, remaining])
-        if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
+        addMovement([bearsOff, HOME], [], game, rolls, seen, results, i);
       } else { // we aren't a direct hit
         // if the largest spot is smaller than the roll
         for (let h = homeboard as Start; h != end; h += direction) {
           if (game.positions[h] & player) {
             if ((direction * bearsOff) > (direction * h)) break;
             // we can bear off any of these
-            const movement: Movement = [h, HOME];
-            const moves: Movement[] = [movement];
-            const key = movesKey(moves);
-            if (seen.has(key)) continue;
-            seen.add(key);
-            const next = cloneGame(game);
-            apply(next, movement, player, opponent);
-            const remaining = rolls.slice();
-            remaining.splice(i, 1);
-            results.push([moves, next, remaining])
-            if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
+            addMovement([h, HOME], [], game, rolls, seen, results, i);
           }
         }
       }
@@ -368,32 +331,12 @@ export function validMoves(game: Game, r: Roll): Result[] {
         const roll = available[i];
         const bearsOff: Start = (end + direction) - (roll * direction) as Start;
         if (g.positions[bearsOff] & player) { 
-          const movement: Movement = [bearsOff, HOME];
-          const moves: Movement[] = [...m, movement];
-          const key = movesKey(moves);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          const next = cloneGame(g);
-          apply(next, movement, player, opponent);
-          const remaining = available.slice();
-          remaining.splice(i, 1);
-          results.push([moves, next, remaining]);
-          if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
+          addMovement([bearsOff, HOME], m, g, available, seen, results, i);
         } else {
           for (let h = homeboard as Start; h != end; h += direction) {
             if (g.positions[h] & player) {
               if ((direction * bearsOff) < (direction * h)) break;
-              const movement: Movement = [h, HOME];
-              const moves: Movement[] = [...m, movement];
-              const key = movesKey(moves);
-              if (seen.has(key)) continue;
-              seen.add(key);
-              const next = cloneGame(g);
-              apply(next, movement, player, opponent);
-              const remaining = available.slice();
-              remaining.splice(i, 1);
-              results.push([moves, next, remaining]);
-              if (remaining.length < minRollsRemaining) { minRollsRemaining = remaining.length }
+              addMovement([h, HOME], m, g, available, seen, results, i); 
             }
           }
         }
@@ -406,11 +349,24 @@ export function validMoves(game: Game, r: Roll): Result[] {
   const final = [];
   for (var k = 0; k < results.length; k++) {
     const [m, g, available] = results[k];
-    if (available.length <= minRollsRemaining) {
+    if (available.length <= results.minRollsRemaining) {
       final.push([m,g])
     }
   }
   return final;
+}
+
+function addMovement(movement, movements, game, available, seen, results, rollIndex): number {
+  const moves: Movement[] = movements.concat([movement]);
+  const key = movesKey(moves);
+  if (seen.has(key)) return; // skip if we've done these exact moves before
+  seen.add(key);
+  const next = cloneGame(game);
+  apply(next, movement);
+  const remaining = available.slice();
+  remaining.splice(rollIndex, 1);
+  results.push([moves, next, remaining]);
+  if (remaining.length < results.minRollsRemaining) { results.minRollsRemaining = remaining.length }
 }
 
 // bearing off if home + homeboard total 15 pieces

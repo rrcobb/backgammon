@@ -20,9 +20,14 @@ summary(() => {
     playGame(first); 
   });
 
-  const second = (options: Result[]) => options && options[1];
+  const second = (options: Result[]) => options && options[1] || options[0];
   bench("second valid option", () => {
     playGame(second); 
+  });
+
+  const last = (options: Result[]) => options && options[options.length - 1];
+  bench("last valid option", () => {
+    playGame(last); 
   });
 
   const random = (options: Result[]) => options && options[Math.floor(Math.random() * options.length)];
@@ -30,20 +35,25 @@ summary(() => {
     playGame(random); 
   });
 
-  const rands = [];
-  const randlength = 50;
-  for (let i = 0; i < randlength; i++) { rands.push(Math.floor(Math.random() * 1000)) }
+  
   var randi = 0;
   const pseudorandom = (options: Result[]) => {
-    if (!options) return null;
-    randi++;
-    if (randi > randlength) randi = 0;
-    return options[rands[randi] % options.length]
+    return options && options[(randi++) % options.length]
   }
-
   bench("pseudorandom option", () => {
     playGame(pseudorandom);
   });
+
+  var i = 0;
+  const cheapmod = (options: Result[]) => {
+    i = (i & 0b00011111) + 1;
+    const index = i ^ options.length;
+    return options && options[index]
+  }
+  bench("cheap modulo option", () => {
+    playGame(cheapmod);
+  });
+
 });
 
 await run();
