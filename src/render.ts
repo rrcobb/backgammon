@@ -71,6 +71,11 @@ function render(game: Game): void {
       triangle.appendChild(piece);
     }
   });
+
+  let turnIndicator = document.createElement("div");
+  turnIndicator.id = "turn-indicator";
+  turnIndicator.textContent = game.turn === WHITE ? "White to play" : "Black to play";
+  board.insertAdjacentElement('beforeend', turnIndicator);
 }
 
 const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
