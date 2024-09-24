@@ -5,8 +5,22 @@ function render(game: Game): void {
   let board = document.getElementById("board");
   if (!board) { throw new Error("board element not found") }
   board.innerHTML = "";
+
   let home = document.createElement("div");
   home?.classList.add("home");
+
+  // show count for pieces in home
+  let blackHome = document.createElement("div");
+  blackHome.classList.add("home-count");
+  blackHome.textContent = `Black ${game.bHome}`;
+
+  let whiteHome = document.createElement("div");
+  whiteHome.classList.add("home-count");
+  whiteHome.textContent = `White ${game.wHome}`;
+ 
+  home.appendChild(blackHome);
+  home.appendChild(whiteHome);
+
   let top = document.createElement("div");
   top.classList.add("top");
   let bottom = document.createElement("div");
@@ -16,7 +30,6 @@ function render(game: Game): void {
   board?.appendChild(bottom);
 
   // TODO:
-  // - show current player
   // - show home piece count
   // - for more than 5 pieces, show a number instead of all the pieces
   // - show current pip count for each player
