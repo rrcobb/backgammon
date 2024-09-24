@@ -2,8 +2,7 @@
 
 Implementing a fast core game logic, so that I can mess around with some AI ideas. Eventually aiming to explore mcts, if I can get there.
 
-## devlog
-- JS missing an enum type is bad, missing a tuple is also frustrating...
+## devlog - JS missing an enum type is bad, missing a tuple is also frustrating...
   - E.g. I end up with a string for the player turn, which is so wack
 - Type signatures would also be helpful... maybe just doing it in typescript would be nicer...
 - The UI is a bit of a hassle, and maybe also takes away focus from some of the AI pieces. Feels fragile, quite CSS dependent. Rendering in a Canvas seems like it'd be more... natural? idk
@@ -183,10 +182,55 @@ summary
    33.36x faster than second valid option
 ```
 
+Okay, so... all of the benchmark issues seem like the were from bugs, mostly with bearing off, but also a bit from entering from the bar. Bearing off was missing the 1 point, and also not returning options in some cases, which could lead to deadlock.
+
+Now that those are fixed, we see a much tighter spread:
+
+```
+$ bun bench/game.ts
+clk: ~3.39 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+first valid option        1.78 ms/iter   2.04 ms    ▆▅▆█▆▃
+                 (745.41 µs … 4.98 ms)   3.66 ms ▁▃▆██████▅▇▆▃▄▅▃▂▂▁▁▁
+second valid option       2.14 ms/iter   2.48 ms   ▂▃█▆▄ ▂
+                 (936.38 µs … 5.44 ms)   4.56 ms ▁▄█████▇██▅▃▂▄▃▃▃▁▁▁▁
+last valid option       922.28 µs/iter 996.79 µs    ▃▄▇█▄
+                 (485.57 µs … 2.24 ms)   1.84 ms ▁▂▆█████▇▆▅▃▃▂▂▂▂▁▂▂▁
+random option             3.80 ms/iter   4.82 ms   ▇▅█
+                  (1.19 ms … 13.85 ms)  11.54 ms ██████▇▇▅▆▃▃▂▂▃▂▁▁▂▂▁
+pseudorandom option       3.62 ms/iter   4.60 ms  ▄▂█▅▇▇▂▂
+                   (1.14 ms … 9.87 ms)   8.90 ms ██████████▇▅▆▆▄▂▂▃▁▂▂
+cheap modulo option       3.56 ms/iter   4.68 ms   ▂▇▄█▇
+                   (1.02 ms … 9.96 ms)   8.49 ms ▅███████▇▅▇▅▅▇▄▅▂▂▂▂▂
+
+summary
+  last valid option
+   1.93x faster than first valid option
+   2.32x faster than second valid option
+   3.86x faster than cheap modulo option
+   3.92x faster than pseudorandom option
+   4.12x faster than random option
+```
+
+It looks like the last option tends to be fastest; I wonder if that also means it performs best when we tournament these against each other.
+
+Makes me think there could be some bugs left, and that fuzz / property testing would be worth the time invested.
+
+## Rendering
+
+got the html build working again, with the new binary game setup.
+
+The api changed a bit between the two versions -- takeTurn now returns [Move, Game] which means we can't just assign it. There are still some rendering todos, especially showing / changing strategies.
+
+Maybe also displaying the valid moves (as a precursor to allowing human vs. AI play, or human vs. human play)
+
 ## Okay, enough messing around
 
 todo:
-- rendering, somewhere
 - play against the ai
 - strategies / evaluation
 - fuzz / property testing

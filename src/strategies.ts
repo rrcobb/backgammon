@@ -10,7 +10,6 @@ function random(options: Result[]): Result {
   let choice = options[Math.floor(Math.random() * options.length)];
   return choice
 }
-random.name = "random"
 
 var randi = 0;
 const pseudorandom = (options: Result[]) => {
@@ -24,6 +23,5 @@ function cheapmod(options: Result[]): Result {
   let choice = options && options[index]
   return choice
 }
-cheapmod.name = "cheapmod"
 
 export { first, second, last, random, pseudorandom, cheapmod }

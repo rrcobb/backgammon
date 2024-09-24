@@ -10,7 +10,8 @@ summary(() => {
     let turnCount = 0;
     while(!checkWinner(game)) {
       const roll = generateRoll();
-      game = takeTurn(game, roll, s);
+      const [move, next] = takeTurn(game, roll, s);
+      game = next
       turnCount++;
       if (turnCount > LIMIT) break;
     }

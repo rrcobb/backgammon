@@ -139,20 +139,20 @@ function apply(game: Game, movement: Movement): void {
       game.positions[start] = val - 1;
     }
   }
-  
+
   // move to home?
   if (dest == HOME) {
     player == BLACK ? game.bHome++ : game.wHome++
   } else {
-    let current = game.positions[dest]
-    // hit a blot? send opponent to bar
-    if (current == (opponent | 1)) {
-      opponent == BLACK ? game.bBar++ : game.wBar++;
-      game.positions[dest] = (player | 1);
-    } else {
-      game.positions[dest] = (player | current + 1);
+      let current = game.positions[dest]
+      // hit a blot? send opponent to bar
+      if (current == (opponent | 1)) {
+        opponent == BLACK ? game.bBar++ : game.wBar++;
+        game.positions[dest] = (player | 1);
+      } else {
+        game.positions[dest] = (player | current + 1);
+      }
     }
-  }
 }
 
 // is a spot valid to move to?
@@ -222,7 +222,7 @@ function validMoves(game: Game, r: Roll): Result[] {
 
   // ignore exact sequences of moves we've seen
   const seen = new Set();
- 
+
   // iterate through the positions
   for (let start = enter as Start; start != end; start += direction) {
     // if there was anything on the bar, we can only use the existing results, not start from scratch

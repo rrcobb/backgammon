@@ -85,13 +85,18 @@ function disableTurns() {
   (document.getElementById("ten") as HTMLButtonElement).disabled = true;
 }
 
+function enableTurns() {
+  (document.getElementById("play") as HTMLButtonElement).disabled = false;
+  (document.getElementById("ten") as HTMLButtonElement).disabled = false;
+}
+
 var game;
 document.addEventListener('DOMContentLoaded', () => {
   game = newGame();
   game.turn = WHITE;
   render(game);
-  const whiteStrategy = random;
-  const blackStrategy = cheapmod;
+  const whiteStrategy = cheapmod;
+  const blackStrategy = random;
 
   document.getElementById("play")?.addEventListener("click", () => {
     const finished = checkWinner(game)
@@ -118,7 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (finished) { disableTurns(); break;}
       const roll = generateRoll();
       const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-      game = takeTurn(game, roll, strat);
+      const player = game.turn == WHITE ? 'w' : 'b'
+      const [move, next] = takeTurn(game, roll, strat);
+      if (move && move.length) {
+        log(show(move))
+      } else {
+        log('no moves')
+      }
+      log(`${roll}`)
+      log(player)
+      log('\n')
+      game = next
     }
     render(game);
   });
@@ -127,5 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
     game = newGame();
     game.turn = WHITE;
     render(game);
+    enableTurns();
   });
 })

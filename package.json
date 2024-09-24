@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "bench": "bun bench/helpers.ts",
+    "bench": "bun bench/game.ts",
     "build": "bun build.js",
     "watch": "watchexec bun build.js",
     "check": "tsc --skipLibCheck --noEmit src/*.ts --target es2022",
