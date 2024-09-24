@@ -1,13 +1,13 @@
-# backgammon
+# Backgammon
 
-implementing a MCTS ai, and maybe other heuristic search ai too
+Implementing a fast core game logic, so that I can mess around with some AI ideas. Eventually aiming to explore mcts, if I can get there.
 
-Notes:
+## devlog
 - JS missing an enum type is bad, missing a tuple is also frustrating...
   - E.g. I end up with a string for the player turn, which is so wack
 - Type signatures would also be helpful... maybe just doing it in typescript would be nicer...
 - The UI is a bit of a hassle, and maybe also takes away focus from some of the AI pieces. Feels fragile, quite CSS dependent. Rendering in a Canvas seems like it'd be more... natural? idk
-- I kinda want to do it in Rust too... maybe next!
+- I kinda want to do it in Rust too... maybe next! (if the speed really is that limiting...)
 
 Question:
 - how deep can the tree search go? How fast is this?
@@ -16,7 +16,9 @@ Question:
 
 - [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)
 
-## missing features
+## initial browser version
+
+### missing features
 
 - show current player's turn
 - show winner
@@ -32,7 +34,7 @@ Question:
 - if the evaluation function is really quick, then no worries
   
 Is there low-hanging fruit for making things faster?
-- representation changes to stop all the array shuffling
+- representation changes to stop all the array shuffling :check:
 - reimplement in a compiled lang / interface to the js API of the game
 
 Qs:
