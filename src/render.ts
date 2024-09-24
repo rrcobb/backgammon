@@ -30,11 +30,9 @@ function render(game: Game): void {
   board?.appendChild(bottom);
 
   // TODO:
-  // - show home piece count
-  // - for more than 5 pieces, show a number instead of all the pieces
-  // - show current pip count for each player
   // - show the roll
   // - render something about the strategy
+  // - show current pip count for each player
 
   game.positions.forEach((v: number, i: number) => {
     let triangle = document.createElement("div");
