@@ -43,6 +43,24 @@ describe("black to enter 2 from the bar, with white blocking", () => {
     expect(moves[0][0][0]).toEqual([BAR, 23]);
     expect(moves[0][0][1]).toEqual([BAR, 22]);
   })
+
+  test("roll of [1,1], black enters and moves", () => {
+    let roll = [1,1];
+    let moves = validMoves(game, roll);
+    expect(moveset(moves)).toEqual(
+      setify([
+        [[BAR,23],[BAR,23],[23,22],[23,22]],
+        [[BAR,23],[BAR,23],[23,22],[22,21]],
+        [[BAR,23],[BAR,23],[23,22],[7,6]],
+        [[BAR,23],[BAR,23],[7,6],[7,6]],
+        [[BAR,23],[BAR,23],[7,6],[6,5]],
+        [[BAR,23],[BAR,23],[23,22],[5,4]],
+        [[BAR,23],[BAR,23],[7,6],[5,4]],
+        [[BAR,23],[BAR,23],[5,4],[5,4]],
+        [[BAR,23],[BAR,23],[5,4],[4,3]],
+      ])
+    )
+  });
 })
 
 function blackWithSeveralMoves() {
@@ -62,6 +80,7 @@ function blackWithSeveralMoves() {
   return game;
 }
 
+const moveset = (rs) => setify(rs.map(([m, _]) => m));
 const setify = (moveListList) => new Set(moveListList.map(JSON.stringify));
 
 describe("black with several options", () => {
@@ -71,7 +90,7 @@ describe("black with several options", () => {
     let roll = [1,2]
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(8);
-    expect(setify(moves.map(([m, _]) => m)))
+    expect(moveset(moves))
     .toEqual(
       setify([
         [[12,10], [10,9]],
@@ -92,7 +111,7 @@ describe("black with several options", () => {
     expect(game).toEqual(blackWithSeveralMoves());
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(11);
-    expect(setify(moves.map(([m, _]) => m))).toEqual(
+    expect(moveset(moves)).toEqual(
       setify([ 
         [[12, 10], [12,10], [12,10], [12,10]],
         [[12, 10], [12,10], [12,10], [10,8]],
@@ -114,7 +133,7 @@ describe("black with several options", () => {
     expect(game).toEqual(blackWithSeveralMoves());
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(14);
-    expect(setify(moves.map(([m, _]) => m))).toEqual(
+    expect(moveset(moves)).toEqual(
       setify([ 
         [[23,20],[20,19]],
         [[12,9],[9,8]],
@@ -156,7 +175,7 @@ describe("white bearing off", () => {
     let roll = [5,4];
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(2);
-    expect(setify(moves.map(([m, _]) => m))).toEqual(
+    expect(moveset(moves)).toEqual(
       setify([
         [[19, HOME], [20, HOME]],
         [[20, HOME], [19, HOME]],
@@ -168,7 +187,7 @@ describe("white bearing off", () => {
     let roll = [6,5];
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(3);
-    expect(setify(moves.map(([m, _]) => m))).toEqual(
+    expect(moveset(moves)).toEqual(
       setify([
         [[19, HOME], [19, HOME]],
         [[20, HOME], [19, HOME]],
@@ -178,7 +197,6 @@ describe("white bearing off", () => {
   })
 });
 
-
 describe("a complete game by picking the first valid move", () => {
   test("eventually finishes", () => {
     const s = (options: Result[]) => options && options[0];
@@ -187,7 +205,8 @@ describe("a complete game by picking the first valid move", () => {
     let turnCount = 0;
     while(!checkWinner(game)) {
       const roll = generateRoll();
-      game = takeTurn(game, roll, s);
+      let result = takeTurn(game, roll, s);
+      game = result[1]
     }
     expect(checkWinner(game)).toBeTruthy()
   });
@@ -211,7 +230,7 @@ describe("when white wins in one move", () => {
     let roll = [6,5];
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(1);
-    expect(setify(moves.map(([m, _]) => m)))
+    expect(moveset(moves))
     .toEqual(
       setify([[[22,HOME]]])
     );

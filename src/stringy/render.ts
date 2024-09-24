@@ -1,5 +1,4 @@
-import { Game, newGame, checkWinner, generateRoll, takeTurn, WHITE, BLACK, show } from './backgammon';
-import {first, last, random, pseudorandom, cheapmod } from './strategies'
+import { Game, newGame, takeTurn } from './game';
 
 function render(game: Game): void {
   let board = document.getElementById("board");
@@ -23,7 +22,7 @@ function render(game: Game): void {
   // - show the roll
   // - render something about the strategy
 
-  game.positions.forEach((v: number, i: number) => {
+  game.positions.forEach((v: string[], i: number) => {
     let triangle = document.createElement("div");
     triangle.classList.add("angle");
     if (i % 2 == 0) {
@@ -41,43 +40,30 @@ function render(game: Game): void {
     if (i == 6 || i === 18) {
       let bar = document.createElement("div");
       bar.classList.add("bar");
-      if (i === 6) {
-        for (let i = 0; i < game.bBar; i++) {
-          let piece = document.createElement("span");
-          piece.classList.add("piece");
-          piece.classList.add('b');
-          bar.appendChild(piece);
-        }
-      } else {
-        for (let i = 0; i < game.wBar; i++) {
-          let piece = document.createElement("span");
-          piece.classList.add("piece");
-          piece.classList.add('w');
-          bar.appendChild(piece);
-        }
-      }
+      i == 6 && game.bar.forEach((p: string) => {
+        let piece = document.createElement("span");
+        piece.classList.add("piece");
+        piece.classList.add(p);
+        bar.appendChild(piece);
+      });
 
       triangle.parentElement.insertBefore(bar, triangle);
     }
 
     triangle.innerText += `${i + 1}`;
 
-    const count = v & 0b00001111;
-    const color = (v & WHITE) ? 'w' : 'b';
-    for (let i = 0; i < count; i++) {
+    v.forEach((p: string) => {
       let piece = document.createElement("span");
       piece.classList.add("piece");
-      piece.classList.add(color);
+      piece.classList.add(p);
       triangle.appendChild(piece);
-    }
+    });
   });
 }
 
 const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
-function log(...rest: string[]) {
-  rest.forEach(msg => {
-    transcript.value = '\n' + msg + transcript?.value;
-  })
+function log(msg: string) {
+  transcript.value = msg + transcript?.value;
 }
 
 function disableTurns() {
@@ -85,46 +71,34 @@ function disableTurns() {
   (document.getElementById("ten") as HTMLButtonElement).disabled = true;
 }
 
-var game;
 document.addEventListener('DOMContentLoaded', () => {
-  game = newGame();
-  game.turn = WHITE;
+  let game = newGame();
   render(game);
-  const whiteStrategy = first;
-  const blackStrategy = first;
 
   document.getElementById("play")?.addEventListener("click", () => {
-    const finished = checkWinner(game)
+    let finished = takeTurn(game, log);
+
     if (finished) { disableTurns(); }
-    const roll = generateRoll();
-    const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-    const [move, next] = takeTurn(game, roll, strat);
-    if (move && move.length) {
-      log(show(move))
-    } else {
-      log('no moves')
-    }
-    log(`${roll}`)
-    log((game.turn == BLACK) ? 'b' : 'w')
-    log('\n')
-    game = next
+
+    // TODO: remove assertion
+    // validate that all the pieces in a position are the same player
+    game.positions.forEach(p => {
+      console.assert(
+        p.length == 0 || p.every(v => v == p[0]),
+        { msg: "constraint violated: two pieces of different colors", game }
+      )
+    })
+
     render(game);
   });
 
   document.getElementById("ten")?.addEventListener("click", () => {
-    for (let i = 0; i < 10; i++) {
-      const finished = checkWinner(game)
-      if (finished) { disableTurns(); break;}
-      const roll = generateRoll();
-      const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-      game = takeTurn(game, roll, strat);
-    }
+    for (let i = 0; i < 10; i++) { takeTurn(game, log); }
     render(game);
   });
 
   document.getElementById("new")?.addEventListener("click", () => {
     game = newGame();
-    game.turn = WHITE;
     render(game);
   });
 })

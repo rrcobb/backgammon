@@ -1,7 +1,7 @@
    const esbuild = require('esbuild');
 
    esbuild.build({
-     entryPoints: ['src/game.ts', 'src/strategies.ts', 'src/render.ts'],
+     entryPoints: ['src/render.ts'],
      outdir: 'dest',
      bundle: true,
      minify: true,

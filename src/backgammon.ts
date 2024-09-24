@@ -1,12 +1,12 @@
 // binary game representation
-export const WHITE = 0b00010000;
-export const BLACK = 0b00100000;
-export const BAR   = 0b01000000;
-export const HOME  = 0b10000000;
+const WHITE = 0b00010000;
+const BLACK = 0b00100000;
+const BAR   = 0b01000000;
+const HOME  = 0b10000000;
 
 type Player = typeof WHITE | typeof BLACK;
 
-export interface Game {
+interface Game {
   // home and bars are really each a half a byte
   // using numbers for now for ease
   bBar: number,
@@ -57,7 +57,7 @@ const INITIAL_POSITIONS: Game['positions'] = new Uint8Array(
   ]
 );
 
-export function newGame(): Game {
+function newGame(): Game {
   return {
     bBar: 0,
     wBar: 0,
@@ -71,7 +71,7 @@ export function newGame(): Game {
 
 // everything is a primitive except the positions typedarray
 // copy for uint8array is relatively cheap
-export function cloneGame(game: Game): Game {
+function cloneGame(game: Game): Game {
   return {
     bBar: game.bBar,
     wBar: game.wBar,
@@ -96,7 +96,7 @@ function movesKey(moves: Movement[]) {
   return result;
 }
 
-export function checkWinner(game: Game) {
+function checkWinner(game: Game) {
   if (game.bHome == 15) return BLACK;
   if (game.wHome == 15) return WHITE;
   return false;
@@ -104,12 +104,12 @@ export function checkWinner(game: Game) {
 
 type Die = 1 | 2 | 3 | 4 | 5 | 6;
 type Roll = [Die, Die]
-export function generateRoll(): Roll {
+function generateRoll(): Roll {
   return [Math.ceil(Math.random() * 6) as Die, Math.ceil(Math.random() * 6) as Die]
 }
 
-export const dice: Die[] = [1,2,3,4,5,6];
-export const ALL_ROLLS: Roll[] = (function() {
+const dice: Die[] = [1,2,3,4,5,6];
+const ALL_ROLLS: Roll[] = (function() {
   return dice.flatMap(d1 => dice.map(d2 => ([d1,d2] as Roll)))
 })();
 
@@ -123,7 +123,7 @@ type Move = Play | DoublePlay
 
 const nullMove: Move = [null, null]
 
-export function apply(game: Game, movement: Movement): void {
+function apply(game: Game, movement: Movement): void {
   let [start, dest] = movement;
   const player = game.turn;
   const opponent = (player == BLACK) ? WHITE : BLACK;
@@ -171,8 +171,6 @@ function checkStart(game: Game, start: Start, player: Player): boolean {
   return (game.positions[start] & player) == player
 }
 
-const min = (a, b) => a >= b ? a : b;
-
 function isDest(dest: number): dest is Dest {
   return dest >= 0 && dest < 24;
 }
@@ -182,7 +180,7 @@ type Result = [Move, Game]
 type TempResult = [Movement[], Game, Die[]]
 type ResultArray = TempResult[] & { minRolls: number } 
 
-export function validMoves(game: Game, r: Roll): Result[] {
+function validMoves(game: Game, r: Roll): Result[] {
   // doubles act twice
   const doubles = r[0] == r[1]; 
   let rolls = doubles ? [r[0], r[0], r[0], r[0]]: r;
@@ -213,8 +211,8 @@ export function validMoves(game: Game, r: Roll): Result[] {
         // still pieces on the bar, so we can only use one move
         return [[[move[0], null], next]];
       } else {
-        // bar is clear, but we used those rolls
-        rolls = results[0][2];
+        // bar is clear, we used those rolls up
+        results.minRolls = rolls.length - results[0][2].length;
       }
     } else {
       // bar had pieces, but no move is possible
@@ -227,8 +225,11 @@ export function validMoves(game: Game, r: Roll): Result[] {
  
   // iterate through the positions
   for (let start = enter as Start; start != end; start += direction) {
-    boardMoves([], game, rolls, start, player, opponent, direction, seen, results);
-    // duplicate the above, but for all of the existing results
+    // if there was anything on the bar, we can only use the existing results, not start from scratch
+    if (!bar) {
+      boardMoves([], game, rolls, start, player, opponent, direction, seen, results);
+    }
+    // add additional moves to the existing results
     for (let prev of results) {
       let [m, g, available] = prev;
       boardMoves(m, g, available, start, player, opponent, direction, seen, results); 
@@ -279,14 +280,15 @@ function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar
       const next = cloneGame(game);
       if (doubles) {
         // push as many as 4 from the bar
-        const count = min(4, bar)
+        const count = Math.min(4, bar)
         const plays: Movement[] = [];
+        const available = rolls.slice()
         for (let i = 0; i < count; i++) {
           plays.push(movement);
           apply(next, movement);
-          rolls.pop() // the roll is used up 
+          available.pop() // the roll is used up 
         }
-        results.push([plays, next, rolls]) 
+        results.push([plays, next, available]) 
         // there's only one version of doubles entrances: move off the bar
         break;
       } else {
@@ -359,11 +361,36 @@ function isBearingOff(player: Player, game: Game) {
   return 15 ==  pieceCount;
 }
 
+function show(moves: Move): string {
+  let result = "(";
+  for (let m in moves) {
+    let move = moves[m]
+    if (move) {
+      result += (1 + move[0]) + "=>" + (1 + move[1]);
+    } else {
+      result += "none"
+    }
+    if (+m < moves.length - 1) result += ",";
+  }
+  result += ")"
+  return result
+}
+
 type Strategy = (options: Result[]) => Result;
-export function takeTurn(game: Game, roll: Roll, strategy: Strategy): Game {
+
+function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = validMoves(game, roll);
-  const choice = strategy(options);  
+  let choice = strategy(options);
+  let move = choice ? choice[0] : nullMove;
   let next = choice ? choice[1] : game;
   next.turn = (game.turn == BLACK) ? WHITE : BLACK;
-  return next;
+  return [move, next];
+}
+
+export { 
+  WHITE, BLACK, HOME, BAR, Game, 
+  newGame, cloneGame, validMoves, 
+  apply, takeTurn, checkWinner,
+  dice, generateRoll, ALL_ROLLS,
+  Result, show
 }

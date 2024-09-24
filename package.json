@@ -1,14 +1,15 @@
 {
   "scripts": {
-    "bench": "bun bench/game.ts",
+    "bench": "bun bench/helpers.ts",
     "build": "bun build.js",
     "watch": "watchexec bun build.js",
-    "check": "tsc --skipLibCheck --noEmit src/* --target es2022",
+    "check": "tsc --skipLibCheck --noEmit src/*.ts --target es2022",
     "test": "bun test"
   },
   "dependencies": {
     "esbuild": "0.17.19",
-    "mitata": "^1.0.4"
+    "mitata": "^1.0.4",
+    "term-canvas": "^0.0.5"
   },
   "devDependencies": {
     "@types/bun": "^1.1.10",

@@ -145,7 +145,7 @@ The tests run in 26ms, give me high confidence, and are (relatively) easy to wri
 
 It'd be a nice thing to do, to fuzz-test the game logic and ensure some invariants hold. e.g. no matter how many moves are played, we never reach an invalid state.
 
-## benchmarking
+## Benchmarking
 
 mitata is nice, though the docs aren't much.
 
@@ -183,4 +183,13 @@ summary
    33.36x faster than second valid option
 ```
 
+## Okay, enough messing around
 
+todo:
+- rendering, somewhere
+- play against the ai
+- strategies / evaluation
+- fuzz / property testing
+- eventually, if the game really needs faster play, we can try optimizing again
+- knip cleanup
+- doubling cube!
