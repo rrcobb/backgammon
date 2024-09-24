@@ -172,6 +172,7 @@ function checkStart(game: Game, start: Start, player: Player): boolean {
 }
 
 const min = (a, b) => a >= b ? a : b;
+
 function isDest(dest: number): dest is Dest {
   return dest >= 0 && dest < 24;
 }
@@ -179,7 +180,7 @@ function isDest(dest: number): dest is Dest {
 // returns: series of plays and the updated game state
 type Result = [Move, Game]
 type TempResult = [Movement[], Game, Die[]]
-type ResultArray = TempResult[] & { minRollsRemaining: number } 
+type ResultArray = TempResult[] & { minRolls: number } 
 
 export function validMoves(game: Game, r: Roll): Result[] {
   // doubles act twice
@@ -196,82 +197,37 @@ export function validMoves(game: Game, r: Roll): Result[] {
 
   const results: ResultArray = ([] as ResultArray)
   // track the max rolls we've used / min rolls available we've seen
-  results.minRollsRemaining = rolls.length;
+  results.minRolls = rolls.length;
 
-  /***********************
-   * Move off the Bar
-   ********************/
+  // are there pieces on the bar?
   const bar = player == BLACK ? game.bBar : game.wBar;
   if (bar > 0) {
-    for (let i in rolls) {
-      const roll = rolls[i];
-      const dest = (roll - 1) * direction + enter;
-      if (!isDest(dest)) {
-        throw new Error(`${dest} is not a valid dest. Roll was ${roll}`);
-      }
-      if (checkDest(game, dest, opponent)) {
-        const movement: Movement = [BAR, dest];
-        const next = cloneGame(game);
-        if (doubles) {
-          // push as many as 4 from the bar
-          const count = min(4, bar)
-          const plays: Movement[] = [];
-          for (let i = 0; i < count; i++) {
-            plays.push(movement);
-            apply(next, movement);
-            rolls.pop() // the roll is used up 
-          }
-          // there's only one version of doubles: move off the bar
-          // if there are some die left and the bar is clear, we'll play more
-          results.push([plays, next, rolls]) 
-          break;
-        } else {
-          if (results.length && bar > 1) {
-            // the first die also allowed us off the bar, and we still have a piece on the bar
-            const [[m1], next1, _] = results[0];
-            const next2 = cloneGame(next1);
-            apply(next2, movement);
-            const moveBothOff: Result = [[m1, movement], next2] 
-            return [moveBothOff]; // no other moves are possible
-          }
+    let early = handleBar(game, player, opponent, rolls, doubles, direction, enter, bar, results); 
+    if (early) return early;
 
-          apply(next, movement);
-          // push this roll, with the other roll still available
-          results.push([[movement], next, [rolls[i ? 0 : 1]]]) 
-        }
-      }
-    }
-    // is the bar cleared
+    // is the bar cleared?
     if (results.length) { // results can only have 0 or 1 length here
-      const next = results[0][1];  // the next game state
+      const [move, next] = results[0];  // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
       if (nextbar) {
-        // still pieces on the bar, we can only use one move
-        const move: Move = [results[0][0][0], null];
-        const g: Game = results[0][1];
-        const result: Result = [move, g];
-        return [result];
+        // still pieces on the bar, so we can only use one move
+        return [[[move[0], null], next]];
       } else {
-        // can only use the remaining rolls
+        // bar is clear, but we used those rolls
         rolls = results[0][2];
       }
     } else {
-      // no move is possible
-      const result: Result = [nullMove, game]
-      return [result] 
+      // bar had pieces, but no move is possible
+      return [[nullMove, game]]
     }
   }
 
-  /**********************************
-   * Moves to normal positions
-   **********************************/
   // ignore exact sequences of moves we've seen
   const seen = new Set();
  
   // iterate through the positions
   for (let start = enter as Start; start != end; start += direction) {
     boardMoves([], game, rolls, start, player, opponent, direction, seen, results);
-
     // duplicate the above, but for all of the existing results
     for (let prev of results) {
       let [m, g, available] = prev;
@@ -279,11 +235,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
     }
   }
 
-  /********************
-   * Bearing Off
-   ********************/
   bearOff([], game, rolls, player, homeboard, end, direction, seen, results);
-
   // check again for any of the results
   for (let result of results) {
     let [m, g, available] = result;
@@ -294,7 +246,7 @@ export function validMoves(game: Game, r: Roll): Result[] {
   const final = [];
   for (var k = 0; k < results.length; k++) {
     const [m, g, available] = results[k];
-    if (available.length <= results.minRollsRemaining) {
+    if (available.length <= results.minRolls) {
       final.push([m,g])
     }
   }
@@ -310,6 +262,46 @@ function boardMoves(m, g, rolls, start, player, opponent, direction, seen, resul
       if (!isDest(dest)) continue; // confirm dest is in range
       if (checkDest(g, dest, opponent)) { // is the target valid?
         addMovement([start, dest], m, g, rolls, seen, results, j);
+      }
+    }
+  }
+}
+
+function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar, results): Result[] | undefined {
+  for (let i in rolls) {
+    const roll = rolls[i];
+    const dest = (roll - 1) * direction + enter;
+    if (!isDest(dest)) {
+      throw new Error(`${dest} is not a valid dest. Roll was ${roll}`);
+    }
+    if (checkDest(game, dest, opponent)) {
+      const movement: Movement = [BAR, dest];
+      const next = cloneGame(game);
+      if (doubles) {
+        // push as many as 4 from the bar
+        const count = min(4, bar)
+        const plays: Movement[] = [];
+        for (let i = 0; i < count; i++) {
+          plays.push(movement);
+          apply(next, movement);
+          rolls.pop() // the roll is used up 
+        }
+        results.push([plays, next, rolls]) 
+        // there's only one version of doubles entrances: move off the bar
+        break;
+      } else {
+        if (results.length && bar > 1) {
+          // the first die allowed us off the bar, and we have more bar pieces to move
+          const [[m1], next1, _] = results[0];
+          const next2 = cloneGame(next1);
+          apply(next2, movement);
+          const moveBothOff: Result = [[m1, movement], next2] 
+          return [moveBothOff]; // no other moves are possible
+        }
+        apply(next, movement);
+
+        // push this roll, with the other roll still available
+        results.push([[movement], next, [rolls[i ? 0 : 1]]]) 
       }
     }
   }
@@ -344,7 +336,7 @@ function addMovement(movement, movements, game, available, seen, results, rollIn
   const remaining = available.slice();
   remaining.splice(rollIndex, 1);
   results.push([moves, next, remaining]);
-  if (remaining.length < results.minRollsRemaining) { results.minRollsRemaining = remaining.length }
+  if (remaining.length < results.minRolls) { results.minRolls = remaining.length }
 }
 
 // bearing off if home + homeboard total 15 pieces

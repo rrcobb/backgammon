@@ -123,6 +123,8 @@ Refactoring!
 - so nice to refactor under test
 - hopefully, refactoring will enable some isolation of hotspots so that we can speed up more carefully
 
+- refactor doesn't seem to have slowed things down a ton... but it's not that precise.
+
 Benchmarking. Additional speedups.
 
 Further speedups:

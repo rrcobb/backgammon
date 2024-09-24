@@ -192,3 +192,29 @@ describe("a complete game by picking the first valid move", () => {
     expect(checkWinner(game)).toBeTruthy()
   });
 });
+
+function whiteToWin(): Game {
+  let game = newGame();
+  game.positions[0] = 0;
+  game.positions[11] = 0;
+  game.positions[16] = 0;
+  game.positions[18] = 0;
+  game.positions[22] = WHITE | 1;
+  game.wHome = 14;
+  game.turn = WHITE;
+  return game;
+}
+
+describe("when white wins in one move", () => {
+  test("only one thing left...", () => {
+    let game = whiteToWin();
+    let roll = [6,5];
+    let moves = validMoves(game, roll);
+    expect(moves.length).toEqual(1);
+    expect(setify(moves.map(([m, _]) => m)))
+    .toEqual(
+      setify([[[22,HOME]]])
+    );
+    expect(checkWinner(moves[0][1])).toEqual(WHITE);
+  });
+});
