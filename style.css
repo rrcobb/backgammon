@@ -49,20 +49,41 @@ div.home {
   margin-top: 4px;
 }
 
-.red {
+.angle.red::before {
   background: #e88;
 }
 
-.gray {
+.angle.gray::before {
   background: #bbb;
 }
 
 .angle {
   display: inline-block;
+  position: relative;
   width: 48px;
   height: 160px;
   margin-bottom: 26px;
+}
+
+.angle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   clip-path: polygon(0% 0%, 50% 100%, 100% 0%);
+  z-index: 1;
+}
+
+.angle .label {
+  position: relative;
+  z-index: 2;
+}
+
+.angle .pieces {
+  position: relative;
+  z-index: 2;
 }
 
 .w {
@@ -76,8 +97,8 @@ div.home {
 .piece {
   display: block;
   border-radius: 100%;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   margin-left: 14px;
   margin-bottom: 2px;
 }

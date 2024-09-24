@@ -72,8 +72,14 @@ function render(game: Game): void {
 
       triangle.parentElement.insertBefore(bar, triangle);
     }
+    let label = document.createElement('span')
+    label.innerText += `${i + 1}`;
+    label.classList.add('label')
+    triangle.appendChild(label)
 
-    triangle.innerText += `${i + 1}`;
+    let piecesContainer = document.createElement("div");
+    piecesContainer.classList.add("pieces");
+    triangle.appendChild(piecesContainer);
 
     const count = v & 0b00001111;
     const color = (v & WHITE) ? 'w' : 'b';
@@ -81,7 +87,7 @@ function render(game: Game): void {
       let piece = document.createElement("span");
       piece.classList.add("piece");
       piece.classList.add(color);
-      triangle.appendChild(piece);
+      piecesContainer.appendChild(piece);
     }
   });
 
