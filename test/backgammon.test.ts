@@ -1,5 +1,5 @@
 import {test, expect, describe} from "bun:test"
-import { BAR, HOME, BLACK, WHITE, newGame, validMoves, apply, cloneGame, checkWinner, generateRoll, takeTurn } from '../src/backgammon.ts';
+import { BAR, HOME, BLACK, WHITE, newGame, isBearingOff, validMoves, apply, cloneGame, checkWinner, generateRoll, takeTurn } from '../src/backgammon.ts';
 
 function blackToEnter(): Game { // fiction: black has two on the bar, and white has made 3 points
   let game = newGame();
@@ -154,6 +154,29 @@ describe("black with several options", () => {
   })
 });
 
+function blackFinalBearingOff(): Game {
+  let game = newGame();
+  // black with 6 on his 1 point
+  game.positions = new Uint8Array([38, 17, 0, 0, 0, 0, 0, 0, 0, 0, 17, 0, 19, 0, 17, 17, 0, 0, 0, 0, 20, 18, 0, 18]);
+  game.bHome = 9;
+  game.turn = BLACK;
+  return game
+}
+
+describe("black bearing off", () => {
+  test("can roll off 2 pieces with 6,2", () => {
+    let game = blackFinalBearingOff();
+    expect(isBearingOff(game.turn, game)).toEqual(true)
+    let roll = [6,2];
+    let moves = validMoves(game, roll);
+    expect(moveset(moves)).toEqual(
+      setify([
+        [[0,HOME],[0,HOME]]
+      ])
+    )
+  });
+})
+
 function whiteToBearOff(): Game {
   let game = newGame();
   game.positions[0] = 0;
@@ -170,8 +193,7 @@ function whiteToBearOff(): Game {
 
 describe("white bearing off", () => {
   let game = whiteToBearOff();
-
-  test("with [5,4] can bear off two (only)", () => {
+  test("with [5,4] can bear off two", () => {
     let roll = [5,4];
     let moves = validMoves(game, roll);
     expect(moves.length).toEqual(2);
@@ -194,7 +216,7 @@ describe("white bearing off", () => {
         [[21, HOME], [19, HOME]],
       ])
     );
-  })
+  });
 });
 
 describe("a complete game by picking the first valid move", () => {

@@ -317,7 +317,7 @@ function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) 
       if (g.positions[bearsOff] & player) { 
         addMovement([bearsOff, HOME], m, g, rolls, seen, results, i);
       } else {
-        for (let h = homeboard as Start; h != end; h += direction) {
+        for (let h = homeboard as Start; h != (end + direction); h += direction) {
           if (g.positions[h] & player) {
             if ((direction * bearsOff) > (direction * h)) break;
             addMovement([h, HOME], m, g, rolls, seen, results, i); 
@@ -380,7 +380,11 @@ type Strategy = (options: Result[]) => Result;
 
 function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = validMoves(game, roll);
-  let choice = strategy(options);
+  let choice
+  if (options.length) {
+    choice = strategy(options);
+  } 
+
   let move = choice ? choice[0] : nullMove;
   let next = choice ? choice[1] : game;
   next.turn = (game.turn == BLACK) ? WHITE : BLACK;
@@ -392,5 +396,5 @@ export {
   newGame, cloneGame, validMoves, 
   apply, takeTurn, checkWinner,
   dice, generateRoll, ALL_ROLLS,
-  Result, show
+  Result, show, isBearingOff
 }

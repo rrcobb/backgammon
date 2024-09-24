@@ -90,14 +90,15 @@ document.addEventListener('DOMContentLoaded', () => {
   game = newGame();
   game.turn = WHITE;
   render(game);
-  const whiteStrategy = first;
-  const blackStrategy = first;
+  const whiteStrategy = random;
+  const blackStrategy = cheapmod;
 
   document.getElementById("play")?.addEventListener("click", () => {
     const finished = checkWinner(game)
     if (finished) { disableTurns(); }
     const roll = generateRoll();
     const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
+    const player = game.turn == WHITE ? 'w' : 'b'
     const [move, next] = takeTurn(game, roll, strat);
     if (move && move.length) {
       log(show(move))
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       log('no moves')
     }
     log(`${roll}`)
-    log((game.turn == BLACK) ? 'b' : 'w')
+    log(player)
     log('\n')
     game = next
     render(game);
