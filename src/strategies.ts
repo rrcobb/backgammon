@@ -24,4 +24,6 @@ function cheapmod(options: Result[]): Result {
   return choice
 }
 
-export { first, second, last, random, pseudorandom, cheapmod }
+const Strategies = { first, second, last, random, pseudorandom, cheapmod }
+
+export { Strategies }

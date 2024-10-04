@@ -11,17 +11,16 @@ Implementing a fast core game logic, so that I can mess around with some AI idea
 Question:
 - how deep can the tree search go? How fast is this?
 
-## Reading
+## Reading / References
 
+- [BKG](https://www.bkgm.com/articles/Berliner/BKG-AProgramThatPlaysBackgammon/index.html)
 - [TD-Gammon](https://bkgm.com/articles/tesauro/tdl.html)
 
 ## initial browser version
 
 ### missing features
 
-- show current player's turn
 - show winner
-- showing pieces that have been borne off
 - starting roll
 - doubling cube
 - interactive mode? play against the AI?
@@ -231,9 +230,12 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
 ## Okay, enough messing around
 
 todo:
+- pick strategies in ui
+- evaluation / strategy comparison
 - play against the ai
-- strategies / evaluation
 - fuzz / property testing
 - eventually, if the game really needs faster play, we can try optimizing again
+  - parallelize, maybe bun workers
+  - see if we can find hotspots and optimize them down
 - knip cleanup
 - doubling cube!

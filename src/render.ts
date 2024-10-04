@@ -1,7 +1,46 @@
-import { Game, newGame, checkWinner, generateRoll, takeTurn, WHITE, BLACK, show } from './backgammon';
-import {first, last, random, pseudorandom, cheapmod } from './strategies'
+import { Player, Game, newGame, checkWinner, generateRoll, takeTurn, WHITE, BLACK, show } from './backgammon';
+import { Strategies } from './strategies'
+
+// globals
+var game;
+var whiteStrategy = Strategies['first'];
+var blackStrategy = Strategies['first'];
+
+function strategyPicker(player: 'white' | 'black') {
+  const div = document.createElement('div');
+  const select = document.createElement('select');
+
+  Object.keys(Strategies).forEach(strategy => {
+    const option = document.createElement('option');
+    option.value = strategy;
+    option.textContent = strategy;
+    select.appendChild(option);
+  });
+
+  div.appendChild(document.createTextNode(player))
+  div.appendChild(select);
+  return div;
+}
+
+function renderStrategySection() {
+  let strategySection = document.getElementById("strategy");
+  let title = document.createElement('span');
+  title.appendChild(document.createTextNode("Strategies"))
+  strategySection.appendChild(title)
+  let whitePicker = strategyPicker('white')
+  whitePicker.addEventListener('change', (e) => {
+    whiteStrategy = Strategies[e.target.value];
+  });
+  let blackPicker = strategyPicker('black')
+  blackPicker.addEventListener('change', (e) => {
+    blackStrategy = Strategies[e.target.value];
+  });
+  strategySection.appendChild(whitePicker);
+  strategySection.appendChild(blackPicker);
+}
 
 function render(game: Game): void {
+
   let board = document.getElementById("board");
   if (!board) { throw new Error("board element not found") }
   board.innerHTML = "";
@@ -30,8 +69,10 @@ function render(game: Game): void {
   board?.appendChild(bottom);
 
   // TODO:
+  // - strategy picker / display about the strategy
   // - show the roll
-  // - render something about the strategy
+  // - show valid moves
+  // - show probabilities of hits?
   // - show current pip count for each player
 
   game.positions.forEach((v: number, i: number) => {
@@ -112,13 +153,12 @@ function enableTurns() {
   (document.getElementById("ten") as HTMLButtonElement).disabled = false;
 }
 
-var game;
 document.addEventListener('DOMContentLoaded', () => {
   game = newGame();
   game.turn = WHITE;
   render(game);
-  const whiteStrategy = cheapmod;
-  const blackStrategy = random;
+
+  renderStrategySection();
 
   document.getElementById("play")?.addEventListener("click", () => {
     const finished = checkWinner(game)

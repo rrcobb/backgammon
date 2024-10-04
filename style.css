@@ -11,6 +11,21 @@ div#board {
   text-align: center;
 }
 
+div#strategy {
+  border: 1px solid black;
+  padding: 4px;
+  margin: 0 10px;
+}
+
+#strategy select {
+  margin: 4px;
+}
+
+#strategy > span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
 div.home {
   position: absolute;
   height: 372px;
@@ -109,8 +124,8 @@ div.home {
 }
 
 #transcript {
-  width: 600px;
-  height: 800px;
+  width: 400px;
+  height: 80vh;
   margin-left: 10px;
 }
 
