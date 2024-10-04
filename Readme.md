@@ -18,14 +18,6 @@ Question:
 
 ## initial browser version
 
-### missing features
-
-- show winner
-- starting roll
-- doubling cube
-- interactive mode? play against the AI?
-- scorekeeping between games
-
 ## Speed
 
 - depth of search will in fact be limited by how fast things are!
@@ -223,18 +215,31 @@ Makes me think there could be some bugs left, and that fuzz / property testing w
 
 got the html build working again, with the new binary game setup.
 
-The api changed a bit between the two versions -- takeTurn now returns [Move, Game] which means we can't just assign it. There are still some rendering todos, especially showing / changing strategies.
+The api changed a bit between the two versions -- takeTurn now returns [Move, Game] which means we can't just assign it.
 
 Maybe also displaying the valid moves (as a precursor to allowing human vs. AI play, or human vs. human play)
 
-## Okay, enough messing around
+## TODO
 
-todo:
+- first roll // first turn
+- starting roll
+- doubling cube
+- scorekeeping between games
+
+- show the valid moves
+- show what moved (arrows? shadows?)
+- display about the strategy
+  - show probabilities of hits / other events
+  - show current pip count for each player
+  - highlight blots
+  - highlight primes
+
 - evaluation / strategy comparison
+- implement ai strategies
 - play against the ai
+- interactive mode / "human player" strategy -- play against the AI
 - fuzz / property testing
 - eventually, if the game really needs faster play, we can try optimizing again
   - parallelize, maybe bun workers
   - see if we can find hotspots and optimize them down
 - knip cleanup
-- doubling cube!

@@ -1,6 +1,6 @@
 import { run, bench, boxplot, barplot, lineplot, compact, summary, group } from "mitata"
 import { newGame, cloneGame, validMoves, checkWinner, generateRoll, takeTurn, WHITE, BLACK } from '../src/backgammon.ts'
-import { first, second, last, random, pseudorandom, cheapmod } from '../src/strategies'
+import { Strategies } from '../src/strategies'
 
 summary(() => {
   const LIMIT = 1e5;
@@ -18,27 +18,31 @@ summary(() => {
   }
 
   bench("first valid option", () => {
-    playGame(first); 
+    playGame(Strategies.first); 
   });
 
   bench("second valid option", () => {
-    playGame(second); 
+    playGame(Strategies.second); 
   });
 
   bench("last valid option", () => {
-    playGame(last); 
+    playGame(Strategies.last); 
   });
 
   bench("random option", () => {
-    playGame(random); 
+    playGame(Strategies.random); 
   });
 
   bench("pseudorandom option", () => {
-    playGame(pseudorandom);
+    playGame(Strategies.pseudorandom);
   });
 
   bench("cheap modulo option", () => {
-    playGame(cheapmod);
+    playGame(Strategies.cheapmod);
+  });
+
+  bench("safety-focused eval fn", () => {
+    playGame(Strategies.safety);
   });
 });
 

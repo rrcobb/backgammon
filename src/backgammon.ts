@@ -396,5 +396,6 @@ export {
   newGame, cloneGame, validMoves, 
   apply, takeTurn, checkWinner,
   dice, generateRoll, ALL_ROLLS,
-  Result, show, isBearingOff
+  Result, show, isBearingOff,
+  Player, Strategy
 }

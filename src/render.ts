@@ -25,23 +25,24 @@ function strategyPicker(player: 'white' | 'black') {
 
 function setStrategy(player, stratName) {
   if (player == WHITE) {
-    whiteStrategy = Strategies[stratName]
-    document.getElementById('white-strategy').value = stratName;
+    whiteStrategy = Strategies[stratName];
+    (document.getElementById('white-strategy') as HTMLSelectElement).value = stratName;
   } else {
-    blackStrategy = Strategies[stratName]
-    document.getElementById('black-strategy').value = stratName;
+    blackStrategy = Strategies[stratName];
+    (document.getElementById('black-strategy') as HTMLSelectElement).value = stratName;
   }
 }
 
 function renderStrategySection() {
   let strategySection = document.getElementById("strategy");
+  strategySection.innerHTML = "";
   let title = document.createElement('span');
   title.appendChild(document.createTextNode("Strategies"))
   strategySection.appendChild(title)
   let whitePicker = strategyPicker('white')
-  whitePicker.addEventListener('change', (e) => setStrategy(WHITE, e.target.value));
+  whitePicker.addEventListener('change', (e) => setStrategy(WHITE, (e.target as HTMLSelectElement).value));
   let blackPicker = strategyPicker('black')
-  blackPicker.addEventListener('change', (e) => setStrategy(BLACK, e.target.value));
+  blackPicker.addEventListener('change', (e) => setStrategy(BLACK, (e.target as HTMLSelectElement).value));
   strategySection.appendChild(whitePicker);
   strategySection.appendChild(blackPicker);
 }
@@ -79,16 +80,6 @@ function render(game: Game): void {
   board?.appendChild(home);
   board?.appendChild(top);
   board?.appendChild(bottom);
-
-  // TODO:
-  // - show the roll
-  // - show the valid moves
-  // - show the move (arrows? shadows?)
-  // - display about the strategy
-    // - show probabilities of hits / other events
-    // - show current pip count for each player
-    // - highlight blots
-    // - highlight primes
 
   game.positions.forEach((v: number, i: number) => {
     let triangle = document.createElement("div");
@@ -168,10 +159,15 @@ function renderRoll(roll) {
 }
 
 const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
+
 function log(...rest: string[]) {
   rest.forEach(msg => {
     transcript.value = '\n' + msg + transcript?.value;
   })
+}
+
+function clearTranscript() {
+  transcript.value = "";
 }
 
 function disableTurns() {
@@ -188,11 +184,12 @@ function initGame() {
   game = newGame();
   game.turn = WHITE;
   render(game);
-  renderStrategySection();
   enableTurns();
+  clearTranscript();
 }
 
 function playTurn() {
+  if (checkWinner(game)) return;
   const roll = generateRoll();
   const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
   const player = game.turn == WHITE ? 'w' : 'b'
@@ -213,9 +210,10 @@ function playTurn() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  renderStrategySection();
+  setStrategy(WHITE, 'first');
+  setStrategy(BLACK, 'safety');
   initGame();
-  setStrategy(WHITE, 'cheapmod');
-  setStrategy(BLACK, 'random');
 
   document.getElementById("play")?.addEventListener("click", playTurn);
 
