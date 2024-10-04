@@ -3,12 +3,13 @@ import { Strategies } from './strategies'
 
 // globals
 var game;
-var whiteStrategy = Strategies['first'];
-var blackStrategy = Strategies['first'];
+var whiteStrategy;
+var blackStrategy;
 
 function strategyPicker(player: 'white' | 'black') {
   const div = document.createElement('div');
   const select = document.createElement('select');
+  select.id = `${player}-strategy`
 
   Object.keys(Strategies).forEach(strategy => {
     const option = document.createElement('option');
@@ -22,25 +23,36 @@ function strategyPicker(player: 'white' | 'black') {
   return div;
 }
 
+function setStrategy(player, stratName) {
+  if (player == WHITE) {
+    whiteStrategy = Strategies[stratName]
+    document.getElementById('white-strategy').value = stratName;
+  } else {
+    blackStrategy = Strategies[stratName]
+    document.getElementById('black-strategy').value = stratName;
+  }
+}
+
 function renderStrategySection() {
   let strategySection = document.getElementById("strategy");
   let title = document.createElement('span');
   title.appendChild(document.createTextNode("Strategies"))
   strategySection.appendChild(title)
   let whitePicker = strategyPicker('white')
-  whitePicker.addEventListener('change', (e) => {
-    whiteStrategy = Strategies[e.target.value];
-  });
+  whitePicker.addEventListener('change', (e) => setStrategy(WHITE, e.target.value));
   let blackPicker = strategyPicker('black')
-  blackPicker.addEventListener('change', (e) => {
-    blackStrategy = Strategies[e.target.value];
-  });
+  blackPicker.addEventListener('change', (e) => setStrategy(BLACK, e.target.value));
   strategySection.appendChild(whitePicker);
   strategySection.appendChild(blackPicker);
 }
 
-function render(game: Game): void {
+function showWinner(player: Player) {
+  let indicator = document.getElementById("turn-indicator");
+  let name = player == WHITE ? "White" : "Black";
+  indicator.textContent = `${name} wins!` 
+}
 
+function render(game: Game): void {
   let board = document.getElementById("board");
   if (!board) { throw new Error("board element not found") }
   board.innerHTML = "";
@@ -69,11 +81,14 @@ function render(game: Game): void {
   board?.appendChild(bottom);
 
   // TODO:
-  // - strategy picker / display about the strategy
   // - show the roll
-  // - show valid moves
-  // - show probabilities of hits?
-  // - show current pip count for each player
+  // - show the valid moves
+  // - show the move (arrows? shadows?)
+  // - display about the strategy
+    // - show probabilities of hits / other events
+    // - show current pip count for each player
+    // - highlight blots
+    // - highlight primes
 
   game.positions.forEach((v: number, i: number) => {
     let triangle = document.createElement("div");
@@ -111,7 +126,7 @@ function render(game: Game): void {
 
       triangle.parentElement.insertBefore(bar, triangle);
     }
-    let label = document.createElement('span')
+    let label = document.createElement('div')
     label.innerText += `${i + 1}`;
     label.classList.add('label')
     triangle.appendChild(label)
@@ -133,7 +148,23 @@ function render(game: Game): void {
   let turnIndicator = document.createElement("div");
   turnIndicator.id = "turn-indicator";
   turnIndicator.textContent = game.turn === WHITE ? "White to play" : "Black to play";
-  board.insertAdjacentElement('beforeend', turnIndicator);
+  board.insertAdjacentElement("beforeend", turnIndicator);
+}
+
+function renderRoll(roll) {
+  const rollDiv = document.createElement('div');
+  rollDiv.classList.add('roll');
+
+  roll.forEach(die => {
+    const img = document.createElement('img');
+    const ordinal = ['one', 'two', 'three', 'four', 'five', 'six'][die - 1];
+    img.src = `src/dice/${ordinal}.svg`;
+    img.alt = ordinal;
+    rollDiv.appendChild(img);
+  });
+
+  const board = document.getElementById('board');
+  board.appendChild(rollDiv);  
 }
 
 const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
@@ -153,57 +184,46 @@ function enableTurns() {
   (document.getElementById("ten") as HTMLButtonElement).disabled = false;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initGame() {
   game = newGame();
   game.turn = WHITE;
   render(game);
-
   renderStrategySection();
+  enableTurns();
+}
 
-  document.getElementById("play")?.addEventListener("click", () => {
-    const finished = checkWinner(game)
-    if (finished) { disableTurns(); }
-    const roll = generateRoll();
-    const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-    const player = game.turn == WHITE ? 'w' : 'b'
-    const [move, next] = takeTurn(game, roll, strat);
-    if (move && move.length) {
-      log(show(move))
-    } else {
-      log('no moves')
-    }
-    log(`${roll}`)
-    log(player)
-    log('\n')
-    game = next
-    render(game);
-  });
+function playTurn() {
+  const roll = generateRoll();
+  const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
+  const player = game.turn == WHITE ? 'w' : 'b'
+  const [move, next] = takeTurn(game, roll, strat);
+  if (move && move.length) {
+    log(show(move))
+  } else {
+    log('no moves')
+  }
+  log(`${roll}`)
+  log(player)
+  log('\n')
+  game = next
+  render(game);
+  renderRoll(roll)
+  const finished = checkWinner(game)
+  if (finished) { showWinner(finished); disableTurns(); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initGame();
+  setStrategy(WHITE, 'cheapmod');
+  setStrategy(BLACK, 'random');
+
+  document.getElementById("play")?.addEventListener("click", playTurn);
 
   document.getElementById("ten")?.addEventListener("click", () => {
     for (let i = 0; i < 10; i++) {
-      const finished = checkWinner(game)
-      if (finished) { disableTurns(); break;}
-      const roll = generateRoll();
-      const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-      const player = game.turn == WHITE ? 'w' : 'b'
-      const [move, next] = takeTurn(game, roll, strat);
-      if (move && move.length) {
-        log(show(move))
-      } else {
-        log('no moves')
-      }
-      log(`${roll}`)
-      log(player)
-      log('\n')
-      game = next
+      playTurn();
     }
-    render(game);
   });
 
-  document.getElementById("new")?.addEventListener("click", () => {
-    game = newGame();
-    game.turn = WHITE;
-    render(game);
-    enableTurns();
-  });
+  document.getElementById("new")?.addEventListener("click", initGame);
 })

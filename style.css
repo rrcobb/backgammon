@@ -7,7 +7,7 @@
 div#board {
   border: 2px solid black;
   width: 652px;
-  background: #fdd;
+  background: #4c3ed0c2;
   text-align: center;
 }
 
@@ -30,7 +30,7 @@ div.home {
   position: absolute;
   height: 372px;
   width: 40px;
-  background-color: #c99;
+  background-color: #fdd;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -48,6 +48,21 @@ div.home {
 }
 
 .bottom {
+  transform: rotate(180deg);
+}
+
+.roll {
+  position: absolute;
+  top: 165px;
+  left: 365px;
+}
+
+.roll img {
+  clip-path: inset(10px round 9px);
+}
+
+.bottom .label {
+  /* flip label back around */
   transform: rotate(180deg);
 }
 
@@ -158,8 +173,10 @@ button {
 }
 
 #turn-indicator {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  margin-top: 10px;
+  font-size: 14px;
+  font-weight: normal;
+  background-color: #fdd;
+  padding: 10px;
+  text-align: center;
+  border-top: 1px solid black;
 }

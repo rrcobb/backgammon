@@ -230,7 +230,6 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
 ## Okay, enough messing around
 
 todo:
-- pick strategies in ui
 - evaluation / strategy comparison
 - play against the ai
 - fuzz / property testing
