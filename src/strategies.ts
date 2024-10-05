@@ -1,5 +1,5 @@
 import type { Result, Player, Game } from './backgammon'
-import { WHITE } from './backgammon'
+import { constants as c, helpers as h } from './backgammon'
 
 type Strategy = (options: Result[]) => Result;
 
@@ -28,10 +28,10 @@ type EvaluationFunction = (game: Game, player: Player) => number;
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) => (game, player) => {
   let score = 0;
-  score -= (player === WHITE ? game.wBar : game.bBar) * f.barPenalty;
-  score += (player === WHITE ? game.bBar : game.wBar) * f.barReward;
-  score += (player === WHITE ? game.wHome : game.bHome) * f.homeReward;
-  score -= (player === WHITE ? game.bHome : game.wHome) * f.homePenalty;
+  score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
+  score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
+  score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
+  score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
 
   for (let i = 0; i < 24; i++) {
     const pos = game.positions[i];
@@ -121,5 +121,49 @@ const aggressive = useEval(evaluate(aggressiveFactors));
 const balanced = useEval(evaluate(balancedFactors));
 const claude = useEval(evaluate(claudeFactors));
 
-const Strategies = { random, safety, aggressive, balanced, claude }
-export { Strategies }
+function useExpectimax(evalFunc, startDepth) {
+  function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
+    if (depth === 0 || h.checkWinner(game)) {
+      let result = evalFunc(game, game.turn);
+      return result; 
+    }
+
+    // there's a chance node in between players
+    let total = 0;
+    for (let roll of c.ALL_ROLLS) {
+      const moves = h.validMoves(game, roll);
+      const scores = []
+      for (let r of moves) {
+        let nextGame = r[1]
+        scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer))
+      }
+      let score = isMaxPlayer ? Math.max(...scores) : Math.min(...scores);
+      total += score
+    }
+    const result = total / c.ALL_ROLLS.length;
+    return result;
+  }
+
+  function _expecti(options: Result[]): Result {
+    let maxScore = -Infinity;
+    let maxOption = null;
+    for (let option of options) {
+      let [move, game] = option;
+      let score = expectimax(game, startDepth - 1, false);
+      if (score > maxScore) {
+        maxScore = score;
+        maxOption = option
+      }
+    }
+    return maxOption
+  }
+
+  return _expecti;
+}
+
+const aggressiveExpecti = useExpectimax(evaluate(aggressiveFactors), 2);
+const balancedExpecti = useExpectimax(evaluate(balancedFactors), 2);
+const claudeExpecti = useExpectimax(evaluate(claudeFactors), 2);
+
+const Strategies = { random, safety, aggressive, balanced, claude, balancedExpecti, claudeExpecti }
+export { Strategies, useExpectimax }

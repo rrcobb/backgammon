@@ -391,11 +391,11 @@ function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   return [move, next];
 }
 
-export { 
-  WHITE, BLACK, HOME, BAR, Game, 
-  newGame, cloneGame, validMoves, 
-  apply, takeTurn, checkWinner,
-  dice, generateRoll, ALL_ROLLS,
-  Result, show, isBearingOff,
-  Player, Strategy
-}
+const constants = { ALL_ROLLS, WHITE, BLACK, HOME, BAR, dice }
+
+const helpers = { isBearingOff, newGame, cloneGame, validMoves, generateRoll, apply, takeTurn, checkWinner, show }
+
+// types
+export { Player, Strategy, Game, Result }
+
+export { helpers, constants }

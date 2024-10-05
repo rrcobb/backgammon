@@ -66,5 +66,4 @@ summary(() => {
   }).args('moves', movesOptions);
 })
 
-
 await run();

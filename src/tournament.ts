@@ -1,4 +1,5 @@
-import { WHITE, BLACK, newGame, checkWinner, generateRoll, takeTurn } from './backgammon'
+import { constants as c, helpers as h } from './backgammon'
+import type { Player } from './backgammon'
 import { Strategies } from './strategies'
 
 type StrategyName = keyof typeof Strategies;
@@ -8,15 +9,15 @@ function compareTwo(a: StrategyName, b: StrategyName, games: number): [number, n
   let bwins = 0;
   
   for (let i = 0; i < games; i++) {
-    let game = newGame();
-    game.turn = i % 2 === 0 ? WHITE : BLACK;
+    let game = h.newGame();
+    game.turn = (i % 2 === 0 ? c.WHITE : c.BLACK) as Player;
     
-    while (!checkWinner(game)) {
-      const currentStrategy = game.turn === WHITE ? Strategies[a] : Strategies[b];
-      const roll = generateRoll();
-      [, game] = takeTurn(game, roll, currentStrategy);
+    while (!h.checkWinner(game)) {
+      const currentStrategy = game.turn === c.WHITE ? Strategies[a] : Strategies[b];
+      const roll = h.generateRoll();
+      [, game] = h.takeTurn(game, roll, currentStrategy);
     }
-    checkWinner(game) === WHITE ? awins++ : bwins++;
+    h.checkWinner(game) === c.WHITE ? awins++ : bwins++;
   }
   
   return [awins, bwins]
@@ -83,4 +84,4 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
 }
 
-roundRobinTournament(Strategies, 100);
+roundRobinTournament(Strategies, 5);

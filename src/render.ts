@@ -1,4 +1,5 @@
-import { Player, Game, newGame, checkWinner, generateRoll, takeTurn, WHITE, BLACK, show } from './backgammon';
+import type { Player, Game } from './backgammon';
+import { constants as c, helpers as h } from './backgammon';
 import { Strategies } from './strategies'
 
 // globals
@@ -24,7 +25,7 @@ function strategyPicker(player: 'white' | 'black') {
 }
 
 function setStrategy(player, stratName) {
-  if (player == WHITE) {
+  if (player == c.WHITE) {
     whiteStrategy = Strategies[stratName];
     (document.getElementById('white-strategy') as HTMLSelectElement).value = stratName;
   } else {
@@ -40,16 +41,16 @@ function renderStrategySection() {
   title.appendChild(document.createTextNode("Strategies"))
   strategySection.appendChild(title)
   let whitePicker = strategyPicker('white')
-  whitePicker.addEventListener('change', (e) => setStrategy(WHITE, (e.target as HTMLSelectElement).value));
+  whitePicker.addEventListener('change', (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value));
   let blackPicker = strategyPicker('black')
-  blackPicker.addEventListener('change', (e) => setStrategy(BLACK, (e.target as HTMLSelectElement).value));
+  blackPicker.addEventListener('change', (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value));
   strategySection.appendChild(whitePicker);
   strategySection.appendChild(blackPicker);
 }
 
 function showWinner(player: Player) {
   let indicator = document.getElementById("turn-indicator");
-  let name = player == WHITE ? "White" : "Black";
+  let name = player == c.WHITE ? "White" : "Black";
   indicator.textContent = `${name} wins!` 
 }
 
@@ -127,7 +128,7 @@ function render(game: Game): void {
     triangle.appendChild(piecesContainer);
 
     const count = v & 0b00001111;
-    const color = (v & WHITE) ? 'w' : 'b';
+    const color = (v & c.WHITE) ? 'w' : 'b';
     for (let i = 0; i < count; i++) {
       let piece = document.createElement("span");
       piece.classList.add("piece");
@@ -138,7 +139,7 @@ function render(game: Game): void {
 
   let turnIndicator = document.createElement("div");
   turnIndicator.id = "turn-indicator";
-  turnIndicator.textContent = game.turn === WHITE ? "White to play" : "Black to play";
+  turnIndicator.textContent = game.turn === c.WHITE ? "White to play" : "Black to play";
   board.insertAdjacentElement("beforeend", turnIndicator);
 }
 
@@ -181,21 +182,21 @@ function enableTurns() {
 }
 
 function initGame() {
-  game = newGame();
-  game.turn = WHITE;
+  game = h.newGame();
+  game.turn = c.WHITE;
   render(game);
   enableTurns();
   clearTranscript();
 }
 
 function playTurn() {
-  if (checkWinner(game)) return;
-  const roll = generateRoll();
-  const strat = game.turn == WHITE ? whiteStrategy : blackStrategy;
-  const player = game.turn == WHITE ? 'w' : 'b'
-  const [move, next] = takeTurn(game, roll, strat);
+  if (h.checkWinner(game)) return;
+  const roll = h.generateRoll();
+  const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
+  const player = game.turn == c.WHITE ? 'w' : 'b'
+  const [move, next] = h.takeTurn(game, roll, strat);
   if (move && move.length) {
-    log(show(move))
+    log(h.show(move))
   } else {
     log('no moves')
   }
@@ -205,14 +206,14 @@ function playTurn() {
   game = next
   render(game);
   renderRoll(roll)
-  const finished = checkWinner(game)
+  const finished = h.checkWinner(game)
   if (finished) { showWinner(finished); disableTurns(); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   renderStrategySection();
-  setStrategy(WHITE, 'aggressive');
-  setStrategy(BLACK, 'balanced');
+  setStrategy(c.WHITE, 'claudeExpecti');
+  setStrategy(c.BLACK, 'balanced');
   initGame();
 
   document.getElementById("play")?.addEventListener("click", playTurn);
