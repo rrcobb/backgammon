@@ -34,12 +34,13 @@ function roundRobinTournament(strategies, games: number) {
   const startTime = performance.now();
 
   for (let i = 0; i < names.length; i++) {
-    for (let j = 0; j < names.length; j++) {
+    for (let j = i; j < names.length; j++) {
       currentMatch++;
       process.stdout.write('\x1b[2K\r');
       process.stdout.write(`[${currentMatch}/${totalMatches}] ${String(names[i]).padEnd(10)} vs ${String(names[j]).padEnd(10)} `);
       const [aWins, bWins] = compareTwo(names[i], names[j], games);
       results[j][i] = aWins / games;
+      results[i][j] = bWins / games;
     }
   }
 

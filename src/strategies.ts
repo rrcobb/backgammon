@@ -100,16 +100,26 @@ const aggressiveFactors: Factors = {
 const balancedFactors: Factors = {
   barPenalty: 2,
   barReward: 4,
-  homeReward: 4,
+  homeReward: 3,
   homePenalty: 2,
   blotPenalty: 1,
-  pointsReward: 1,
-  primeReward: 4,
+  pointsReward: 2,
+  primeReward: 5,
+}
+const claudeFactors: Factors = {
+  barPenalty: 15,
+  barReward: 9,
+  homeReward: 10,
+  homePenalty: 7,
+  blotPenalty: 4,
+  pointsReward: 4,
+  primeReward: 8
 }
 
 const safety = useEval(evaluate(safetyFactors));
 const aggressive = useEval(evaluate(aggressiveFactors));
 const balanced = useEval(evaluate(balancedFactors));
+const claude = useEval(evaluate(claudeFactors));
 
-const Strategies = { first, random, safety, aggressive, balanced }
+const Strategies = { random, safety, aggressive, balanced, claude }
 export { Strategies }
