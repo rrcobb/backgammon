@@ -17,32 +17,10 @@ summary(() => {
     }
   }
 
-  bench("first valid option", () => {
-    playGame(Strategies.first); 
-  });
-
-  bench("second valid option", () => {
-    playGame(Strategies.second); 
-  });
-
-  bench("last valid option", () => {
-    playGame(Strategies.last); 
-  });
-
-  bench("random option", () => {
-    playGame(Strategies.random); 
-  });
-
-  bench("pseudorandom option", () => {
-    playGame(Strategies.pseudorandom);
-  });
-
-  bench("cheap modulo option", () => {
-    playGame(Strategies.cheapmod);
-  });
-
-  bench("safety-focused eval fn", () => {
-    playGame(Strategies.safety);
+  Object.entries(Strategies).map(([name, strategy]) => {
+    bench(`${name} whole game`, () => {
+      playGame(strategy)
+    })
   });
 });
 

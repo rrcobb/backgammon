@@ -211,7 +211,7 @@ function playTurn() {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderStrategySection();
-  setStrategy(WHITE, 'first');
+  setStrategy(WHITE, 'aggressive');
   setStrategy(BLACK, 'safety');
   initGame();
 
