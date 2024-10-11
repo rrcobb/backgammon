@@ -219,6 +219,21 @@ The api changed a bit between the two versions -- takeTurn now returns [Move, Ga
 
 Maybe also displaying the valid moves (as a precursor to allowing human vs. AI play, or human vs. human play)
 
+## Ai again
+
+- expectimax sort of working, with at least a couple of tests
+- it breaks Claude's brain, but it's still at least a little helpful
+- if we can constrain the range of the evaluation function, we can use a version of a/b pruning when we look at the possible average achievable by a node in the tree
+- pruning is important, we are currently really slow
+- the evaluation function is pretty dumb rn, but could get good
+  - incorporate some hit probabilities
+  - check for pipcount
+  - reward the golden prime
+  - how to think about back game?
+- we could check the evaluation function to decide whether to look deeper into the tree for a given move
+  - e.g. cut off dumb lines of search earlier
+- we could also sample from the rolls instead of evaluating all of them
+
 ## TODO
 
 - first roll // first turn
@@ -243,3 +258,28 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
   - parallelize, maybe bun workers
   - see if we can find hotspots and optimize them down
 - knip cleanup
+
+## More ideas for speed improvements... pending finding legit hotspots
+
+can do movement checks in a bitwise op:
+- 25 positions for starts
+- 25 valid ends
+- shift by roll
+- ^ or & depending on how the positions are represented
+- bearing off and multiple rolls trickier
+
+can represent a game in 140 bits: 
+- 24 x 5 bits (player, how many pieces)
+- white and black bar, a byte
+- white and black home, a byte
+- doubling cube, five bits
+
+128 bits: 24 positions and the bar, no cube, home inferred
+
+very likely that games can be compressed further, maybe a hamming tree
+
+a strategy takes a board state and die roll and outputs a new board state
+
+a big nn could have just a game as input layer, or it could have game plus more info from eg a planning system
+
+would the nn work on the compressed stream?
