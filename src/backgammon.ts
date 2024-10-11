@@ -6,7 +6,9 @@ const HOME = 0b10000000;
 
 type Player = typeof WHITE | typeof BLACK;
 
+let gameIdCounter = 0;
 interface Game {
+  _id: number; // for use as a key
   // home and bars are really each a half a byte
   // using numbers for now for ease
   bBar: number;
@@ -57,6 +59,7 @@ const INITIAL_POSITIONS: Game["positions"] = new Uint8Array([
 
 function newGame(): Game {
   return {
+    _id: gameIdCounter++,
     bBar: 0,
     wBar: 0,
     bHome: 0,
@@ -71,6 +74,7 @@ function newGame(): Game {
 // copy for uint8array is relatively cheap
 function cloneGame(game: Game): Game {
   return {
+    _id: gameIdCounter++,
     bBar: game.bBar,
     wBar: game.wBar,
     bHome: game.bHome,
@@ -361,7 +365,7 @@ function addMovement(movement, movements, game, available, seen, results, rollIn
 
 // bearing off if home + homeboard total 15 pieces
 // last (first) 6 positions are the home board
-function isBearingOff(player: Player, game: Game) {
+function _isBearingOff(player: Player, game: Game) {
   let pieceCount, start;
   if (player == WHITE) {
     if (game.wBar) return false;
@@ -379,6 +383,10 @@ function isBearingOff(player: Player, game: Game) {
   }
   return 15 == pieceCount;
 }
+// var so we hoist
+const isBearingOff = memoize(_isBearingOff, function key(player, game) {
+  return "" + game._id + player;
+});
 
 function show(moves: Move): string {
   let result = "(";
