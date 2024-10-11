@@ -7,13 +7,13 @@
     "test": "bun test"
   },
   "dependencies": {
-    "esbuild": "0.17.19",
-    "mitata": "^1.0.4",
+    "esbuild": "0.24.0",
+    "mitata": "^1.0.10",
     "term-canvas": "^0.0.5"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.10",
-    "knip": "^5.30.5",
-    "typescript": "^5.0.4"
+    "@types/bun": "^1.1.11",
+    "knip": "^5.33.3",
+    "typescript": "^5.6.3"
   }
 }
