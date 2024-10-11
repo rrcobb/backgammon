@@ -1,8 +1,10 @@
 import type { Result, Player, Game } from './backgammon'
 import { constants as c, helpers as h } from './backgammon'
+import { evaluate, factors as f } from './evaluationFns'
 
 type Strategy = (options: Result[]) => Result;
 
+// handful of random-ish strategies
 const first = (options: Result[]) => options && options[0];
 const second = (options: Result[]) => options && options[1] || options[0];
 const last = (options: Result[]) => options && options[options.length - 1];
@@ -24,50 +26,7 @@ function cheapmod(options: Result[]): Result {
   return choice
 }
 
-type EvaluationFunction = (game: Game, player: Player) => number;
-
-const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) => (game, player) => {
-  let score = 0;
-  score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
-  score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
-  score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
-  score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
-
-  for (let i = 0; i < 24; i++) {
-    const pos = game.positions[i];
-    if ((pos & player) === player) {
-      const count = pos & 0b1111;
-      if (count === 1) {
-        score -= f.blotPenalty;
-      } else if (count >= 2) {
-        score += f.pointsReward;
-      }
-    }
-  }
-
-  score += detectPrimes(game, player) * f.primeReward;
-
-  return score;
-}
-
-function detectPrimes(game: Game, player: Player): number {
-  let primeCount = 0;
-  let consecutivePoints = 0;
-
-  for (let i = 0; i < 24; i++) {
-    if ((game.positions[i] & player) === player && (game.positions[i] & 0b1111) >= 2) {
-      consecutivePoints++;
-      if (consecutivePoints >= 3) {
-        primeCount++;
-      }
-    } else {
-      consecutivePoints = 0;
-    }
-  }
-
-  return primeCount;
-}
-
+// strategies use an evaluation function (depth = 0)
 function useEval(evalFn: EvaluationFunction): Strategy {
   return (options: Result[]) => {
     if (!options) return;
@@ -78,48 +37,10 @@ function useEval(evalFn: EvaluationFunction): Strategy {
   }
 }
 
-const safetyFactors = {
-  barPenalty: 10,
-  barReward: 0,
-  homeReward: 1,
-  homePenalty: 3,
-  blotPenalty: 5,
-  pointsReward: 1,
-  primeReward: 0,
-}
-type Factors = typeof safetyFactors;
-const aggressiveFactors: Factors = {
-  barPenalty: 1,
-  barReward: 5,
-  homeReward: 5,
-  homePenalty: 3,
-  blotPenalty: 0,
-  pointsReward: 0,
-  primeReward: 5,
-}
-const balancedFactors: Factors = {
-  barPenalty: 2,
-  barReward: 4,
-  homeReward: 3,
-  homePenalty: 2,
-  blotPenalty: 1,
-  pointsReward: 2,
-  primeReward: 5,
-}
-const claudeFactors: Factors = {
-  barPenalty: 15,
-  barReward: 9,
-  homeReward: 10,
-  homePenalty: 7,
-  blotPenalty: 4,
-  pointsReward: 4,
-  primeReward: 8
-}
-
-const safety = useEval(evaluate(safetyFactors));
-const aggressive = useEval(evaluate(aggressiveFactors));
-const balanced = useEval(evaluate(balancedFactors));
-const claude = useEval(evaluate(claudeFactors));
+const safety = useEval(evaluate(f.safetyFactors));
+const aggressive = useEval(evaluate(f.aggressiveFactors));
+const balanced = useEval(evaluate(f.balancedFactors));
+const claude = useEval(evaluate(f.claudeFactors));
 
 function useExpectimax(evalFunc, startDepth) {
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
@@ -161,9 +82,9 @@ function useExpectimax(evalFunc, startDepth) {
   return _expecti;
 }
 
-const aggressiveExpecti = useExpectimax(evaluate(aggressiveFactors), 2);
-const balancedExpecti = useExpectimax(evaluate(balancedFactors), 2);
-const claudeExpecti = useExpectimax(evaluate(claudeFactors), 2);
+const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
+const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
+const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
 
 const Strategies = { random, safety, aggressive, balanced, claude, balancedExpecti, claudeExpecti }
 export { Strategies, useExpectimax }

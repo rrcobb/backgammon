@@ -1,17 +1,17 @@
 import { run, bench, compact, summary, group } from "mitata"
-import { newGame, cloneGame, movesString, movesStringCustom, validMoves, checkWinner, generateRoll, takeTurn, WHITE, BLACK } from '../src/backgammon.ts'
+import { helpers as h, constants as c } from '../src/backgammon.ts';
 
 compact(() => {
-  const initial = newGame();
-  initial.turn = WHITE;
+  const initial = h.newGame();
+  initial.turn = c.WHITE;
 
   bench("generate roll", () => {
-    generateRoll();
+    h.generateRoll();
   });
   
   bench("calculate valid moves", () => {
-    let roll = generateRoll();
-    validMoves(initial, roll);
+    let roll = h.generateRoll();
+    h.validMoves(initial, roll);
   });
 });
 
