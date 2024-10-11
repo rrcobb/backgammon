@@ -1,6 +1,6 @@
 // backgammon game
 
-import { choice, StrategyName, measure, memoize, makeKey } from './strategies'
+import { choice, StrategyName, measure, memoize, makeKey } from "./strategies";
 export type Player = "b" | "w";
 
 export interface Game {
@@ -10,8 +10,8 @@ export interface Game {
   positions: Player[][];
   cube: number;
   turn: Player;
-  wStrategy: StrategyName,
-  bStrategy: StrategyName,
+  wStrategy: StrategyName;
+  bStrategy: StrategyName;
 }
 
 // 24 spaces
@@ -49,8 +49,8 @@ const INITIAL: Player[][] = [
 ];
 
 export function newGame(): Game {
-    // TODO: implement the start of the game / first roll
-  let first: Player = Math.random() > 0.5 ? "w": "b";  // :/ flip a coin for first
+  // TODO: implement the start of the game / first roll
+  let first: Player = Math.random() > 0.5 ? "w" : "b"; // :/ flip a coin for first
   return {
     bar: [],
     wHome: [],
@@ -63,43 +63,45 @@ export function newGame(): Game {
   };
 }
 
-type Droll = 1 | 2 | 3 | 4 | 5 | 6 | -1 | -2 | -3 | -4 | -5 | -6
+type Droll = 1 | 2 | 3 | 4 | 5 | 6 | -1 | -2 | -3 | -4 | -5 | -6;
 function die(): Droll {
   return Math.ceil(Math.random() * 6) as Droll;
 }
 
-type Roll = [Droll, Droll] | [Droll, Droll, Droll, Droll]
+type Roll = [Droll, Droll] | [Droll, Droll, Droll, Droll];
 function roll(): Roll {
   let [i, j] = [die(), die()];
-  return cleanRoll(i,j);
+  return cleanRoll(i, j);
 }
 
-function cleanRoll<T>(i: T, j: T): [T,T] | [T,T,T,T] {
+function cleanRoll<T>(i: T, j: T): [T, T] | [T, T, T, T] {
   if (i == j) {
-    return [i,i,i,i];
+    return [i, i, i, i];
   } else {
-    return [i,j];
+    return [i, j];
   }
 }
 
-const dice: Droll[] = [1,2,3,4,5,6]
-export const allRolls: Roll[] = (function() {
-  return dice.flatMap(d1 => dice.map(d2 => [d1, d2])).map(([i,j]) => cleanRoll(i,j))
+const dice: Droll[] = [1, 2, 3, 4, 5, 6];
+export const allRolls: Roll[] = (function () {
+  return dice.flatMap((d1) => dice.map((d2) => [d1, d2])).map(([i, j]) => cleanRoll(i, j));
 })();
 
 function orderings(rolls: Roll): Array<Roll> {
   // hack: we know that we only have one ordering if the die are equal, or if there's only one
   if (rolls.length < 2 || rolls[0] == rolls[1]) {
-    return [rolls]
+    return [rolls];
   } else {
-    return [[rolls[0], rolls[1]], [rolls[1], rolls[0]]];
+    return [
+      [rolls[0], rolls[1]],
+      [rolls[1], rolls[0]],
+    ];
   }
 }
 
-
-type Start = 'bar' | number
-type Dest = number | 'home'
-export type Move = [Start, Dest]
+type Start = "bar" | number;
+type Dest = number | "home";
+export type Move = [Start, Dest];
 
 // check destination is
 // in-bounds and not blocked
@@ -107,26 +109,28 @@ function valid(player: Player, move: Move, positions: Array<Array<Player>>): boo
   if (typeof move[1] == "number") {
     return (
       move[1] >= 0 &&
-        move[1] < 24 && // inbounds
-        (positions[move[1]].length < 2 || positions[move[1]][0] == player)
+      move[1] < 24 && // inbounds
+      (positions[move[1]].length < 2 || positions[move[1]][0] == player)
     );
   } else {
-    return true // dest is "home", which can't be blocked
+    return true; // dest is "home", which can't be blocked
   }
 }
 
 function startingPositions(game: Game): number[] {
-  let withIndex: Array<[Player[], number]> = game.positions.map((v: Player[], i: number) => [v, i])
-  return  withIndex.filter(([a, i]) => a.length > 0 && a[0] == game.turn).map(([_, i]) => i);
+  let withIndex: Array<[Player[], number]> = game.positions.map((v: Player[], i: number) => [v, i]);
+  return withIndex.filter(([a, i]) => a.length > 0 && a[0] == game.turn).map(([_, i]) => i);
 }
 
 function isBearingOff(starts: number[], player: Player): boolean {
-  if (starts.length == 0) { return false }
+  if (starts.length == 0) {
+    return false;
+  }
   // can bear off if all pieces are in the nearest section
   if (player == "w") {
-    return starts.every(start => start > 17)
+    return starts.every((start) => start > 17);
   } else {
-    return starts.every(start => start < 6)
+    return starts.every((start) => start < 6);
   }
 }
 
@@ -135,76 +139,84 @@ function isBearingOff(starts: number[], player: Player): boolean {
 // returns Array<Move>
 function validMoves(roll: Droll, game: Game): Move[] {
   let player = game.turn;
-  let barcount = game.bar.filter(p => p == player).length;
-    // legal entrances get pieces off the bar first
+  let barcount = game.bar.filter((p) => p == player).length;
+  // legal entrances get pieces off the bar first
   if (barcount > 0) {
-    const start = player == 'b' ? 24 : -1;
-    let entrance: Move = ['bar', start + roll]
+    const start = player == "b" ? 24 : -1;
+    let entrance: Move = ["bar", start + roll];
     if (valid(player, entrance, game.positions)) {
-      return [entrance]
+      return [entrance];
     } else {
-      return []
+      return [];
     }
   }
 
-  let starts = startingPositions(game)
-  let moves = starts.map(p => [p, p + roll]) as Move[]
-  moves = moves.filter(move => valid(player, move, game.positions));
+  let starts = startingPositions(game);
+  let moves = starts.map((p) => [p, p + roll]) as Move[];
+  moves = moves.filter((move) => valid(player, move, game.positions));
   if (isBearingOff(starts, player)) {
     // can bear off a piece
     // piece is exactly n away from home
     // _or_ the highest one, if all are less than the roll off
-    let bears = starts.filter(start => (start + roll == -1) || (start + roll == 24)).map(start => [start, 'home'])
-    let furthest = player == "w" ? Math.min(...starts) : Math.max(...starts)
-    if ((roll + furthest < 0)  || (roll + furthest >= 24)) {
-      bears = [[furthest, 'home']]
+    let bears = starts.filter((start) => start + roll == -1 || start + roll == 24).map((start) => [start, "home"]);
+    let furthest = player == "w" ? Math.min(...starts) : Math.max(...starts);
+    if (roll + furthest < 0 || roll + furthest >= 24) {
+      bears = [[furthest, "home"]];
     }
-    moves = moves.concat(bears as Move[])
+    moves = moves.concat(bears as Move[]);
   }
-  return moves
+  return moves;
 }
 
 export function orderedValidPlays(game: Game, rolls: Roll): Move[][] {
   if (game.turn == "b") {
-     rolls = rolls.map(r => -r) as Roll
+    rolls = rolls.map((r) => -r) as Roll;
   }
   // order of moves matters, but only for the case of two different die
-  let ords = orderings(rolls)
-  return ords.flatMap(rls => validPlays(game, rls))
+  let ords = orderings(rolls);
+  return ords.flatMap((rls) => validPlays(game, rls));
 }
 
-const sc = measure(structuredClone)
+const sc = measure(structuredClone);
 
-export const safeUpdate = measure(memoize(
-  function safeUpdate(game: Game, moves: Move[]) {
-    let imaginedWorld = sc(game)
-    update(imaginedWorld, moves);
-    return imaginedWorld
-  }, makeKey, 'safeUpdate'), 'safeUpdate');
+export const safeUpdate = measure(
+  memoize(
+    function safeUpdate(game: Game, moves: Move[]) {
+      let imaginedWorld = sc(game);
+      update(imaginedWorld, moves);
+      return imaginedWorld;
+    },
+    makeKey,
+    "safeUpdate",
+  ),
+  "safeUpdate",
+);
 
 // Rolls: list of rolled dies
 // Play: list of start/finish pairs e.g. [(start1, end1), (start2, end2)]
 // returns: list of plays
 function validPlays(game: Game, rolls: Array<Droll>): Move[][] {
-  if (rolls.length == 0) { return [] }
-  let [toTry, ...rest] = rolls
-  let results: Move[][] = []
-  let moves = validMoves(toTry, game)
+  if (rolls.length == 0) {
+    return [];
+  }
+  let [toTry, ...rest] = rolls;
+  let results: Move[][] = [];
+  let moves = validMoves(toTry, game);
   if (rest.length == 0) {
-    return moves.map(move => [move])
+    return moves.map((move) => [move]);
   }
   for (let move of moves) {
-    let imaginedWorld = safeUpdate(game, [move])
-    let nextPlays = validPlays(imaginedWorld, rest)
+    let imaginedWorld = safeUpdate(game, [move]);
+    let nextPlays = validPlays(imaginedWorld, rest);
     if (nextPlays.length > 0) {
       for (let play of nextPlays) {
-        results.push([move, ...play])
+        results.push([move, ...play]);
       }
     } else {
-      results.push([move])
+      results.push([move]);
     }
   }
-  return results
+  return results;
 }
 
 // move the pieces
@@ -220,19 +232,24 @@ export const update = measure(function update(game: Game, moves: Move[]) {
       piece = game.positions[origin].pop() as Player;
     }
 
-    console.assert(piece == game.turn, "mismatch:" + `piece ${piece} + game.turn ${game.turn}` + JSON.stringify({ piece: piece, move: m, moves, turn: game.turn, positions: game.positions}))
+    console.assert(
+      piece == game.turn,
+      "mismatch:" +
+        `piece ${piece} + game.turn ${game.turn}` +
+        JSON.stringify({ piece: piece, move: m, moves, turn: game.turn, positions: game.positions }),
+    );
 
     // if bearing off, move to home
     if (dest == "home") {
       let playerHome = game.turn == "w" ? "wHome" : "bHome";
-      game[playerHome].push(piece)
+      game[playerHome].push(piece);
       return;
     }
 
     // if it's a hit, move whatever's in dest to the bar
     let hit = game.positions[dest].length > 0 && game.positions[dest][0] != game.turn;
     if (hit) {
-      let pieceHit = game.positions[dest].pop()
+      let pieceHit = game.positions[dest].pop();
       if (pieceHit) {
         game.bar.push(pieceHit);
       }
@@ -240,20 +257,20 @@ export const update = measure(function update(game: Game, moves: Move[]) {
 
     game.positions[dest].push(piece);
   });
-})
+});
 
 function formatStart(s: Start): string {
-  if (typeof s == 'number') {
-    return (s + 1).toString()
+  if (typeof s == "number") {
+    return (s + 1).toString();
   } else {
-    return s
+    return s;
   }
 }
 function formatDest(d: Dest): string {
-  if (typeof d == 'number') {
-    return (d + 1).toString()
+  if (typeof d == "number") {
+    return (d + 1).toString();
   } else {
-    return d
+    return d;
   }
 }
 function formatMove(move: Move): string {
@@ -261,28 +278,28 @@ function formatMove(move: Move): string {
 }
 
 function formatTurn(player: Player, roll: Roll, moves: Move[]): string {
-  return `\n${player} rolled ${roll}\n ${moves.map(formatMove).join(', ')}\n`
+  return `\n${player} rolled ${roll}\n ${moves.map(formatMove).join(", ")}\n`;
 }
 
-export type Win = Player | false
+export type Win = Player | false;
 
 export function checkWinner(game: Game): Win {
   if (game.bHome.length == 15) {
-    return 'b';
+    return "b";
   } else if (game.wHome.length == 15) {
-    return 'w';
+    return "w";
   } else {
-    return false
+    return false;
   }
 }
 
-type Log = (string) => void
+type Log = (string) => void;
 
 export function takeTurn(game: Game, log: Log): Win {
   let winner = checkWinner(game);
-  if (winner) { 
-    log(winner + ' wins! Game over.\n');
-    return winner
+  if (winner) {
+    log(winner + " wins! Game over.\n");
+    return winner;
   }
 
   let rolls = roll();
@@ -291,26 +308,26 @@ export function takeTurn(game: Game, log: Log): Win {
     let c = choice(game, mvs);
     update(game, c);
     if (game.bar.length > 0) {
-      log(`bar: ${game.bar.toString()}\n`)
+      log(`bar: ${game.bar.toString()}\n`);
     }
     if (game.bHome.length > 0) {
-      log(`bHome: ${game.bHome.length}\n`)
+      log(`bHome: ${game.bHome.length}\n`);
     }
     if (game.wHome.length > 0) {
-      log(`wHome: ${game.wHome.length}\n`)
+      log(`wHome: ${game.wHome.length}\n`);
     }
     log(formatTurn(game.turn, rolls, c));
   } else {
-    log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`)
+    log(`\n${game.turn} rolled ${rolls}\nNo available moves.\n`);
   }
-  log(`\n\n${game.turn}'s turn`)
+  log(`\n\n${game.turn}'s turn`);
   game.turn = game.turn == "w" ? "b" : "w"; // next player's turn
 
   winner = checkWinner(game);
-  if (winner) { 
-    log(winner + ' wins! Game over.\n');
-    return winner
+  if (winner) {
+    log(winner + " wins! Game over.\n");
+    return winner;
   }
 
-  return false
+  return false;
 }

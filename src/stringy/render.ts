@@ -1,8 +1,10 @@
-import { Game, newGame, takeTurn } from './game';
+import { Game, newGame, takeTurn } from "./game";
 
 function render(game: Game): void {
   let board = document.getElementById("board");
-  if (!board) { throw new Error("board element not found") }
+  if (!board) {
+    throw new Error("board element not found");
+  }
   board.innerHTML = "";
   let home = document.createElement("div");
   home?.classList.add("home");
@@ -40,12 +42,13 @@ function render(game: Game): void {
     if (i == 6 || i === 18) {
       let bar = document.createElement("div");
       bar.classList.add("bar");
-      i == 6 && game.bar.forEach((p: string) => {
-        let piece = document.createElement("span");
-        piece.classList.add("piece");
-        piece.classList.add(p);
-        bar.appendChild(piece);
-      });
+      i == 6 &&
+        game.bar.forEach((p: string) => {
+          let piece = document.createElement("span");
+          piece.classList.add("piece");
+          piece.classList.add(p);
+          bar.appendChild(piece);
+        });
 
       triangle.parentElement.insertBefore(bar, triangle);
     }
@@ -71,29 +74,30 @@ function disableTurns() {
   (document.getElementById("ten") as HTMLButtonElement).disabled = true;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   let game = newGame();
   render(game);
 
   document.getElementById("play")?.addEventListener("click", () => {
     let finished = takeTurn(game, log);
 
-    if (finished) { disableTurns(); }
+    if (finished) {
+      disableTurns();
+    }
 
     // TODO: remove assertion
     // validate that all the pieces in a position are the same player
-    game.positions.forEach(p => {
-      console.assert(
-        p.length == 0 || p.every(v => v == p[0]),
-        { msg: "constraint violated: two pieces of different colors", game }
-      )
-    })
+    game.positions.forEach((p) => {
+      console.assert(p.length == 0 || p.every((v) => v == p[0]), { msg: "constraint violated: two pieces of different colors", game });
+    });
 
     render(game);
   });
 
   document.getElementById("ten")?.addEventListener("click", () => {
-    for (let i = 0; i < 10; i++) { takeTurn(game, log); }
+    for (let i = 0; i < 10; i++) {
+      takeTurn(game, log);
+    }
     render(game);
   });
 
@@ -101,4 +105,4 @@ document.addEventListener('DOMContentLoaded', () => {
     game = newGame();
     render(game);
   });
-})
+});

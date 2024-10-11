@@ -1,6 +1,6 @@
-import { newGame, takeTurn, Win, allRolls } from './game'
-import { toBinary, gameHistory, compress, decompress } from './compress'
-import { runtimeStats } from './strategies'
+import { newGame, takeTurn, Win, allRolls } from "./game";
+import { toBinary, gameHistory, compress, decompress } from "./compress";
+import { runtimeStats } from "./strategies";
 
 function doGame() {
   let game = newGame();
@@ -12,7 +12,7 @@ function doGame() {
     if (MEASURE_PERF) {
       turnStart = performance.now();
     }
-    winner = takeTurn(game, s => {});
+    winner = takeTurn(game, (s) => {});
     if (MEASURE_PERF) {
       const turnEnd = performance.now();
       turnTimes.push(turnEnd - turnStart);
@@ -30,18 +30,16 @@ let totalTurns = 0;
 
 type Times = (fn: (i: number) => any) => void;
 declare global {
-    interface Number {
-          times: Times;
-    }
+  interface Number {
+    times: Times;
+  }
 }
 
-Number.prototype.times = function (fn) { 
-  for (let i = 0; i < this; i++) { 
+Number.prototype.times = function (fn) {
+  for (let i = 0; i < this; i++) {
     fn(i);
   }
 };
-
-
 
 const wins = [];
 
@@ -60,7 +58,7 @@ function playMany(n: number) {
     if (MEASURE_PERF) {
       gameTimes.push(gameEnd - gameStart);
       totalTurns += turnTimes.length;
-      wins.push(winner)
+      wins.push(winner);
 
       if (i === 0 && false) {
         console.log(`First game stats:
@@ -77,8 +75,8 @@ function playMany(n: number) {
     totalTime = totalEnd - totalStart;
     const averageGameTime = gameTimes.reduce((a, b) => a + b, 0) / gameTimes.length;
     const averageTurnTime = totalTime / totalTurns;
-    const wWins = wins.filter(v => v == 'w').length;
-    const bWins = wins.filter(v => v == 'b').length;
+    const wWins = wins.filter((v) => v == "w").length;
+    const bWins = wins.filter((v) => v == "b").length;
     const wStrat = newGame().wStrategy;
     const bStrat = newGame().bStrategy;
 
@@ -86,7 +84,7 @@ function playMany(n: number) {
     Total time: ${totalTime.toFixed(2)} ms
     Average game time: ${averageGameTime.toFixed(2)} ms
     Total turns: ${totalTurns}
-    Average turns: ${totalTurns/gameTimes.length}
+    Average turns: ${totalTurns / gameTimes.length}
     Average turn time: ${averageTurnTime.toFixed(2)} ms
     White (${wStrat}): ${wWins}
     Black (${bStrat}): ${bWins}
@@ -102,21 +100,21 @@ if (MEASURE_PERF) {
 var TIME_LIMIT = 10000; // ms
 (1).times(() => playMany(1));
 
-console.log(`Function stats:`)
-let loglines = []
+console.log(`Function stats:`);
+let loglines = [];
 for (let f in runtimeStats) {
-  let calls = runtimeStats[f]
-  let total = calls.reduce((a,b) => a+b,0)
+  let calls = runtimeStats[f];
+  let total = calls.reduce((a, b) => a + b, 0);
   let count = calls.length;
   let avg = total / count;
-  let text = `(${(100*total/totalTime).toFixed(2)}%) [${f}]: ${count} calls, ${avg.toFixed(4)}ms avg, ${total.toFixed(2)}ms total`
+  let text = `(${((100 * total) / totalTime).toFixed(2)}%) [${f}]: ${count} calls, ${avg.toFixed(4)}ms avg, ${total.toFixed(2)}ms total`;
   if (calls.cacheMisses) {
-    text += `\n\tmissed cache ${calls.cacheMisses}/${count} on calls (${(100*calls.cacheMisses/count).toFixed(3)}% miss)`;
+    text += `\n\tmissed cache ${calls.cacheMisses}/${count} on calls (${((100 * calls.cacheMisses) / count).toFixed(3)}% miss)`;
   }
-  loglines.push([total,  text]);
+  loglines.push([total, text]);
 }
 // print sorted by total time
-loglines.sort(([sizea, _],[sizeb, __]) => sizea - sizeb);
+loglines.sort(([sizea, _], [sizeb, __]) => sizea - sizeb);
 loglines.forEach(([size, text]) => console.log(text));
 
 // histories.forEach(h => {

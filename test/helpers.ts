@@ -73,6 +73,7 @@ const arbitraryGame = fc
     };
   });
 
-const genGame = () => fc.sample(arbitraryGame, { seed: 10, numRuns: 1})[0]
+const genGame = () => fc.sample(arbitraryGame, { seed: 10, numRuns: 1 })[0];
+const genGames = (n) => fc.sample(arbitraryGame, { seed: 10, numRuns: n });
 
-export { arbitraryGame, genGame }
+export { arbitraryGame, genGame, genGames };

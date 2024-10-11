@@ -1,11 +1,11 @@
-import { run, bench, compact, summary, group } from "mitata"
-import { newGame, cloneGame, WHITE } from '../src/backgammon.ts'
+import { run, bench, compact, summary, group } from "mitata";
+import { newGame, cloneGame, WHITE } from "../src/backgammon.ts";
 
 // everything is a primitive except the positions typedarray
-// copy is relatively cheap... 
+// copy is relatively cheap...
 // but what's the cheapest?
 function spread(game: Game): Game {
-  return {...game, positions: new Uint8Array(game.positions)}
+  return { ...game, positions: new Uint8Array(game.positions) };
 }
 
 function clone(game: Game): Game {
@@ -15,7 +15,7 @@ function clone(game: Game): Game {
 function assign(game: Game): Game {
   const obj = Object.assign({}, game);
   obj.positions = new Uint8Array(obj.positions);
-  return obj
+  return obj;
 }
 
 function literal(game: Game): Game {
@@ -27,7 +27,7 @@ function literal(game: Game): Game {
     turn: game.turn,
     positions: new Uint8Array(game.positions),
     cube: game.cube,
-  }
+  };
 }
 
 summary(() => {
@@ -53,6 +53,6 @@ summary(() => {
   bench("Object.assign", () => {
     assign(initial);
   });
-})
+});
 
 await run();

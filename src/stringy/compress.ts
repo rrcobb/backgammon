@@ -1,7 +1,7 @@
 // allow compressing and decompressing game states
 // allow compressing/decompressing a series of moves -- a game history
 // reading and writing these to files
-import { Player, Game, newGame } from './game'
+import { Player, Game, newGame } from "./game";
 
 type TurnBinary = Uint8Array;
 type GameHistory = Uint8Array;
@@ -23,26 +23,24 @@ export function toBinary(game: Game): TurnBinary {
 
   // Whose turn: a whole darn byte
   let currentTurn = game.turn;
-  let turnByte = currentTurn === 'w' ? WHITE : BLACK;
+  let turnByte = currentTurn === "w" ? WHITE : BLACK;
   result[byteIndex++] = turnByte;
 
   // bar: 4 bits white, then 4 bits black
-  let whitebar = game.bar.filter(p => p === 'w').length;
-  let blackbar = game.bar.filter(p => p === 'b').length;
+  let whitebar = game.bar.filter((p) => p === "w").length;
+  let blackbar = game.bar.filter((p) => p === "b").length;
   let barByte = (whitebar << 4) + blackbar;
   result[byteIndex++] = barByte;
- 
+
   // doubling cube
   // TODO
-  // currently, just push a 0 byte 
-  byteIndex++
+  // currently, just push a 0 byte
+  byteIndex++;
 
   // Positions
   for (let i = 0; i < game.positions.length; i++) {
     const p = game.positions[i];
-    result[byteIndex++] = p.length > 0
-      ? (p[0] === 'w' ? WHITE : BLACK) << 4 | p.length
-      : 0;
+    result[byteIndex++] = p.length > 0 ? ((p[0] === "w" ? WHITE : BLACK) << 4) | p.length : 0;
   }
 
   return result;
@@ -52,43 +50,58 @@ export function fromBinary(view: TurnBinary): Game {
   let game = newGame(); // default to a new game's settings
   let byteIndex = 0;
   // turn - byte 1
-  game.turn = view[byteIndex++] == WHITE ? 'w' : 'b';
+  game.turn = view[byteIndex++] == WHITE ? "w" : "b";
 
   // bar: doesn't perfectly roundtrip
   // the Game representation can mix the order of black and white in the bar -- maybe that's weird
   let barByte = view[byteIndex++];
-  let blackBarCount = barByte & 0b11110000; // mask off white 
+  let blackBarCount = barByte & 0b11110000; // mask off white
   let whiteBarCount = barByte >> 4; // top 4 bits
-  game.bar = [...new Array(blackBarCount).fill('b'), ...new Array(whiteBarCount).fill('w')]
- 
+  game.bar = [...new Array(blackBarCount).fill("b"), ...new Array(whiteBarCount).fill("w")];
+
   // cube
   // TODO: when we do the cube...
-  game.cube = 1
-  byteIndex++
+  game.cube = 1;
+  byteIndex++;
 
   // positions
-  game.positions = (new Array(24).fill(null)).map(_ => []);
+  game.positions = new Array(24).fill(null).map((_) => []);
   for (let pos of game.positions) {
     let byte = view[byteIndex++];
-    let player = (byte & PLAYER_MASK) >> 4 == WHITE ? 'w' : 'b';
-    let count = byte & (~PLAYER_MASK);
-    pos.push(...Array(count).fill(player))
+    let player = (byte & PLAYER_MASK) >> 4 == WHITE ? "w" : "b";
+    let count = byte & ~PLAYER_MASK;
+    pos.push(...Array(count).fill(player));
   }
 
   // reconstruct home
-  let wCount = 0; let bCount = 0;
-  for (let p of game.bar) { if (p == 'w') { wCount++ } else { bCount++ } }
-  for (let pos of game.positions) {
-    for (let p of pos) { if (p == 'w') { wCount++ } else { bCount++ } }
+  let wCount = 0;
+  let bCount = 0;
+  for (let p of game.bar) {
+    if (p == "w") {
+      wCount++;
+    } else {
+      bCount++;
+    }
   }
-  game.wHome = Array(15 - wCount).fill('w');
-  game.bHome = Array(15 - bCount).fill('b');
+  for (let pos of game.positions) {
+    for (let p of pos) {
+      if (p == "w") {
+        wCount++;
+      } else {
+        bCount++;
+      }
+    }
+  }
+  game.wHome = Array(15 - wCount).fill("w");
+  game.bHome = Array(15 - bCount).fill("b");
 
-  return game
+  return game;
 }
 
 export function gameHistory(turns: TurnBinary[]): GameHistory {
-  if (turns.length > 0 && turns[0].byteLength != GAME_BYTES) { throw new Error("turns bytelength is wrong") }
+  if (turns.length > 0 && turns[0].byteLength != GAME_BYTES) {
+    throw new Error("turns bytelength is wrong");
+  }
 
   let totalByteLength = turns.length * GAME_BYTES;
   let view = new Uint8Array(totalByteLength);
@@ -104,9 +117,9 @@ export function gameHistory(turns: TurnBinary[]): GameHistory {
 // Compression
 // uses bun's zlib deflate
 export function compress(binary: Uint8Array): Uint8Array {
-  return Bun.deflateSync(binary)
+  return Bun.deflateSync(binary);
 }
 
 export function decompress(compressed: Uint8Array): Uint8Array {
-  return Bun.inflateSync(compressed)
+  return Bun.inflateSync(compressed);
 }

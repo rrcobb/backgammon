@@ -1,29 +1,29 @@
-import type { Result, Player, Game } from './backgammon'
-import { constants as c, helpers as h } from './backgammon'
-import { evaluate, factors as f } from './evaluationFns'
+import type { Result, Player, Game } from "./backgammon";
+import { constants as c, helpers as h } from "./backgammon";
+import { evaluate, factors as f } from "./evaluationFns";
 
 type Strategy = (options: Result[]) => Result;
 
 // handful of random-ish strategies
 const first = (options: Result[]) => options && options[0];
-const second = (options: Result[]) => options && options[1] || options[0];
+const second = (options: Result[]) => (options && options[1]) || options[0];
 const last = (options: Result[]) => options && options[options.length - 1];
-function random(options: Result[]): Result { 
+function random(options: Result[]): Result {
   let choice = options[Math.floor(Math.random() * options.length)];
-  return choice
+  return choice;
 }
 
 var randi = 0;
 const pseudorandom = (options: Result[]) => {
-  return options && options[(randi++) % options.length]
-}
+  return options && options[randi++ % options.length];
+};
 
 var i = 0;
 function cheapmod(options: Result[]): Result {
   i = (i & 0b00011111) + 1;
   const index = i & (options.length - 1);
-  let choice = options && options[index]
-  return choice
+  let choice = options && options[index];
+  return choice;
 }
 
 // strategies use an evaluation function (depth = 0)
@@ -32,9 +32,9 @@ function useEval(evalFn: EvaluationFunction): Strategy {
     if (!options) return;
     return options.reduce((best, current) => {
       const player = current[1].turn;
-      return evalFn(current[1], player) > evalFn(best[1], player) ? current : best
+      return evalFn(current[1], player) > evalFn(best[1], player) ? current : best;
     });
-  }
+  };
 }
 
 const safety = useEval(evaluate(f.safetyFactors));
@@ -46,20 +46,20 @@ function useExpectimax(evalFunc, startDepth) {
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
     if (depth === 0 || h.checkWinner(game)) {
       let result = evalFunc(game, game.turn);
-      return result; 
+      return result;
     }
 
     // there's a chance node in between players
     let total = 0;
     for (let roll of c.ALL_ROLLS) {
       const moves = h.validMoves(game, roll);
-      const scores = []
+      const scores = [];
       for (let r of moves) {
-        let nextGame = r[1]
-        scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer))
+        let nextGame = r[1];
+        scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer));
       }
       let score = isMaxPlayer ? Math.max(...scores) : Math.min(...scores);
-      total += score
+      total += score;
     }
     const result = total / c.ALL_ROLLS.length;
     return result;
@@ -73,10 +73,10 @@ function useExpectimax(evalFunc, startDepth) {
       let score = expectimax(game, startDepth - 1, false);
       if (score > maxScore) {
         maxScore = score;
-        maxOption = option
+        maxOption = option;
       }
     }
-    return maxOption
+    return maxOption;
   }
 
   return _expecti;
@@ -86,5 +86,5 @@ const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
 const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
 const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
 
-const Strategies = { random, safety, aggressive, balanced, claude, balancedExpecti, claudeExpecti }
-export { Strategies, useExpectimax }
+const Strategies = { random, safety, aggressive, balanced, claude, balancedExpecti, claudeExpecti };
+export { Strategies, useExpectimax };

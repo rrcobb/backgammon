@@ -1,7 +1,7 @@
 import * as fc from "fast-check";
 import { describe, it, expect } from "bun:test";
 import { helpers as h, constants as c } from "../src/backgammon.ts";
-import { arbitraryGame } from './helpers'
+import { arbitraryGame } from "./helpers";
 
 // Property-based test
 describe("Dice roll validity", () => {
@@ -66,15 +66,9 @@ describe("validMoves correct number of pieces", () => {
         const opponent = game.turn === c.WHITE ? c.BLACK : c.WHITE;
 
         return moves.every(([_, nextState]) => {
-          const whiteCount =
-            nextState.wBar +
-            nextState.wHome +
-            nextState.positions.reduce((sum, pos) => sum + (pos & c.WHITE ? pos & 0x0f : 0), 0);
+          const whiteCount = nextState.wBar + nextState.wHome + nextState.positions.reduce((sum, pos) => sum + (pos & c.WHITE ? pos & 0x0f : 0), 0);
 
-          const blackCount =
-            nextState.bBar +
-            nextState.bHome +
-            nextState.positions.reduce((sum, pos) => sum + (pos & c.BLACK ? pos & 0x0f : 0), 0);
+          const blackCount = nextState.bBar + nextState.bHome + nextState.positions.reduce((sum, pos) => sum + (pos & c.BLACK ? pos & 0x0f : 0), 0);
 
           return whiteCount === 15 && blackCount === 15;
         });

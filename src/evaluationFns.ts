@@ -1,5 +1,5 @@
-import type { Result, Player, Game } from './backgammon'
-import { constants as c, helpers as h } from './backgammon'
+import type { Result, Player, Game } from "./backgammon";
+import { constants as c, helpers as h } from "./backgammon";
 type EvaluationFunction = (game: Game, player: Player) => number;
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) => (game, player) => {
@@ -24,7 +24,7 @@ const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) =
   score += detectPrimes(game, player) * f.primeReward;
 
   return score;
-}
+};
 
 function detectPrimes(game: Game, player: Player): number {
   let primeCount = 0;
@@ -52,7 +52,7 @@ const safetyFactors = {
   blotPenalty: 5,
   pointsReward: 1,
   primeReward: 0,
-}
+};
 type Factors = typeof safetyFactors;
 const aggressiveFactors: Factors = {
   barPenalty: 1,
@@ -62,7 +62,7 @@ const aggressiveFactors: Factors = {
   blotPenalty: 0,
   pointsReward: 0,
   primeReward: 5,
-}
+};
 const balancedFactors: Factors = {
   barPenalty: 2,
   barReward: 4,
@@ -71,7 +71,7 @@ const balancedFactors: Factors = {
   blotPenalty: 1,
   pointsReward: 2,
   primeReward: 5,
-}
+};
 const claudeFactors: Factors = {
   barPenalty: 15,
   barReward: 9,
@@ -79,9 +79,9 @@ const claudeFactors: Factors = {
   homePenalty: 7,
   blotPenalty: 4,
   pointsReward: 4,
-  primeReward: 8
-}
+  primeReward: 8,
+};
 
-const factors = { safetyFactors, aggressiveFactors, balancedFactors, claudeFactors }
+const factors = { safetyFactors, aggressiveFactors, balancedFactors, claudeFactors };
 
-export { evaluate, factors }
+export { evaluate, factors };

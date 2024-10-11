@@ -42,7 +42,8 @@ div.home {
   text-align: center;
 }
 
-.top, .bottom {
+.top,
+.bottom {
   display: flex;
   margin-left: 40px;
 }
@@ -96,7 +97,7 @@ div.home {
 }
 
 .angle::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -159,14 +160,14 @@ body {
 }
 
 #play {
-    padding: 1rem;
-    margin: 1rem;
-    border-radius: 4px;
-    font-size: 18px;
+  padding: 1rem;
+  margin: 1rem;
+  border-radius: 4px;
+  font-size: 18px;
 }
 
 button {
-  padding: .5rem;
+  padding: 0.5rem;
   border-radius: 4px;
   margin: 4px 6rem;
   font-size: 14px;

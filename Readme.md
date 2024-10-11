@@ -3,12 +3,14 @@
 Implementing a fast core game logic, so that I can mess around with some AI ideas. Eventually aiming to explore mcts, if I can get there.
 
 ## devlog - JS missing an enum type is bad, missing a tuple is also frustrating...
-  - E.g. I end up with a string for the player turn, which is so wack
+
+- E.g. I end up with a string for the player turn, which is so wack
 - Type signatures would also be helpful... maybe just doing it in typescript would be nicer...
 - The UI is a bit of a hassle, and maybe also takes away focus from some of the AI pieces. Feels fragile, quite CSS dependent. Rendering in a Canvas seems like it'd be more... natural? idk
 - I kinda want to do it in Rust too... maybe next! (if the speed really is that limiting...)
 
 Question:
+
 - how deep can the tree search go? How fast is this?
 
 ## Reading / References
@@ -22,25 +24,28 @@ Question:
 
 - depth of search will in fact be limited by how fast things are!
 - if the evaluation function is really quick, then no worries
-  
+
 Is there low-hanging fruit for making things faster?
+
 - representation changes to stop all the array shuffling :check:
 - reimplement in a compiled lang / interface to the js API of the game
 
 Qs:
+
 - how long are we allowed to take to pick move? (1s limit? 5s limit? more?)
 - what are the kinds of search strategies we want to use?
 
 ## Perf Log: Implementation 1 (strings in arrays)
 
 checkpoint 1: evaluation is about half an ms
-  - we do... how many evaluations per expectimax level?
-    - 36 rolls, several moves per roll (3? 5?)
-    - so, 36 times the average work... or 17.5ms per turn
-    - for a game of ~80 turns, it should be about 1600ms, so 1.6s
-    - but instead, it's... much longer -- close to 4s per turn, 283s!
-    - what's happening?
-    - way more calls than I thought?
+
+- we do... how many evaluations per expectimax level?
+  - 36 rolls, several moves per roll (3? 5?)
+  - so, 36 times the average work... or 17.5ms per turn
+  - for a game of ~80 turns, it should be about 1600ms, so 1.6s
+  - but instead, it's... much longer -- close to 4s per turn, 283s!
+  - what's happening?
+  - way more calls than I thought?
 - after some perf attention, things are faster, though not fast
 - evaluating the game state hundreds of thousands of time is slow!
 - changing the representation to the compressed version for manipulation is likely better for speed too
@@ -68,6 +73,7 @@ update : 594021 calls, 0.0039ms on average, 2316.67ms in total
 ```
 
 A full game, in a minute:
+
 ```
 Overall stats:
     Total time: 59403.34 ms
@@ -112,6 +118,7 @@ lots of subtle bugs in the ordering of the handling of different parts of the ga
 Tests first, then benchmarking, then refactoring.
 
 Refactoring!
+
 - so nice to refactor under test
 - hopefully, refactoring will enable some isolation of hotspots so that we can speed up more carefully
 
@@ -120,16 +127,17 @@ Refactoring!
 Benchmarking. Additional speedups.
 
 Further speedups:
+
 - bar and home currently reference string properties in the game object. Could likely speed up those accesses if we didn't do that. Since we have to switch on strings, and we have a number, which always copies instead of passing as a reference.
 - we create and keep around a lot of duplicate game objects. might not be needed
 - walking through every result to add further steps to it seems potentially slow; maybe we could keep a list of positions with pieces, and check that instead? Maybe we could check through the rolls, and then subsequently re-check with the positions that the rolls give us access to. Maybe that's the same as we have now?
 - handle doubles specially, so it's not in our core loop?
 
-## Testing 
+## Testing
 
 hurrah for testing!
 
-Using bun test is really nice. 
+Using bun test is really nice.
 
 The tests run in 26ms, give me high confidence, and are (relatively) easy to write. I mostly have to think about what moves are actually valid, not anything else.
 
@@ -244,6 +252,7 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
 - show the valid moves
 - show what moved (arrows? shadows?)
 - display about the strategy
+
   - show probabilities of hits / other events
   - show current pip count for each player
   - highlight blots
@@ -262,13 +271,15 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
 ## More ideas for speed improvements... pending finding legit hotspots
 
 can do movement checks in a bitwise op:
+
 - 25 positions for starts
 - 25 valid ends
 - shift by roll
 - ^ or & depending on how the positions are represented
 - bearing off and multiple rolls trickier
 
-can represent a game in 140 bits: 
+can represent a game in 140 bits:
+
 - 24 x 5 bits (player, how many pieces)
 - white and black bar, a byte
 - white and black home, a byte
@@ -283,3 +294,45 @@ a strategy takes a board state and die roll and outputs a new board state
 a big nn could have just a game as input layer, or it could have game plus more info from eg a planning system
 
 would the nn work on the compressed stream?
+
+## some benchmarking
+
+```sh
+$ bun bench/strategies.ts
+clk: ~3.45 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun 1.1.30 (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+genGame                   8.96 µs/iter   8.33 µs  34.81 µs █▂▁▁▁▁▁▁▁▁▁
+generateRoll              5.40 ns/iter   5.28 ns  10.44 ns ▂█▁▁▁▁▁▁▁▁▁
+game + roll + validMo..  51.23 µs/iter  31.26 µs 274.57 µs █▂▁▁▁▂▁▁▁▁▁
+
+-------------------------------------- -------------------------------
+apply safety to 10 sc..  44.55 µs/iter  43.98 µs   █
+                (38.06 µs … 196.38 µs)  91.63 µs ▄▆█▄▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply aggressive to 1..  46.73 µs/iter  45.94 µs   █
+                (38.00 µs … 210.24 µs)  98.06 µs ▂▁█▄▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply balanced to 10 ..  45.54 µs/iter  45.17 µs  █▄
+                (38.74 µs … 233.18 µs)  98.03 µs ▆██▅▃▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply claude to 10 sc..  45.98 µs/iter  47.07 µs                   █▃
+                 (41.04 µs … 47.91 µs)  47.49 µs ▆▁▁▁▁▁▁▁▁▆▁▁▆▆▁▁▆▁██▁
+apply balancedExpecti.. 907.56 ms/iter 894.36 ms    █
+                  (851.74 ms … 1.01 s) 994.49 ms ▅▁▁█▅█▅▁▁▁▁▁▁▁▁▁▁▁▁▅▁
+apply claudeExpecti t.. 992.98 ms/iter    1.00 s          ▃    █
+                  (959.21 ms … 1.03 s)    1.01 s ▆▁▁▁▁▁▁▁▁█▆▁▁▁█▆▁▆▆▁▁
+
+summary
+  apply safety to 10 scenarios
+   1.02x faster than apply balanced to 10 scenarios
+   1.03x faster than apply claude to 10 scenarios
+   1.05x faster than apply aggressive to 10 scenarios
+   20370.92x faster than apply balancedExpecti to 10 scenarios
+   22288.18x faster than apply claudeExpecti to 10 scenarios
+```
+
+Insights:
+
+- validMoves generation takes about as long as the evaluation function
+- expectimax does (roughly) 20k calls to validMoves (??)
