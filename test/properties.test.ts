@@ -132,3 +132,46 @@ describe("validMoves correct number of pieces", () => {
     );
   });
 });
+
+describe("Bar entry priority", () => {
+  it("should correctly handle moves based on the number of pieces on the bar", () => {
+    fc.assert(
+      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+        const moves = h.validMoves(game, roll);
+        const currentPlayer = game.turn;
+        const barCount = currentPlayer === c.WHITE ? game.wBar : game.bBar;
+
+        return moves.every(([move, _]) => {
+          let barMoves = 0;
+          let nonBarMoves = 0;
+          let total = 0;
+          let totalNonNull = 0;
+
+          move.forEach(movement => {
+            total++;
+            if (movement !== null) {
+              totalNonNull++;
+              if (movement[0] === c.BAR) {
+                barMoves++;
+              } else {
+                nonBarMoves++;
+              }
+            }
+          });
+          // have to have 2 or 4 die
+          if (total != 2 && total != 4) { return false }
+          // can't move more off the bar than are on the bar
+          if (barMoves > barCount) { return false }
+
+          const barCleared = (barMoves == barCount);
+          if (barCleared) {
+            return (nonBarMoves == totalNonNull - barMoves) &&
+              (nonBarMoves <= total - barCount);
+          } else {
+            return nonBarMoves == 0;
+          }
+        });
+      })
+    );
+  });
+});
