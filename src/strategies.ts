@@ -1,6 +1,6 @@
 import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
-import { evaluate, factors as f } from "./evaluationFns";
+import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
 
 type Strategy = (options: Result[]) => Result;
 
@@ -42,16 +42,25 @@ const aggressive = useEval(evaluate(f.aggressiveFactors));
 const balanced = useEval(evaluate(f.balancedFactors));
 const claude = useEval(evaluate(f.claudeFactors));
 
+/*
+  Add some global counters to keep track of calls to different functions.
+*/
+export const counts = { validMoves: 0, evalFunc: 0, expectimax: 0 };
+export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
+
 function useExpectimax(evalFunc, startDepth) {
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
+    counts.expectimax++;
     if (depth === 0 || h.checkWinner(game)) {
       let result = evalFunc(game, game.turn);
+      counts.evalFunc++;
       return result;
     }
 
     // there's a chance node in between players
     let total = 0;
     for (let roll of c.ALL_ROLLS) {
+      counts.validMoves++;
       const moves = h.validMoves(game, roll);
       const scores = [];
       for (let r of moves) {
@@ -86,5 +95,5 @@ const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
 const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
 const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
 
-const Strategies = { random, safety, aggressive, balanced, claude, balancedExpecti, claudeExpecti };
+const Strategies = { random, balanced, claude, claudeExpecti };
 export { Strategies, useExpectimax };

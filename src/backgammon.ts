@@ -115,6 +115,16 @@ const ALL_ROLLS: Roll[] = (function () {
   return dice.flatMap((d1) => dice.map((d2) => [d1, d2] as Roll));
 })();
 
+const UNIQUE_ROLLS: Roll[] = (function () {
+  let uniq: Roll[] = [];
+  for (let i = 1; i < 7; i++) {
+    for (let j = i; j < 7; j++) {
+      uniq.push([i, j] as Roll);
+    }
+  }
+  return uniq;
+})();
+
 type Slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23;
 type Start = typeof BAR | Slot;
 type Dest = typeof HOME | Slot;
@@ -272,7 +282,7 @@ function validMoves(game: Game, r: Roll): Result[] {
   return final;
 }
 
-// prettier-ignore:nextline
+// prettier-ignore
 function boardMoves(m, g, rolls, start, player, opponent, direction, seen, results) {
   // if the position is owned by the player
   if (checkStart(g, start, player)) {
@@ -348,7 +358,7 @@ function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) 
   }
 }
 
-function addMovement(movement, movements, game, available, seen, results, rollIndex): number {
+function addMovement(movement, movements, game, available, seen, results, rollIndex) {
   const moves: Movement[] = movements.concat([movement]);
   const key = movesKey(moves);
   if (seen.has(key)) return; // skip if we've done these exact moves before
@@ -365,7 +375,7 @@ function addMovement(movement, movements, game, available, seen, results, rollIn
 
 // bearing off if home + homeboard total 15 pieces
 // last (first) 6 positions are the home board
-function _isBearingOff(player: Player, game: Game) {
+function isBearingOff(player: Player, game: Game) {
   let pieceCount, start;
   if (player == WHITE) {
     if (game.wBar) return false;
@@ -383,10 +393,6 @@ function _isBearingOff(player: Player, game: Game) {
   }
   return 15 == pieceCount;
 }
-// var so we hoist
-const isBearingOff = memoize(_isBearingOff, function key(player, game) {
-  return "" + game._id + player;
-});
 
 function show(moves: Move): string {
   let result = "(";
@@ -418,7 +424,7 @@ function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   return [move, next];
 }
 
-const constants = { ALL_ROLLS, WHITE, BLACK, HOME, BAR, dice };
+const constants = { ALL_ROLLS, UNIQUE_ROLLS, WHITE, BLACK, HOME, BAR, dice };
 
 const helpers = {
   isBearingOff,

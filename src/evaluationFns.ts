@@ -1,6 +1,6 @@
 import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
-type EvaluationFunction = (game: Game, player: Player) => number;
+export type EvaluationFunction = (game: Game, player: Player) => number;
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) => (game, player) => {
   let score = 0;

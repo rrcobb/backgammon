@@ -297,6 +297,8 @@ would the nn work on the compressed stream?
 
 ## some benchmarking
 
+a couple runs of the benchmarking script (bench/strategies.ts)
+
 ```sh
 $ bun bench/strategies.ts
 clk: ~3.45 GHz
@@ -305,34 +307,54 @@ runtime: bun 1.1.30 (x64-darwin)
 
 benchmark              avg (min … max) p75   p99    (min … top 1%)
 -------------------------------------- -------------------------------
-genGame                   8.96 µs/iter   8.33 µs  34.81 µs █▂▁▁▁▁▁▁▁▁▁
-generateRoll              5.40 ns/iter   5.28 ns  10.44 ns ▂█▁▁▁▁▁▁▁▁▁
-game + roll + validMo..  51.23 µs/iter  31.26 µs 274.57 µs █▂▁▁▁▂▁▁▁▁▁
+genGame                   8.97 µs/iter   8.45 µs  29.84 µs ▆█▁▁▁▁▁▁▁▁▁
+generateRoll              5.34 ns/iter   5.28 ns   8.73 ns ▁█▁▁▁▁▁▁▁▁▁
+game + roll + validMo..  70.55 µs/iter  47.45 µs 378.06 µs █▂▁▁▁▂▁▁▁▁▁
 
 -------------------------------------- -------------------------------
-apply safety to 10 sc..  44.55 µs/iter  43.98 µs   █
-                (38.06 µs … 196.38 µs)  91.63 µs ▄▆█▄▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-apply aggressive to 1..  46.73 µs/iter  45.94 µs   █
-                (38.00 µs … 210.24 µs)  98.06 µs ▂▁█▄▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-apply balanced to 10 ..  45.54 µs/iter  45.17 µs  █▄
-                (38.74 µs … 233.18 µs)  98.03 µs ▆██▅▃▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
-apply claude to 10 sc..  45.98 µs/iter  47.07 µs                   █▃
-                 (41.04 µs … 47.91 µs)  47.49 µs ▆▁▁▁▁▁▁▁▁▆▁▁▆▆▁▁▆▁██▁
-apply balancedExpecti.. 907.56 ms/iter 894.36 ms    █
-                  (851.74 ms … 1.01 s) 994.49 ms ▅▁▁█▅█▅▁▁▁▁▁▁▁▁▁▁▁▁▅▁
-apply claudeExpecti t.. 992.98 ms/iter    1.00 s          ▃    █
-                  (959.21 ms … 1.03 s)    1.01 s ▆▁▁▁▁▁▁▁▁█▆▁▁▁█▆▁▆▆▁▁
+apply balanced to 10 ..  71.23 µs/iter  72.53 µs    █▄
+                (58.49 µs … 285.57 µs) 126.79 µs ▃▇▆██▅▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply claude to 10 sc..  77.66 µs/iter  74.61 µs   █▄
+                  (58.87 µs … 2.48 ms) 160.23 µs ▂▄██▂▁▁▁▁▂▂▂▁▁▁▁▁▁▁▁▁
+apply claudeExpecti t..    2.26 s/iter    2.31 s  █
+                     (2.09 s … 2.57 s)    2.49 s █████▁▁█▁█▁█▁▁▁▁▁▁▁█▁
 
 summary
-  apply safety to 10 scenarios
-   1.02x faster than apply balanced to 10 scenarios
-   1.03x faster than apply claude to 10 scenarios
-   1.05x faster than apply aggressive to 10 scenarios
-   20370.92x faster than apply balancedExpecti to 10 scenarios
-   22288.18x faster than apply claudeExpecti to 10 scenarios
+  apply balanced to 10 scenarios
+   1.09x faster than apply claude to 10 scenarios
+   31711.94x faster than apply claudeExpecti to 10 scenarios
+claudeExpecti (total, 10 scenarios):{"validMoves":15552,"evalFunc":1161508,"expectimax":1161940}
+claudeExpecti (scenario 1):{"validMoves":4320,"evalFunc":427004,"expectimax":427124}
+claudeExpecti (scenario 2):{"validMoves":1872,"evalFunc":50585,"expectimax":50637}
+claudeExpecti (scenario 3):{"validMoves":36,"evalFunc":1634,"expectimax":1635}
+claudeExpecti (scenario 4):{"validMoves":1836,"evalFunc":142934,"expectimax":142985}
+claudeExpecti (scenario 5):{"validMoves":36,"evalFunc":795,"expectimax":796}
+claudeExpecti (scenario 6):{"validMoves":1620,"evalFunc":98175,"expectimax":98220}
+claudeExpecti (scenario 7):{"validMoves":36,"evalFunc":3285,"expectimax":3286}
+claudeExpecti (scenario 8):{"validMoves":720,"evalFunc":94369,"expectimax":94389}
+claudeExpecti (scenario 9):{"validMoves":1764,"evalFunc":74413,"expectimax":74462}
+claudeExpecti (scenario 10):{"validMoves":3312,"evalFunc":268314,"expectimax":268406}```
+
+summary
+  apply balanced to 10 scenarios
+   1.02x faster than apply claude to 10 scenarios
+   25292.69x faster than apply claudeExpecti to 10 scenarios
+claudeExpecti (total, 10 scenarios):{"validMoves":10188,"evalFunc":756668,"expectimax":756951}
+claudeExpecti (scenario 1 [19 options]):{"validMoves":684,"evalFunc":76897,"expectimax":76916}
+claudeExpecti (scenario 2 [48 options]):{"validMoves":1728,"evalFunc":66262,"expectimax":66310}
+claudeExpecti (scenario 3 [1 options]):{"validMoves":36,"evalFunc":1300,"expectimax":1301}
+claudeExpecti (scenario 4 [62 options]):{"validMoves":2232,"evalFunc":201971,"expectimax":202033}
+claudeExpecti (scenario 5 [1 options]):{"validMoves":36,"evalFunc":795,"expectimax":796}
+claudeExpecti (scenario 6 [39 options]):{"validMoves":1404,"evalFunc":81707,"expectimax":81746}
+claudeExpecti (scenario 7 [30 options]):{"validMoves":1080,"evalFunc":81914,"expectimax":81944}
+claudeExpecti (scenario 8 [9 options]):{"validMoves":324,"evalFunc":43550,"expectimax":43559}
+claudeExpecti (scenario 9 [6 options]):{"validMoves":216,"evalFunc":10139,"expectimax":10145}
+claudeExpecti (scenario 10 [68 options]):{"validMoves":2448,"evalFunc":192133,"expectimax":192201}
 ```
 
-Insights:
+Note: the benchmark script uses  a seed for the random number generator, so the scenarios are the same every time. Hence, there are the same number of calls to each function for each scenario, based on the seed. The benching is random, but repeatable.
 
-- validMoves generation takes about as long as the evaluation function
-- expectimax does (roughly) 20k calls to validMoves (??)
+Insights:
+- validMoves generation takes about 10x as long as it takes to run the evaluation function as many times as needed for the scenario.
+- as sort of expected, we call validMoves 36 times for each of the options passed in
+- there is a lot of variation in the number of valid moves! from 1 to 68 in the 10 scenarios.

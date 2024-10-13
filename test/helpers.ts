@@ -7,8 +7,8 @@ const playerPieces = fc.array(fc.nat(25), { minLength: 15, maxLength: 15 });
 
 // map to the players' game positions 15 times
 const arbitraryGame = fc
-  .tuple(playerPieces, playerPieces, fc.oneof(fc.constant(c.WHITE), fc.constant(c.BLACK)))
-  .map(([firstPieces, secondPieces, first]) => {
+  .tuple(playerPieces, playerPieces, fc.oneof(fc.constant(c.WHITE), fc.constant(c.BLACK)), fc.nat())
+  .map(([firstPieces, secondPieces, first, id]) => {
     let oneBar = 0,
       twoBar = 0,
       oneHome = 0,
@@ -63,6 +63,7 @@ const arbitraryGame = fc
     }
 
     return {
+      _id: id,
       bBar,
       wBar,
       bHome,
