@@ -209,19 +209,25 @@ type ResultArray = TempResult[] & { minRolls: number };
 
 function memoize(fn: Function, keyFn: (...args: any[]) => any) {
   const cache = new Map();
-  return function (...args: any[]) {
+  const memoizedVersion = function (...args: any[]) {
     const key = keyFn(...args);
     if (cache.has(key)) {
+      counts.eCacheHit++;
       return cache.get(key);
     }
     const result = fn(...args);
     cache.set(key, result);
     return result;
   };
+  memoizedVersion.clearCache = () => cache.clear();
+  return memoizedVersion;
 }
 
+const validMoves = _validMoves; // memoize(_validMoves, (game, roll) => game.key + roll[0] + roll[1]);
+
 // prettier-ignore
-function validMoves(game: Game, r: Roll): Result[] {
+function _validMoves(game: Game, r: Roll): Result[] {
+  counts.validMoves++
   // doubles act twice
   const doubles = r[0] == r[1];
   let rolls = doubles ? [r[0], r[0], r[0], r[0]] : r;

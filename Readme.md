@@ -416,3 +416,15 @@ So, roughly in line with what we expected.
 
 Next... some pruning?
 Nah, some caching!
+
+## Caching results
+Lots of experiments with Caching. Lots of memoizing. a lot of failed experiments.
+What worked?
+- key the game by a computation of the state
+- compute that when the state changes (not on demand)
+- memoize the validMoves calls (not expectimax)
+
+It's relatively easy, at least in benchmarks, to get tons of cache hits....
+
+Fuck, I think I was just fooling myself in the benchmark again! Keeping the cache between bench runs means tons of hits, so the games run really fast...
+in the benchmark.

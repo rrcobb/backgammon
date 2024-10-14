@@ -89,12 +89,11 @@ function useExpectimax(evalFunc, startDepth) {
     // there's a chance node in between players
     let total = 0;
     for (let roll of c.UNIQUE_ROLLS) {
-      counts.validMoves++;
       const moves = h.validMoves(game, roll);
       const scores: number[] = [];
       for (let r of moves) {
         let nextGame = r[1];
-        scores.push(cachedExpectimax(nextGame, depth - 1, !isMaxPlayer));
+        scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer));
       }
       let score = isMaxPlayer ? Math.max(...scores) : Math.min(...scores);
       let rollWeight = roll[0] === roll[1] ? 1 : 2;
@@ -121,7 +120,7 @@ function useExpectimax(evalFunc, startDepth) {
     let maxOption = null;
     for (let option of options) {
       let [move, game] = option;
-      let score = cachedExpectimax(game, startDepth - 1, false);
+      let score = expectimax(game, startDepth - 1, false);
       if (score > maxScore) {
         maxScore = score;
         maxOption = option;

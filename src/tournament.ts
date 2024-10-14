@@ -81,4 +81,4 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
 }
 
-roundRobinTournament(Strategies, 5);
+roundRobinTournament(Strategies, 10);

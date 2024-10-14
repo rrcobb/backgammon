@@ -4,17 +4,17 @@ import { Strategies, counts } from "../src/strategies";
 import { genRolls } from "../test/helpers.ts";
 
 const rolls = genRolls(1000);
-let rollCounter = 0;
-const getRoll = () => {
-  if (rollCounter >= rolls.length) {
-    rollCounter = 0;
-  }
-  return rolls[rollCounter++];
-};
 
-summary(() => {
+(() => {
   const LIMIT = 1e5;
   const playGame = (s) => {
+    let rollCounter = 0;
+    const getRoll = () => {
+      if (rollCounter >= rolls.length) {
+        rollCounter = 0;
+      }
+      return rolls[rollCounter++];
+    };
     let game = h.newGame();
     game.turn = c.WHITE;
     let turnCount = 0;
@@ -23,7 +23,7 @@ summary(() => {
       const [move, next] = h.takeTurn(game, roll, s);
       game = next;
       turnCount++;
-      if (turnCount > LIMIT) break;
+      if (turnCount > LIMIT) 1 / 0;
     }
   };
 
@@ -33,7 +33,7 @@ summary(() => {
       playGame(strategy);
     });
   });
-});
+})();
 
 await run();
 console.log(JSON.stringify(counts));
