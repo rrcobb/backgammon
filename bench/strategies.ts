@@ -1,5 +1,5 @@
 import { run, bench, boxplot, barplot, lineplot, compact, summary, group } from "mitata";
-import { constants as c, helpers as h, clearCache } from "../src/backgammon.ts";
+import { constants as c, helpers as h } from "../src/backgammon.ts";
 import { genGame, genGames, genRoll } from "../test/helpers";
 import { Strategies, counts, resetCounts } from "../src/strategies";
 
@@ -45,7 +45,6 @@ await run();
 
 Object.keys(Strategies).forEach((name) => {
   resetCounts();
-  clearCache();
   let strategy = Strategies[name];
   scenarios.forEach((scenario) => {
     strategy(scenario);
@@ -59,9 +58,8 @@ Object.keys(Strategies).forEach((name) => {
   let i = 1;
   for (let scenario of scenarios) {
     resetCounts();
-    clearCache();
     strategy(scenario);
     if (counts.validMoves == 0) continue;
-    console.log(`${name} (scenario ${i++} [_id ${games[i - 2]._id} ${scenario.length} options]):` + JSON.stringify(counts));
+    console.log(`${name} (scenario ${i++} [${scenario.length} options]):` + JSON.stringify(counts));
   }
 });

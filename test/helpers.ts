@@ -63,7 +63,7 @@ const arbitraryGame = fc
     }
 
     return {
-      _id: id,
+      // _id: id,
       bBar,
       wBar,
       bHome,

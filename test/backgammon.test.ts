@@ -5,7 +5,7 @@ function expectGamesEqual(actual, expected) {
   expect(actual).toEqual(
     expect.objectContaining({
       ...expected,
-      _id: expect.any(Number),
+      // _id: expect.any(Number),
     }),
   );
 }

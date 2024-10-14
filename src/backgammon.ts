@@ -10,9 +10,10 @@ type Player = typeof WHITE | typeof BLACK;
 
 let gameIdCounter = 0;
 interface Game {
-  _id: number; // for use as a key
+  // _id: number; // for use as a key
   // home and bars are really each a half a byte
   // using numbers for now for ease
+  key: string;
   bBar: number;
   wBar: number;
   bHome: number;
@@ -60,8 +61,9 @@ const INITIAL_POSITIONS: Game["positions"] = new Uint8Array([
 ]);
 
 function newGame(): Game {
-  return {
-    _id: gameIdCounter++,
+  let temp = {
+    // _id: gameIdCounter++,
+    key: "",
     bBar: 0,
     wBar: 0,
     bHome: 0,
@@ -70,13 +72,21 @@ function newGame(): Game {
     positions: new Uint8Array(INITIAL_POSITIONS),
     cube: 1,
   };
+  temp.key = generateGameKey(temp);
+  return temp;
+}
+
+const decoder = new TextDecoder();
+export function generateGameKey(game: Game): string {
+  return "" + game.bBar + game.wBar + game.bHome + game.wHome + game.turn + game.cube + decoder.decode(game.positions);
 }
 
 // everything is a primitive except the positions typedarray
 // copy for uint8array is relatively cheap
 function cloneGame(game: Game): Game {
   return {
-    _id: gameIdCounter++,
+    // _id: gameIdCounter++,
+    key: game.key,
     bBar: game.bBar,
     wBar: game.wBar,
     bHome: game.bHome,
@@ -167,6 +177,7 @@ function apply(game: Game, movement: Movement): void {
       game.positions[dest] = player | (current + 1);
     }
   }
+  game.key = generateGameKey(game);
 }
 
 // is a spot valid to move to?
@@ -210,7 +221,7 @@ function memoize(fn: Function, keyFn: (...args: any[]) => any) {
 }
 
 // prettier-ignore
-function _validMoves(game: Game, r: Roll): Result[] {
+function validMoves(game: Game, r: Roll): Result[] {
   // doubles act twice
   const doubles = r[0] == r[1];
   let rolls = doubles ? [r[0], r[0], r[0], r[0]] : r;
@@ -412,43 +423,6 @@ function show(moves: Move): string {
 }
 
 type Strategy = (options: Result[]) => Result;
-
-/* attempt memoization */
-const validMovesCache = new Map<string, Result[]>();
-export const clearCache = () => {
-  validMovesCache.clear();
-};
-
-function mValidMoves(game: Game, roll: Roll): Result[] {
-  const key = `${game._id}-${roll[0]}-${roll[1]}`;
-  if (validMovesCache.has(key)) {
-    counts.vmCacheHit++;
-    return validMovesCache.get(key)!;
-  }
-  const result = _validMoves(game, roll);
-  validMovesCache.set(key, result);
-  return result;
-}
-
-const MAX_CACHE_SIZE = 100;
-function lValidMoves(game: Game, roll: Roll): Result[] {
-  const key = `${game._id}-${roll[0]}-${roll[1]}`;
-  if (validMovesCache.has(key)) {
-    counts.vmCacheHit++;
-    const value = validMovesCache.get(key)!;
-    validMovesCache.delete(key);
-    validMovesCache.set(key, value);
-    return value;
-  }
-  const result = _validMoves(game, roll);
-  if (validMovesCache.size >= MAX_CACHE_SIZE) {
-    validMovesCache.delete(validMovesCache.keys().next().value);
-  }
-  validMovesCache.set(key, result);
-  return result;
-}
-
-const validMoves = _validMoves;
 
 function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = validMoves(game, roll);
