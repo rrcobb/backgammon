@@ -45,7 +45,7 @@ const claude = useEval(evaluate(f.claudeFactors));
 /*
   Add some global counters to keep track of calls to different functions.
 */
-export const counts = { validMoves: 0, evalFunc: 0, expectimax: 0 };
+export const counts = { validMoves: 0, vmCacheHit: 0, evalFunc: 0, expectimax: 0 };
 export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
 
 function useExpectimax(evalFunc, startDepth) {
@@ -59,7 +59,7 @@ function useExpectimax(evalFunc, startDepth) {
 
     // there's a chance node in between players
     let total = 0;
-    for (let roll of c.ALL_ROLLS) {
+    for (let roll of c.UNIQUE_ROLLS) {
       counts.validMoves++;
       const moves = h.validMoves(game, roll);
       const scores = [];
@@ -68,9 +68,10 @@ function useExpectimax(evalFunc, startDepth) {
         scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer));
       }
       let score = isMaxPlayer ? Math.max(...scores) : Math.min(...scores);
-      total += score;
+      let rollWeight = roll[0] === roll[1] ? 1 : 2;
+      total += score * rollWeight;
     }
-    const result = total / c.ALL_ROLLS.length;
+    const result = total / 36; // c.ALL_ROLLS.length;
     return result;
   }
 

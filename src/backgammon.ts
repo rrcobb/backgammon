@@ -1,3 +1,5 @@
+import { counts } from "./strategies";
+
 // binary game representation
 const WHITE = 0b00010000;
 const BLACK = 0b00100000;
@@ -208,7 +210,7 @@ function memoize(fn: Function, keyFn: (...args: any[]) => any) {
 }
 
 // prettier-ignore
-function validMoves(game: Game, r: Roll): Result[] {
+function _validMoves(game: Game, r: Roll): Result[] {
   // doubles act twice
   const doubles = r[0] == r[1];
   let rolls = doubles ? [r[0], r[0], r[0], r[0]] : r;
@@ -410,6 +412,43 @@ function show(moves: Move): string {
 }
 
 type Strategy = (options: Result[]) => Result;
+
+/* attempt memoization */
+const validMovesCache = new Map<string, Result[]>();
+export const clearCache = () => {
+  validMovesCache.clear();
+};
+
+function mValidMoves(game: Game, roll: Roll): Result[] {
+  const key = `${game._id}-${roll[0]}-${roll[1]}`;
+  if (validMovesCache.has(key)) {
+    counts.vmCacheHit++;
+    return validMovesCache.get(key)!;
+  }
+  const result = _validMoves(game, roll);
+  validMovesCache.set(key, result);
+  return result;
+}
+
+const MAX_CACHE_SIZE = 100;
+function lValidMoves(game: Game, roll: Roll): Result[] {
+  const key = `${game._id}-${roll[0]}-${roll[1]}`;
+  if (validMovesCache.has(key)) {
+    counts.vmCacheHit++;
+    const value = validMovesCache.get(key)!;
+    validMovesCache.delete(key);
+    validMovesCache.set(key, value);
+    return value;
+  }
+  const result = _validMoves(game, roll);
+  if (validMovesCache.size >= MAX_CACHE_SIZE) {
+    validMovesCache.delete(validMovesCache.keys().next().value);
+  }
+  validMovesCache.set(key, result);
+  return result;
+}
+
+const validMoves = _validMoves;
 
 function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = validMoves(game, roll);

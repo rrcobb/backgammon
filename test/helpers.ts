@@ -76,5 +76,7 @@ const arbitraryGame = fc
 
 const genGame = () => fc.sample(arbitraryGame, { seed: 10, numRuns: 1 })[0];
 const genGames = (n) => fc.sample(arbitraryGame, { seed: 10, numRuns: n });
+const genRoll = () => fc.sample(fc.constantFrom(...c.ALL_ROLLS), { seed: 10, numRuns: 1 })[0];
+const genRolls = (n) => fc.sample(fc.constantFrom(...c.ALL_ROLLS), { seed: 10, numRuns: n });
 
-export { arbitraryGame, genGame, genGames };
+export { arbitraryGame, genGame, genGames, genRoll, genRolls };

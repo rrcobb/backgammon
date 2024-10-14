@@ -1,33 +1,33 @@
 import { run, bench, boxplot, barplot, lineplot, compact, summary, group } from "mitata";
-import { constants as c, helpers as h } from "../src/backgammon.ts";
-import { genGame, genGames } from "../test/helpers";
+import { constants as c, helpers as h, clearCache } from "../src/backgammon.ts";
+import { genGame, genGames, genRoll } from "../test/helpers";
 import { Strategies, counts, resetCounts } from "../src/strategies";
-
-compact(() => {
-  bench("genGame", () => {
-    genGame();
-  });
-
-  bench("generateRoll", () => {
-    h.generateRoll();
-  });
-
-  // conceptually: this happens for each strategy run
-  // so, subtract it (and the apply step) from the strategy time
-  bench("game + roll + validMoves", () => {
-    const game = genGame();
-    const roll = h.generateRoll();
-    h.validMoves(game, roll);
-  });
-});
 
 const SCENARIOS = 10;
 const games = genGames(SCENARIOS);
 const scenarios = games.map((g) => {
-  let roll = h.generateRoll();
+  let roll = genRoll();
   let options = h.validMoves(g, roll);
   return options;
 });
+
+// compact(() => {
+//   bench("genGame (test fc arb)", () => {
+//     genGame();
+//   });
+
+//   bench("generateRoll", () => {
+//     h.generateRoll();
+//   });
+
+//   // conceptually: this happens for each strategy run
+//   // so, subtract it (and the apply step) from the strategy time
+//   bench("game + roll + validMoves", () => {
+//     const game = genGame();
+//     const roll = h.generateRoll();
+//     h.validMoves(game, roll);
+//   });
+// });
 
 summary(() => {
   Object.keys(Strategies).forEach((name) => {
@@ -45,6 +45,7 @@ await run();
 
 Object.keys(Strategies).forEach((name) => {
   resetCounts();
+  clearCache();
   let strategy = Strategies[name];
   scenarios.forEach((scenario) => {
     strategy(scenario);
@@ -58,8 +59,9 @@ Object.keys(Strategies).forEach((name) => {
   let i = 1;
   for (let scenario of scenarios) {
     resetCounts();
+    clearCache();
     strategy(scenario);
     if (counts.validMoves == 0) continue;
-    console.log(`${name} (scenario ${i++} [${scenario.length} options]):` + JSON.stringify(counts));
+    console.log(`${name} (scenario ${i++} [_id ${games[i - 2]._id} ${scenario.length} options]):` + JSON.stringify(counts));
   }
 });

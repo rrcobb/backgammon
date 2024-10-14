@@ -334,27 +334,85 @@ claudeExpecti (scenario 7):{"validMoves":36,"evalFunc":3285,"expectimax":3286}
 claudeExpecti (scenario 8):{"validMoves":720,"evalFunc":94369,"expectimax":94389}
 claudeExpecti (scenario 9):{"validMoves":1764,"evalFunc":74413,"expectimax":74462}
 claudeExpecti (scenario 10):{"validMoves":3312,"evalFunc":268314,"expectimax":268406}```
+```
+
+```sh
+$ bun bench/strategies.ts
+clk: ~3.55 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun 1.1.30 (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+apply balanced to 10 ..  42.56 µs/iter  41.60 µs   █
+                (35.35 µs … 217.83 µs)  82.47 µs ▂▁█▆▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply claude to 10 sc..  42.69 µs/iter  43.39 µs            █
+                 (40.38 µs … 45.08 µs)  44.72 µs █▁█▁▁█▁█▁█▁██▁█▁█▁▁▁▁
+apply claudeExpecti t..    1.19 s/iter    1.22 s                   ██
+                     (1.09 s … 1.29 s)    1.23 s █▁█▁▁▁▁██▁▁▁▁▁█▁█▁██▁
 
 summary
   apply balanced to 10 scenarios
-   1.02x faster than apply claude to 10 scenarios
-   25292.69x faster than apply claudeExpecti to 10 scenarios
-claudeExpecti (total, 10 scenarios):{"validMoves":10188,"evalFunc":756668,"expectimax":756951}
-claudeExpecti (scenario 1 [19 options]):{"validMoves":684,"evalFunc":76897,"expectimax":76916}
-claudeExpecti (scenario 2 [48 options]):{"validMoves":1728,"evalFunc":66262,"expectimax":66310}
-claudeExpecti (scenario 3 [1 options]):{"validMoves":36,"evalFunc":1300,"expectimax":1301}
-claudeExpecti (scenario 4 [62 options]):{"validMoves":2232,"evalFunc":201971,"expectimax":202033}
-claudeExpecti (scenario 5 [1 options]):{"validMoves":36,"evalFunc":795,"expectimax":796}
-claudeExpecti (scenario 6 [39 options]):{"validMoves":1404,"evalFunc":81707,"expectimax":81746}
-claudeExpecti (scenario 7 [30 options]):{"validMoves":1080,"evalFunc":81914,"expectimax":81944}
-claudeExpecti (scenario 8 [9 options]):{"validMoves":324,"evalFunc":43550,"expectimax":43559}
-claudeExpecti (scenario 9 [6 options]):{"validMoves":216,"evalFunc":10139,"expectimax":10145}
-claudeExpecti (scenario 10 [68 options]):{"validMoves":2448,"evalFunc":192133,"expectimax":192201}
+   1x faster than apply claude to 10 scenarios
+   27980.36x faster than apply claudeExpecti to 10 scenarios
+claudeExpecti (total, 10 scenarios):{"validMoves":10764,"evalFunc":806345,"expectimax":806644}
+claudeExpecti (scenario 1 [_id 1335920278 17 options]):{"validMoves":612,"evalFunc":67057,"expectimax":67074}
+claudeExpecti (scenario 2 [_id 702452313 22 options]):{"validMoves":792,"evalFunc":21379,"expectimax":21401}
+claudeExpecti (scenario 3 [_id 2147483620 1 options]):{"validMoves":36,"evalFunc":1301,"expectimax":1302}
+claudeExpecti (scenario 4 [_id 1 68 options]):{"validMoves":2448,"evalFunc":176720,"expectimax":176788}
+claudeExpecti (scenario 5 [_id 1260141739 1 options]):{"validMoves":36,"evalFunc":178,"expectimax":179}
+claudeExpecti (scenario 6 [_id 30 60 options]):{"validMoves":2160,"evalFunc":131955,"expectimax":132015}
+claudeExpecti (scenario 7 [_id 25 1 options]):{"validMoves":36,"evalFunc":2019,"expectimax":2020}
+claudeExpecti (scenario 8 [_id 2147483634 22 options]):{"validMoves":792,"evalFunc":104748,"expectimax":104770}
+claudeExpecti (scenario 9 [_id 347289096 7 options]):{"validMoves":252,"evalFunc":8360,"expectimax":8367}
+claudeExpecti (scenario 10 [_id 2147483622 100 options]):{"validMoves":3600,"evalFunc":292628,"expectimax":292728}
 ```
 
 Note: the benchmark script uses  a seed for the random number generator, so the scenarios are the same every time. Hence, there are the same number of calls to each function for each scenario, based on the seed. The benching is random, but repeatable.
+  NOT actually true! Not clear why, but I'm getting different scenarios for the seed. Dang!
 
 Insights:
 - validMoves generation takes about 10x as long as it takes to run the evaluation function as many times as needed for the scenario.
 - as sort of expected, we call validMoves 36 times for each of the options passed in
 - there is a lot of variation in the number of valid moves! from 1 to 68 in the 10 scenarios.
+
+Improvements:
+- we can iterate through the (21) unique rolls instead of all the rolls (36). Duh.
+- Should be a ~40% speedup?
+
+```sh
+$ bun bench/strategies.ts
+clk: ~3.63 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun 1.1.30 (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+apply balanced to 10 ..  41.93 µs/iter  43.64 µs █
+                (37.74 µs … 229.71 µs)  84.20 µs █▃▄▇▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply claude to 10 sc..  41.93 µs/iter  43.28 µs █▅
+                (37.82 µs … 220.31 µs)  83.37 µs ██▅█▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+apply claudeExpecti t.. 832.74 ms/iter 846.46 ms            █
+               (785.70 ms … 894.90 ms) 883.51 ms █▁██▁██▁█▁▁██▁█▁▁▁▁▁▁
+
+summary
+  apply claude to 10 scenarios
+   1x faster than apply balanced to 10 scenarios
+   19858.89x faster than apply claudeExpecti to 10 scenarios
+claudeExpecti (total, 10 scenarios):{"validMoves":6279,"evalFunc":570412,"expectimax":570711}
+claudeExpecti (scenario 1 [_id 1335920278 17 options]):{"validMoves":357,"evalFunc":48732,"expectimax":48749}
+claudeExpecti (scenario 2 [_id 702452313 22 options]):{"validMoves":462,"evalFunc":13679,"expectimax":13701}
+claudeExpecti (scenario 3 [_id 2147483620 1 options]):{"validMoves":21,"evalFunc":852,"expectimax":853}
+claudeExpecti (scenario 4 [_id 1 68 options]):{"validMoves":1428,"evalFunc":125403,"expectimax":125471}
+claudeExpecti (scenario 5 [_id 1260141739 1 options]):{"validMoves":21,"evalFunc":163,"expectimax":164}
+claudeExpecti (scenario 6 [_id 30 60 options]):{"validMoves":1260,"evalFunc":90909,"expectimax":90969}
+claudeExpecti (scenario 7 [_id 25 1 options]):{"validMoves":21,"evalFunc":1443,"expectimax":1444}
+claudeExpecti (scenario 8 [_id 2147483634 22 options]):{"validMoves":462,"evalFunc":76931,"expectimax":76953}
+claudeExpecti (scenario 9 [_id 347289096 7 options]):{"validMoves":147,"evalFunc":5628,"expectimax":5635}
+claudeExpecti (scenario 10 [_id 2147483622 100 options]):{"validMoves":2100,"evalFunc":206672,"expectimax":206772}
+```
+
+So, roughly in line with what we expected.
+
+Next... some pruning?
+Nah, some caching!
