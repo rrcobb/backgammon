@@ -90,11 +90,15 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     let total = 0;
     for (let roll of c.UNIQUE_ROLLS) {
       const moves = h.validMoves(game, roll);
-      const scores: number[] = [];
+      // let extremum = isMaxPlayer ? -Infinity : Infinity;
+      let scores = [];
       for (let r of moves) {
         let nextGame = r[1];
-        scores.push(expectimax(nextGame, depth - 1, !isMaxPlayer));
+        let score = expectimax(nextGame, depth - 1, !isMaxPlayer);
+        scores.push(score);
+        // extremum = isMaxPlayer !== score > extremum ? extremum : score;
       }
+      // let score = extremum;
       let score = isMaxPlayer ? Math.max(...scores) : Math.min(...scores);
       let rollWeight = roll[0] === roll[1] ? 1 : 2;
       total += score * rollWeight;
@@ -177,8 +181,70 @@ const useAbPruning = (evalFunc: EvaluationFunction, startDepth: number) => {
   return _expecti;
 };
 
+function sample<T>(list: Array<T>, sampleSize: number): Array<T> {
+  if (list.length < sampleSize) return list;
+
+  const s: Set<T> = new Set();
+  for (let i = 0; i < sampleSize; i++) {
+    let index = Math.floor(Math.random() * list.length);
+    s.add(list[index]);
+  }
+  return Array.from(s);
+}
+
+function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
+  const SAMPLE_ROLLS = 4;
+  const SAMPLE_MOVES = 4;
+  function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
+    counts.expectimax++;
+
+    if (depth === 0 || h.checkWinner(game)) {
+      let result = evalFunc(game, game.turn);
+      counts.evalFunc++;
+      return result;
+    }
+
+    // there's a chance node in between players
+    let total = 0;
+    let weights = 0;
+    let sampleRolls = sample(c.UNIQUE_ROLLS, SAMPLE_ROLLS);
+    for (let roll of sampleRolls) {
+      const moves = sample(h.validMoves(game, roll), SAMPLE_MOVES);
+      let extremum = isMaxPlayer ? -Infinity : Infinity;
+      for (let r of moves) {
+        let nextGame = r[1];
+        let score = expectimax(nextGame, depth - 1, !isMaxPlayer);
+
+        // typescript likes !== for XOR; this would be ^ otherwise
+        extremum = isMaxPlayer !== score > extremum ? extremum : score;
+      }
+      let rollWeight = roll[0] === roll[1] ? 1 : 2;
+      weights += rollWeight;
+      total += extremum * rollWeight;
+    }
+    const result = total / weights;
+    return result;
+  }
+
+  function _expecti(options: Result[]): Result {
+    let maxScore = -Infinity;
+    let maxOption = null;
+    for (let option of options) {
+      let [move, game] = option;
+      let score = expectimax(game, startDepth - 1, false);
+      if (score > maxScore) {
+        maxScore = score;
+        maxOption = option;
+      }
+    }
+    return maxOption;
+  }
+
+  return _expecti;
+}
 const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
 const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
+const balancedSpeedExpecti = useSpeedExpectimax(evaluate(f.balancedFactors), 2);
 const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
 const balancedAbPrune = useAbPruning(evaluate(f.balancedFactors), 2);
 const claudeAbPrune = useAbPruning(evaluate(f.claudeFactors), 2);
@@ -187,9 +253,11 @@ const Strategies = {
   random,
   // claude,
   // claudeExpecti,
-  // claudeAbPrune,
   balanced,
   balancedExpecti,
-  balancedAbPrune,
+  balancedSpeedExpecti,
+  // pruning isn't very good after all
+  // claudeAbPrune,
+  // balancedAbPrune,
 };
 export { Strategies, useExpectimax, useAbPruning };

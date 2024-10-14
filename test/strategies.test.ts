@@ -73,7 +73,6 @@ test("Expectimax chooses optimal move with some risk when bearing off", () => {
   ]);
 });
 
-// attempt to test pruning
 test("pruning should return the same options as normal expectimax", () => {
   const game = h.newGame();
   game.turn = c.WHITE;
