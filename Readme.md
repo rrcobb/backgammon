@@ -428,3 +428,34 @@ It's relatively easy, at least in benchmarks, to get tons of cache hits....
 
 Fuck, I think I was just fooling myself in the benchmark again! Keeping the cache between bench runs means tons of hits, so the games run really fast...
 in the benchmark.
+
+Okay so, status:
+- speedups from caching have all been illusory
+- expectimax seems to lose to the plain evaluation functions that it wraps when I run a tournament
+- things are a mite faster, but still pretty slow
+
+The way to debug might be to do some rollouts, and see where the strategies differ, and see what is causing them to differ. honestly, I don't know that I care enough about expectimax to fix it! It's not what we're here for anyways.
+
+Why do we think the expectimax is doing worse in the tournaments?
+
+- bad luck?
+- not enough iterations / depth?
+- is my tournament code busted?
+- Is the lookahead evaluation broken in some way?
+  - does the turn switching mean that I'm not evaluating correctly?
+- am I messing up the averaging?
+
+Let's just get on to some pruning, evaluation fn improvements, neural nets, and mcts; I don't think more optimization is helping.
+
+### a/b pruning
+
+Gist: don't look deeper in places we know aren't as good as the other places. Direct the search with some bounds. That means we can search deeper.
+
+Ideas:
+- when we're looking at opponents rolls, can we look at each individual roll (1-6) instead of looking at all 21 unique combos?
+- can we sample from the 21, instead of running all of them?
+
+### mcts
+
+- Can we generate a random move faster than getting all the valid moves and picking?
+- If we're calling validMoves as we roll out the game, should we call the eval fn?

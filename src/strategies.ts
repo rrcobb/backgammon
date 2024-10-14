@@ -45,7 +45,7 @@ const claude = useEval(evaluate(f.claudeFactors));
 /*
   Add some global counters to keep track of calls to different functions.
 */
-export const counts = { validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0 };
+export const counts = { pruned: 0, validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0 };
 export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
 
 class LRUCache<K, V> {
@@ -76,7 +76,7 @@ class LRUCache<K, V> {
   }
 }
 
-function useExpectimax(evalFunc, startDepth) {
+function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
     counts.expectimax++;
 
@@ -103,18 +103,6 @@ function useExpectimax(evalFunc, startDepth) {
     return result;
   }
 
-  const expectimaxCache = new LRUCache<string, number>(200);
-  function cachedExpectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
-    const key = game.key + depth + isMaxPlayer;
-    if (expectimaxCache.has(key)) {
-      counts.eCacheHit++;
-      return expectimaxCache.get(key)!;
-    }
-    let result = expectimax(game, depth, isMaxPlayer);
-    expectimaxCache.set(key, result);
-    return result;
-  }
-
   function _expecti(options: Result[]): Result {
     let maxScore = -Infinity;
     let maxOption = null;
@@ -132,9 +120,73 @@ function useExpectimax(evalFunc, startDepth) {
   return _expecti;
 }
 
+const useAbPruning = (evalFunc: EvaluationFunction, startDepth: number) => {
+  function expectimax(game: Game, depth: number, isMaxPlayer: boolean, alpha: number = -Infinity, beta: number = Infinity): number {
+    counts.expectimax++;
+
+    if (depth === 0 || h.checkWinner(game)) {
+      counts.evalFunc++;
+      return evalFunc(game, game.turn);
+    }
+
+    let total = 0;
+    for (let roll of c.UNIQUE_ROLLS) {
+      const moves = h.validMoves(game, roll);
+      let rollScore = isMaxPlayer ? -Infinity : Infinity;
+      for (let [_, nextGame] of moves) {
+        let score = expectimax(nextGame, depth - 1, !isMaxPlayer, alpha, beta);
+        if (isMaxPlayer) {
+          // max
+          rollScore = score > rollScore ? score : rollScore;
+          alpha = rollScore > alpha ? rollScore : alpha;
+        } else {
+          // min
+          rollScore = rollScore < score ? rollScore : score;
+          beta = rollScore < beta ? rollScore : beta;
+        }
+        if (alpha >= beta) {
+          counts.pruned++;
+          break; // Prune
+        }
+      }
+      let rollWeight = roll[0] === roll[1] ? 1 : 2;
+      total += rollScore * rollWeight;
+    }
+    return total / 36;
+  }
+
+  function _expecti(options: Result[]): Result {
+    let maxScore = -Infinity;
+    let maxOption = null;
+    let alpha = -Infinity;
+    for (let option of options) {
+      let [move, game] = option;
+      let score = expectimax(game, startDepth - 1, false, alpha, Infinity);
+      if (score > maxScore) {
+        maxScore = score;
+        maxOption = option;
+      }
+      alpha = score > alpha ? score : alpha;
+    }
+    return maxOption;
+  }
+
+  return _expecti;
+};
+
 const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
 const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
 const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
+const balancedAbPrune = useAbPruning(evaluate(f.balancedFactors), 2);
+const claudeAbPrune = useAbPruning(evaluate(f.claudeFactors), 2);
 
-const Strategies = { random, balanced, claude, claudeExpecti };
-export { Strategies, useExpectimax };
+const Strategies = {
+  random,
+  // claude,
+  // claudeExpecti,
+  // claudeAbPrune,
+  balanced,
+  balancedExpecti,
+  balancedAbPrune,
+};
+export { Strategies, useExpectimax, useAbPruning };

@@ -29,7 +29,7 @@ function roundRobinTournament(strategies, games: number) {
   const names = Object.keys(strategies) as StrategyName[];
   const results: number[][] = names.map(() => new Array(names.length).fill(0));
 
-  const totalMatches = names.length * names.length;
+  const totalMatches = names.length * (names.length - 1);
   let currentMatch = 0;
   process.stdout.write(`${games} games per round. Strategies: ${names.join(", ")}\n`);
   const startTime = performance.now();
@@ -39,6 +39,10 @@ function roundRobinTournament(strategies, games: number) {
       currentMatch++;
       process.stdout.write("\x1b[2K\r");
       process.stdout.write(`[${currentMatch}/${totalMatches}] ${String(names[i]).padEnd(10)} vs ${String(names[j]).padEnd(10)} `);
+      if (i == j) {
+        results[i][i] = 0.5;
+        continue;
+      }
       const [aWins, bWins] = compareTwo(names[i], names[j], games);
       results[j][i] = aWins / games;
       results[i][j] = bWins / games;

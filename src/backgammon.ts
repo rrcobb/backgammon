@@ -223,7 +223,8 @@ function memoize(fn: Function, keyFn: (...args: any[]) => any) {
   return memoizedVersion;
 }
 
-const validMoves = _validMoves; // memoize(_validMoves, (game, roll) => game.key + roll[0] + roll[1]);
+const validMoves = _validMoves;
+// const validMoves = memoize(_validMoves, (game, roll) => game.key + roll[0] + roll[1]);
 
 // prettier-ignore
 function _validMoves(game: Game, r: Roll): Result[] {

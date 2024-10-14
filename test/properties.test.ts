@@ -1,7 +1,9 @@
 import * as fc from "fast-check";
 import { describe, it, expect } from "bun:test";
-import { helpers as h, constants as c } from "../src/backgammon.ts";
 import { arbitraryGame } from "./helpers";
+
+import { helpers as h, constants as c } from "../src/backgammon.ts";
+import { useExpectimax, useAbPruning } from "../src/strategies.ts";
 
 // Property-based test
 describe("Dice roll validity", () => {
@@ -121,4 +123,24 @@ describe("Bar entry priority", () => {
       }),
     );
   });
+});
+
+describe("ab pruning matches expectimax", () => {
+  const evalFn = (g) => {
+    const val = g.wHome * 10 - g.bHome * 10 + g.wBar * -50 + g.bBar * 50;
+    return g.turn == c.WHITE ? val : -val;
+  };
+  const expectimax = useExpectimax(evalFn, 3);
+  const abPruning = useAbPruning(evalFn, 3);
+  fc.assert(
+    fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+      const moves = h.validMoves(game, roll);
+      const currentPlayer = game.turn;
+
+      const abResult = abPruning(moves);
+      const expectiResult = expectimax(moves);
+
+      expect(abResult).toEqual(expectiResult);
+    }),
+  );
 });

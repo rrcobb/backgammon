@@ -27,12 +27,14 @@ const rolls = genRolls(1000);
     }
   };
 
-  Object.entries(Strategies).map(([name, strategy]) => {
-    if (name == "random") return;
-    bench(`${name} whole game`, () => {
-      playGame(strategy);
+  Object.entries(Strategies)
+    .reverse()
+    .map(([name, strategy]) => {
+      if (name == "random") return;
+      bench(`${name} whole game`, () => {
+        playGame(strategy);
+      });
     });
-  });
 })();
 
 await run();
