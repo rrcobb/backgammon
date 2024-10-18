@@ -133,18 +133,21 @@ const useAbPruning = (evalFunc: EvaluationFunction, startDepth: number) => {
     for (let roll of c.UNIQUE_ROLLS) {
       const moves = h.validMoves(game, roll);
       let rollScore = isMaxPlayer ? -Infinity : Infinity;
+      // scope these here to not pollute other rolls
+      let a = alpha;
+      let b = beta;
       for (let [_, nextGame] of moves) {
         let score = expectimax(nextGame, depth - 1, !isMaxPlayer, alpha, beta);
         if (isMaxPlayer) {
           // max
           rollScore = score > rollScore ? score : rollScore;
-          alpha = rollScore > alpha ? rollScore : alpha;
+          a = rollScore > a ? rollScore : a;
         } else {
           // min
           rollScore = rollScore < score ? rollScore : score;
-          beta = rollScore < beta ? rollScore : beta;
+          b = rollScore < b ? rollScore : b;
         }
-        if (alpha >= beta) {
+        if (a >= b) {
           counts.pruned++;
           break; // Prune
         }

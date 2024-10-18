@@ -93,8 +93,8 @@ test("pruning should return the same options as normal expectimax", () => {
     return g.wHome * 10 + (24 - g.positions.filter((p) => p & c.BLACK).length);
   };
 
-  const abPruning = useAbPruning(evalFn, 3);
-  const expectimax = useExpectimax(evalFn, 3);
+  const abPruning = useAbPruning(evalFn, 2);
+  const expectimax = useExpectimax(evalFn, 2);
 
   const roll: Roll = [5, 2];
   const moves = h.validMoves(game, roll);

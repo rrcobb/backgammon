@@ -1,3 +1,4 @@
+import { expect } from "bun:test";
 import * as fc from "fast-check";
 import { helpers as h, constants as c } from "../src/backgammon.ts";
 
@@ -79,4 +80,13 @@ const genGames = (n) => fc.sample(arbitraryGame, { seed: 10, numRuns: n });
 const genRoll = () => fc.sample(fc.constantFrom(...c.ALL_ROLLS), { seed: 10, numRuns: 1 })[0];
 const genRolls = (n) => fc.sample(fc.constantFrom(...c.ALL_ROLLS), { seed: 10, numRuns: n });
 
-export { arbitraryGame, genGame, genGames, genRoll, genRolls };
+function expectGamesEqual(actual, expected) {
+  expect(actual).toEqual(
+    expect.objectContaining({
+      ...expected,
+      key: expect.any(String),
+    }),
+  );
+}
+
+export { arbitraryGame, genGame, genGames, genRoll, genRolls, expectGamesEqual };

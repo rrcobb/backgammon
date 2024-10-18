@@ -1,14 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { constants as c, helpers as h } from "../src/backgammon.ts";
-
-function expectGamesEqual(actual, expected) {
-  expect(actual).toEqual(
-    expect.objectContaining({
-      ...expected,
-      // _id: expect.any(Number),
-    }),
-  );
-}
+import { expectGamesEqual } from "./helpers.ts";
 
 function blackToEnter(): Game {
   // fiction: black has two on the bar, and white has made 3 points

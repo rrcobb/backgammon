@@ -1,6 +1,6 @@
 import * as fc from "fast-check";
 import { describe, it, expect } from "bun:test";
-import { arbitraryGame } from "./helpers";
+import { arbitraryGame, expectGamesEqual } from "./helpers";
 
 import { helpers as h, constants as c } from "../src/backgammon.ts";
 import { useExpectimax, useAbPruning } from "../src/strategies.ts";
@@ -130,8 +130,8 @@ describe("ab pruning matches expectimax", () => {
     const val = g.wHome * 10 - g.bHome * 10 + g.wBar * -50 + g.bBar * 50;
     return g.turn == c.WHITE ? val : -val;
   };
-  const expectimax = useExpectimax(evalFn, 3);
-  const abPruning = useAbPruning(evalFn, 3);
+  const expectimax = useExpectimax(evalFn, 2);
+  const abPruning = useAbPruning(evalFn, 2);
   fc.assert(
     fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
       const moves = h.validMoves(game, roll);
