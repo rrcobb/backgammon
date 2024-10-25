@@ -43,23 +43,24 @@ summary(() => {
 
 await run();
 
+// enable counters for how many calls we make to different functions
 Object.keys(Strategies).forEach((name) => {
   resetCounts();
   let strategy = Strategies[name];
   scenarios.forEach((scenario) => {
     strategy(scenario);
   });
-  if (counts.validMoves == 0) return;
+  // if (counts.evaluate == 0) return;
   console.log(`${name} (total, ${SCENARIOS} scenarios):` + JSON.stringify(counts));
 });
 
-Object.keys(Strategies).forEach((name) => {
-  let strategy = Strategies[name];
-  let i = 1;
-  for (let scenario of scenarios) {
-    resetCounts();
-    strategy(scenario);
-    if (counts.validMoves == 0) continue;
-    console.log(`${name} (scenario ${i++} [${scenario.length} options]):` + JSON.stringify(counts));
-  }
-});
+// Object.keys(Strategies).forEach((name) => {
+//   let strategy = Strategies[name];
+//   let i = 1;
+//   for (let scenario of scenarios) {
+//     resetCounts();
+//     strategy(scenario);
+//     if (counts.validMoves == 0) continue;
+//     console.log(`${name} (scenario ${i++} [${scenario.length} options]):` + JSON.stringify(counts));
+//   }
+// });

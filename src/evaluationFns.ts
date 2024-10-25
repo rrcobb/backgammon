@@ -1,8 +1,12 @@
 import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
+import { counts } from './strategies';
+
+
 export type EvaluationFunction = (game: Game, player: Player) => number;
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: typeof safetyFactors) => (game, player) => {
+  counts.evaluate += 1;
   let score = 0;
   score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
   score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;

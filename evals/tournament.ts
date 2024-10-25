@@ -1,6 +1,6 @@
-import { constants as c, helpers as h } from "./backgammon";
-import type { Player } from "./backgammon";
-import { Strategies } from "./strategies";
+import { constants as c, helpers as h } from "../src/backgammon";
+import type { Player } from "../src/backgammon";
+import { Strategies } from "../src/strategies";
 
 type StrategyName = keyof typeof Strategies;
 
@@ -9,6 +9,7 @@ function compareTwo(a: StrategyName, b: StrategyName, games: number): [number, n
   let bwins = 0;
 
   for (let i = 0; i < games; i++) {
+    drawProgressBar(i, games);
     let game = h.newGame();
     game.turn = (i % 2 === 0 ? c.WHITE : c.BLACK) as Player;
 
@@ -18,12 +19,37 @@ function compareTwo(a: StrategyName, b: StrategyName, games: number): [number, n
       [, game] = h.takeTurn(game, roll, currentStrategy);
     }
     h.checkWinner(game) === c.WHITE ? awins++ : bwins++;
+    clearProgressBar(i, games)
   }
 
   return [awins, bwins];
 }
 
 const colWidth = 8; // tweak to fit
+
+function drawProgressBar(current, total) {
+    const width = 30;
+    const percent = Math.round((current / total) * 100);
+    const filledWidth = Math.round((current / total) * width);
+    const emptyWidth = width - filledWidth;
+    
+    const filled = "█".repeat(filledWidth);
+    const empty = "░".repeat(emptyWidth);
+    const output = `[${filled}${empty}] ${percent}% (${current}/${total})`;
+    
+    process.stdout.write(output);
+}
+
+function clearProgressBar(current, total) {
+  const percent = Math.round((current / total) * 100);
+  const output = `[${"█".repeat(30)}] ${percent}% (${current}/${total})`;
+  // First move back by the length of the output
+  const backspaces = "\b".repeat(output.length);
+  // Then write spaces to clear old content
+  const spaces = " ".repeat(output.length);
+  // Then move back again and write new content
+  process.stdout.write(backspaces + spaces + backspaces)
+}
 
 function roundRobinTournament(strategies, games: number) {
   const names = Object.keys(strategies) as StrategyName[];

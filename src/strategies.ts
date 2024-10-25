@@ -45,7 +45,7 @@ const claude = useEval(evaluate(f.claudeFactors));
 /*
   Add some global counters to keep track of calls to different functions.
 */
-export const counts = { pruned: 0, validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0 };
+export const counts = { pruned: 0, validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0, evaluate: 0 };
 export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
 
 class LRUCache<K, V> {
@@ -91,7 +91,7 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     for (let roll of c.UNIQUE_ROLLS) {
       const moves = h.validMoves(game, roll);
       // let extremum = isMaxPlayer ? -Infinity : Infinity;
-      let scores = [];
+      const scores: number[] = [];
       for (let r of moves) {
         let nextGame = r[1];
         let score = expectimax(nextGame, depth - 1, !isMaxPlayer);
@@ -192,9 +192,45 @@ function sample<T>(list: Array<T>, sampleSize: number): Array<T> {
   return Array.from(s);
 }
 
+function bestN<T>(list: Array<T>, sampleSize: number, metric: (a: T) => number): Array<T> {
+  if (sampleSize > list.length) return list;
+
+  const best = new Array(sampleSize);
+  const bestScores = new Array(sampleSize).fill(-Infinity);
+
+  for (let item of list) {
+    const score = metric(item);
+    
+    let insertIndex = -1;
+    for (let i = 0; i < sampleSize; i++) {
+      if (score > bestScores[i]) {
+        insertIndex = i;
+        break;
+      }
+    }
+    
+    if (insertIndex !== -1) {
+      // Shift elements to make room for the new item
+      for (let i = sampleSize - 1; i > insertIndex; i--) {
+        best[i] = best[i - 1];
+        bestScores[i] = bestScores[i - 1];
+      }
+      
+      // Insert the new item
+      best[insertIndex] = item;
+      bestScores[insertIndex] = score;
+    }
+  }
+
+  return best;
+}
+
 function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
-  const SAMPLE_ROLLS = 4;
-  const SAMPLE_MOVES = 4;
+  const SAMPLE_ROLLS = 10;
+  const SAMPLE_MOVES = 5;
+
+  const evaluateOption = ([move, game]) => evalFunc(game, game.turn)
+
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
     counts.expectimax++;
 
@@ -209,7 +245,7 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     let weights = 0;
     let sampleRolls = sample(c.UNIQUE_ROLLS, SAMPLE_ROLLS);
     for (let roll of sampleRolls) {
-      const moves = sample(h.validMoves(game, roll), SAMPLE_MOVES);
+      const moves = bestN(h.validMoves(game, roll), SAMPLE_MOVES, evaluateOption);
       let extremum = isMaxPlayer ? -Infinity : Infinity;
       for (let r of moves) {
         let nextGame = r[1];
@@ -226,10 +262,11 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     return result;
   }
 
-  function _expecti(options: Result[]): Result {
+  function _speedExpecti(options: Result[]): Result {
     let maxScore = -Infinity;
     let maxOption = null;
-    for (let option of options) {
+    let sampleOptions = bestN(options, SAMPLE_MOVES, evaluateOption)
+    for (let option of sampleOptions) {
       let [move, game] = option;
       let score = expectimax(game, startDepth - 1, false);
       if (score > maxScore) {
@@ -240,24 +277,34 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     return maxOption;
   }
 
-  return _expecti;
+  return _speedExpecti;
 }
+
 const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
 const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
-const balancedSpeedExpecti = useSpeedExpectimax(evaluate(f.balancedFactors), 2);
 const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
+
+// pruning, which...ugh.
 const balancedAbPrune = useAbPruning(evaluate(f.balancedFactors), 2);
 const claudeAbPrune = useAbPruning(evaluate(f.claudeFactors), 2);
 
+// sampling for speed!
+const speedOne = useSpeedExpectimax(evaluate(f.balancedFactors), 1);
+const balancedSpeedExpecti = useSpeedExpectimax(evaluate(f.balancedFactors), 3);
+const claudeSpeedExpecti = useSpeedExpectimax(evaluate(f.claudeFactors), 3);
+
 const Strategies = {
-  random,
+  // random,
+  // aggressive,
+  // safety,
   // claude,
   // claudeExpecti,
   balanced,
-  balancedExpecti,
+  // balancedExpecti,
+  speedOne,
   balancedSpeedExpecti,
-  // pruning isn't very good after all
-  // claudeAbPrune,
+  // pruning isn't very good...
   // balancedAbPrune,
+  // claudeAbPrune,
 };
-export { Strategies, useExpectimax, useAbPruning };
+export { Strategies, useExpectimax, useAbPruning, useSpeedExpectimax };

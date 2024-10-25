@@ -444,7 +444,36 @@ Ideas:
 - when we're looking at opponents rolls, can we look at each individual roll (1-6) instead of looking at all 21 unique combos?
 - can we sample from the 21, instead of running all of them?
 
-### mcts
+It basically doesn't work. Even when we get some sampling, we basically can't prune enough to make things faster / deeper.
+
+### sampling
+
+Skip lots of the search tree! That'll speed things up...
+
+It does! Doing a fixed 4/21 rolls and 4/N moves speeds the game up dramatically -- like, a 6x speedup or so. Limiting to just 1 roll and evaluating 1 move results in a ~21x speedup.
+
+unfortunately... doesn't really help improve the depth. That's not enough! The slowdown is probably that we are looking at all of the options and running a ply of expectimax on them each, which involves generating all the valid moves from some number of dice rolls for each of them. If we moved the sampling up to the `_expecti` function, we could make sure that we're not exploding quite as badly. (update: this does work! expecti was the source of some of the blowup). Fixing the sampling takes us to ~70x faster than normal expectimax. Try another ply? Let's see it at 3.
+
+Now that we're sampling the moves in the top-level `expecti` search, it's still faster at 3 plys, which is so nice! We could likely improve quality by taking the n best (instead of random n) when we sample.
+
+- this slows things down a bit... but how much?
+- previously, speed with 3 rolls / 10 moves was 1.5x faster, now it's... only 1.3x faster. Seems like not much perf cost!
+
+Quality will also get better with a stronger evaluation function!
+
+### Quality check...
+
+how does sampling do in the tournament (3ply, 3rolls, best 10 moves)?
+
+(should beat everyone, I think...)
+
+Loses to the vanilla 'balanced' evaluation function! Why? Seems like it really shouldn't.
+
+What is going wrong with my expectimax implementations? I feel like something is really flawed! Increasing depth a little through sampling doesn't seem to have made things much better. Maybe my config is bad / tuning is bad? do more sample rolls or more moves? Fewer, but even more depth?
+
+It's unclear -- maybe I'm on net hurting the evaluation by looking at some subset of the future; there's more variability in the future, so we end up comparing scenarios we don't see. Or something. Maybe just a bug in my expectimax implementation.
+
+### mcts thoughts
 
 - Can we generate a random move faster than getting all the valid moves and picking?
 - If we're calling validMoves as we roll out the game, should we call the eval fn?
