@@ -1,5 +1,5 @@
 import { run, bench, compact, summary, group } from "mitata";
-import { newGame, cloneGame, WHITE } from "../src/backgammon.ts";
+import { helpers as h, constants as c } from "../src/backgammon.ts";
 
 // everything is a primitive except the positions typedarray
 // copy is relatively cheap...
@@ -31,11 +31,11 @@ function literal(game: Game): Game {
 }
 
 summary(() => {
-  const initial = newGame();
-  initial.turn = WHITE;
+  const initial = h.newGame();
+  initial.turn = c.WHITE;
 
   bench("newgame", () => {
-    const game = newGame();
+    const game = h.newGame();
   });
 
   bench("spread", () => {

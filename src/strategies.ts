@@ -1,8 +1,6 @@
-import type { Result, Player, Game } from "./backgammon";
+import type { Strategy, Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h, generateGameKey } from "./backgammon";
 import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
-
-type Strategy = (options: Result[]) => Result;
 
 // handful of random-ish strategies
 const first = (options: Result[]) => options && options[0];
