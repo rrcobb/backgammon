@@ -1,4 +1,4 @@
-import { counts } from "./strategies";
+import { counts, Strategy } from "./strategies";
 
 // binary game representation
 const WHITE = 0b00010000;
@@ -8,7 +8,7 @@ const HOME = 0b10000000;
 
 type Player = typeof WHITE | typeof BLACK;
 
-let gameIdCounter = 0;
+// let gameIdCounter = 0;
 interface Game {
   // _id: number; // for use as a key
   // home and bars are really each a half a byte
@@ -110,7 +110,7 @@ function movesKey(moves: Movement[]) {
   return result;
 }
 
-function checkWinner(game: Game) {
+function checkWinner(game: Game): Player | false {
   if (game.bHome == 15) return BLACK;
   if (game.wHome == 15) return WHITE;
   return false;
@@ -429,8 +429,7 @@ function show(moves: Move): string {
   return result;
 }
 
-type Strategy = (options: Result[]) => Result;
-
+// TODO: move generation of valid moves to the strategy
 function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = validMoves(game, roll);
   let choice;
@@ -459,6 +458,6 @@ const helpers = {
 };
 
 // types
-export { Player, Strategy, Game, Result };
+export { Player, Game, Result, Roll };
 
 export { helpers, constants };

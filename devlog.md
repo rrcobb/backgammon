@@ -477,3 +477,14 @@ It's unclear -- maybe I'm on net hurting the evaluation by looking at some subse
 
 - Can we generate a random move faster than getting all the valid moves and picking?
 - If we're calling validMoves as we roll out the game, should we call the eval fn?
+- should we rollout with the eval function?
+  - in theory, if our eval function can predict the winner with pretty high confidence, we could bail early from the rollout
+- should we limit the search space with the eval function? (only search promising nodes)
+
+
+## neural net thoughts
+
+- what is the shape of the input?
+- what is the shape of the output?
+- what is the structure of the net?
+- what is the backprop implementation like?

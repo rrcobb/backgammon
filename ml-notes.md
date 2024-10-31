@@ -13,10 +13,11 @@ Some kind of RL/ML strategies:
 - SARSA? 
   - it's not likely to converge quick enough
   - it's a precursor to a TD method
+  - we shouldn't do naive sarsa
 - Q-learning?
 - Q* search? 
-- CST? (https://en.wikipedia.org/wiki/Constructing_skill_trees)
-- Some kind of attention? Transformer?
+- [CST](https://en.wikipedia.org/wiki/Constructing_skill_trees)?
+- Some kind of attention? Transformers?
 - Some kind of Deep RL?
 - DQN? Double DQN? yeesh. 
 

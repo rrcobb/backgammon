@@ -1,6 +1,8 @@
-import type { Strategy, Result, Player, Game } from "./backgammon";
+import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h, generateGameKey } from "./backgammon";
 import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
+
+export type Strategy = (options: Result[]) => Result;
 
 // handful of random-ish strategies
 const first = (options: Result[]) => options && options[0];
@@ -305,4 +307,4 @@ const Strategies = {
   // balancedAbPrune,
   // claudeAbPrune,
 };
-export { Strategies, useExpectimax, useAbPruning, useSpeedExpectimax };
+export { Strategies, useExpectimax, useAbPruning, useSpeedExpectimax, random };
