@@ -1,7 +1,6 @@
 import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { counts } from './strategies';
-
 export type EvaluationFunction = (game: Game, player: Player) => number;
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
@@ -160,19 +159,33 @@ type Factors = {
 
 // example factors -- could be tweaked or, ideally, learned via some linear approximation
 const balancedFactors: Factors = {
-  barPenalty: 2,
-  barReward: 4,
-  homeReward: 3,
-  homePenalty: 2,
-  blotPenalty: 1,
-  primeReward: 5,
-  racingPipReward: 0.02,
-  contactPipReward: 0.01,
-  positionDecay: 3.5,
-  homeBonus: 0.2,
-  anchorBonus: 0.4,
+  barPenalty: 0.3,
+  barReward: 0.2,
+  homeReward: 0.4,
+  homePenalty: 0.2,
+  blotPenalty: 0.2,
+  primeReward: 4,
+  racingPipReward: 0.03,
+  contactPipReward: 0.005,
+  positionDecay: 2.5,
+  homeBonus: 0.3,
+  anchorBonus: 0.3,
 };
 
-const factors = { balancedFactors };
+const runnerFactors: Factors = {
+  barPenalty: 0,
+  barReward: 0,
+  homeReward: 10,
+  homePenalty: 0,
+  blotPenalty: 0,
+  primeReward: 0,
+  racingPipReward: 0.15,
+  contactPipReward: 0.05,
+  positionDecay: 5,
+  homeBonus: 0.5,
+  anchorBonus: 0,
+};
+
+const factors = { balancedFactors, runnerFactors };
 
 export { evaluate, factors };
