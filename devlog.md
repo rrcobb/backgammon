@@ -499,9 +499,21 @@ NOPE! I was reversing good and bad and also it was just nooping because I forgot
 
 MCTS is indeed kinda slow and kinda crappy, though it at least beats random. Still, lots to try to fix.
 
+### mcts perf
+
+Should I spend more time on perf, now that I have an mcts implementation?
+
+Well... it's very slow. I don't know for sure what the slowness is coming from, but it's probably from finding validMoves? Or slowness in the evaluate function? Maybe worth getting a setup where I can run things in bun --inspect and get the profiler going there...
+
+If there are obvious wins, and they would reliably improve the mcts quality... idk, that seems like it'd be good!
+
+However... the mcts we have right now seems pretty bad, whether because of the limited number of simulations or because the implementation is wrong somehow.
+
 ## neural net thoughts
 
 - what is the shape of the input?
 - what is the shape of the output?
 - what is the structure of the net?
 - what is the backprop implementation like?
+
+Let's just get to it, huh?

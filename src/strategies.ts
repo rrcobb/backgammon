@@ -313,23 +313,23 @@ const speedOne = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1))
 const balancedSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 2));
 const claudeSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.claudeFactors), 3));
 
-const mcts = useMCTS({
-  explore: 0.2,
-  simulations: 10,
-  rolloutStrategy: balanced,
-});
+const mcts1 = useMCTS({ explore: 0.3, simulations: 100, rolloutStrategy: random, });
+const mcts2 = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced, });
+const mcts3 = useMCTS({ explore: 0.3, simulations: 100, rolloutStrategy: balanced, });
 
 const Strategies = {
-  random,
-  mcts,
+  // random,
+  mcts1,
+  mcts2,
+  mcts3,
   // aggressive,
   // safety,
   // claude,
   // claudeExpecti,
-  balanced,
+  // balanced,
   // balancedExpecti,
-  speedOne,
-  balancedSpeedExpecti,
+  // speedOne,
+  // balancedSpeedExpecti,
   // pruning isn't very good...
   // balancedAbPrune,
   // claudeAbPrune,

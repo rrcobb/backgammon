@@ -4,7 +4,7 @@ import { random } from "./strategies";
 import { helpers as h, constants as c } from "./backgammon";
 
 function maxBy<T>(list: T[], func: (a: T) => number) {
-  let max = null;
+  let max = list[0];
   let maxVal = -Infinity;
   for (let item of list) {
     const val = func(item)
@@ -19,7 +19,7 @@ function maxBy<T>(list: T[], func: (a: T) => number) {
 class MCTSNode {
   rolloutStrategy: AppliedStrategy;
   state: Game;
-  player: Player;
+  player: Player | undefined;
   parent: MCTSNode | undefined;
   visitCount: number;
   wins: number;
@@ -29,10 +29,10 @@ class MCTSNode {
   untriedActions: Result[];
   move?: Move;
 
-  explore: number;
-  simulations: number;
+  explore?: number;
+  simulations?: number;
 
-  constructor(state: Game, player: Player, rolloutStrategy: AppliedStrategy, parent?: MCTSNode, roll?: Roll, move?: Move, explore?: number, simulations?: number) {
+  constructor(state: Game, player: Player | undefined, rolloutStrategy: AppliedStrategy, parent?: MCTSNode, roll?: Roll, move?: Move, explore?: number, simulations?: number) {
     this.rolloutStrategy = rolloutStrategy;
     this.state = state;
     this.player = player;
@@ -66,10 +66,12 @@ class MCTSNode {
   }
 
   expand(): MCTSNode {
-    let action = this.untriedActions.pop();
-    let move = action[0];
-    let next = action[1];
-    let child = new MCTSNode(next, this.player, this.rolloutStrategy, this, null, move);
+    const action = this.untriedActions.pop();
+    if (!action) {
+      throw new Error("No untried actions available");
+    }
+    const [move, next] = action;
+    const child = new MCTSNode(next, this.player, this.rolloutStrategy, this, undefined, move);
     this.children.push(child);
     return child;
   }
@@ -79,15 +81,19 @@ class MCTSNode {
   }
 
   // find the best child node using the ucb/t formula
-  bestChild(explore: number = this.explore): MCTSNode {
+  bestChild(explore = this.explore): MCTSNode {
+    if (this.children.length === 0) {
+      throw new Error("Cannot select best child; no children available");
+    }
     return maxBy(
-      this.children, 
+      this.children,
       // upper confidence bound formula
       (c) => c.q() / c.n() + explore * Math.sqrt((2 * Math.log(this.n()) / c.n()))
     );
   }
 
   simulate(): Player {
+    console.time('simulate')
     let current = this.state;
     let winner = h.checkWinner(current)
     while (!winner) {
@@ -100,13 +106,14 @@ class MCTSNode {
       winner = h.checkWinner(current)
       current.turn = (current.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
     }
+    console.timeEnd('simulate')
     return winner
   }
 
   backpropagate(win: boolean) {
     this.visitCount += 1;
 
-    if (win) { this.wins += 1; } 
+    if (win) { this.wins += 1; }
     else { this.losses += 1; }
 
     if (this.parent) {
@@ -116,6 +123,7 @@ class MCTSNode {
 
   evaluate() {
     for (let i = 0; i < this.simulations; i++) {
+      console.time('simulation-' + i);
       let node = this.select();
       if (!node) { // no valid options
         if (!this.children.length && !this.untriedActions.length) {
@@ -127,6 +135,7 @@ class MCTSNode {
       }
       let winner = node.simulate();
       node.backpropagate(winner == this.player);
+      console.timeEnd('simulation-' + i);
     }
 
     return this.bestChild(0); // no exploration on the final evaluation
@@ -142,19 +151,22 @@ type MCTSOptions = {
 
 function useMCTS(options: MCTSOptions): AppliedStrategy {
   return function mcts(game: Game, roll: Roll): Result {
+
     let best = new MCTSNode(
-      game, 
-      game.turn, 
-      options.rolloutStrategy, 
+      game,
+      game.turn,
+      options.rolloutStrategy,
       null, // parent
       roll,
       null, // move
       options.explore,
       options.simulations,
     ).evaluate();
-    if (best) {
-      return [best.move, best.state]
+
+    if (!best) {
+      throw ("No valid moves available")
     }
+    return [best.move, best.state]
   }
 }
 
