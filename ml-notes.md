@@ -40,8 +40,12 @@ In some sense, predicting the winner is _pretty_ similar to a strategy. Sort of 
 
 ## Code, for ML in js...
 
-- we're in the javascript world, famous for ML research... (not actually)
+- we're in the javascript world, famous for ML research... (not actually) (but kinda?)
 - https://github.com/trekhleb/micrograd-ts/tree/main
+  - todo: reimplement from the video
 - https://github.com/eduardoleao052/js-pytorch
+  - todo: implement with this
 - https://github.com/torch-js/torch-js
+  - try with this as well
 - https://github.com/tensorflow/tfjs
+  - and also this?

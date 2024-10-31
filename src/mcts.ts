@@ -93,7 +93,6 @@ class MCTSNode {
   }
 
   simulate(): Player {
-    console.time('simulate')
     let current = this.state;
     let winner = h.checkWinner(current)
     while (!winner) {
@@ -106,7 +105,6 @@ class MCTSNode {
       winner = h.checkWinner(current)
       current.turn = (current.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
     }
-    console.timeEnd('simulate')
     return winner
   }
 
@@ -123,7 +121,6 @@ class MCTSNode {
 
   evaluate() {
     for (let i = 0; i < this.simulations; i++) {
-      console.time('simulation-' + i);
       let node = this.select();
       if (!node) { // no valid options
         if (!this.children.length && !this.untriedActions.length) {
@@ -135,7 +132,6 @@ class MCTSNode {
       }
       let winner = node.simulate();
       node.backpropagate(winner == this.player);
-      console.timeEnd('simulation-' + i);
     }
 
     return this.bestChild(0); // no exploration on the final evaluation
