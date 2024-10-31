@@ -1,7 +1,7 @@
 {
   "scripts": {
     "bench": "bun bench/strategies.ts",
-    "bench-all": "bun bench/clone.ts && bun bench/helpers.ts && bun bench/game.ts && bun bench/keys.ts",
+    "bench-all": "bun bench/clone.ts && bun bench/helpers.ts && bun bench/game.ts && bun bench/keys.ts && bun bench/strategies.ts",
     "build": "bun build.js",
     "watch": "watchexec bun build.js",
     "check": "tsc --skipLibCheck --noEmit src/*.ts --target es2022",

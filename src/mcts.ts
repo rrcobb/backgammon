@@ -1,5 +1,6 @@
-import type { Result, Player, Game, Roll } from "./backgammon";
-import type { Strategy } from "./strategies";
+import type { Result, Player, Game, Roll, Move } from "./backgammon";
+import type { AppliedStrategy } from "./strategies";
+import { random } from "./strategies";
 import { helpers as h, constants as c } from "./backgammon";
 
 function maxBy<T>(list: T[], func: (a: T) => number) {
@@ -16,10 +17,10 @@ function maxBy<T>(list: T[], func: (a: T) => number) {
 }
 
 const EXPLORE = 0.3;
-const SIMULATIONS = 100;
+const SIMULATIONS = 10;
 
 class MCTSNode {
-  rolloutStrategy: Strategy;
+  rolloutStrategy: AppliedStrategy;
   state: Game;
   player: Player;
   parent: MCTSNode | undefined;
@@ -29,13 +30,15 @@ class MCTSNode {
   children: MCTSNode[];
   roll?: Roll;
   untriedActions: Result[];
+  move?: Move;
 
-  constructor(state: Game, player: Player, rolloutStrategy: Strategy, parent?: MCTSNode, roll?: Roll) {
+  constructor(state: Game, player: Player, rolloutStrategy: AppliedStrategy, parent?: MCTSNode, roll?: Roll, move?: Move) {
     this.rolloutStrategy = rolloutStrategy;
     this.state = state;
     this.player = player;
     this.parent = parent;
     this.roll = roll;
+    this.move = move;
 
     this.visitCount = 0;
     this.wins = 0;
@@ -62,8 +65,9 @@ class MCTSNode {
 
   expand(): MCTSNode {
     let action = this.untriedActions.pop();
+    let move = action[0];
     let next = action[1];
-    let child = new MCTSNode(next, this.player, this.rolloutStrategy, this);
+    let child = new MCTSNode(next, this.player, this.rolloutStrategy, this, null, move);
     this.children.push(child);
     return child;
   }
@@ -86,15 +90,13 @@ class MCTSNode {
     let winner = h.checkWinner(current)
     while (!winner) {
       const roll = h.generateRoll();
-      const options = h.validMoves(current, roll);
-      if (!options.length || !options[0].length) { 
-        current.turn = (current.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-        continue;
+      const result = this.rolloutStrategy(current, roll);
+      if (result) {
+        current = result[1]; // we have [move, Game] as the Result of a strategy
+        // otherwise, there were no options for the roll, i.e. it's a pass, just switch turns
       }
-      const action = this.rolloutStrategy(options);
-      current = action[1]; // we have [move, Game] as the Result of a strategy
-      current.turn = (current.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
       winner = h.checkWinner(current)
+      current.turn = (current.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
     }
     return winner
   }
@@ -113,6 +115,9 @@ class MCTSNode {
   evaluate() {
     for (let i = 0; i < SIMULATIONS; i++) {
       let node = this.select();
+      if (!node) { // no valid options
+        return null
+      }
       let winner = node.simulate();
       node.backpropagate(winner == this.player);
     }
@@ -121,4 +126,13 @@ class MCTSNode {
   }
 }
 
-export { MCTSNode }
+function useMCTS(): AppliedStrategy {
+  return function mcts(game: Game, roll: Roll): Result {
+    let best = new MCTSNode(game, game.turn, random, null, roll, null).evaluate();
+    if (best) {
+      return [best.move, best.state]
+    }
+  }
+}
+
+export { MCTSNode, useMCTS }

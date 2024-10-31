@@ -6,15 +6,9 @@ import { MCTSNode } from "../src/mcts";
 describe("mcts", () => {
   test("Can get a result from evaluating a Node", () => {
     const game = genGame();
-    const strategy = (...args) => { 
-      let res = random(...args)
-      if (!res) {
-        console.log(args);
-      }
-      return res;
-    };
+    const strategy = random;
     const roll = [4,6];
-    const gameNode = new MCTSNode(game, game.turn, strategy, null, roll);
+    const gameNode = new MCTSNode(game, game.turn, strategy, null, roll, null);
     const result = gameNode.evaluate();
     expect(result).not.toBe(null);
   });

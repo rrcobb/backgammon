@@ -1,5 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { constants as c, helpers as h } from "../src/backgammon.ts";
+import { makeApplied } from '../src/strategies.ts';
 import { expectGamesEqual } from "./helpers.ts";
 
 function blackToEnter(): Game {
@@ -402,7 +403,7 @@ describe("white bearing off", () => {
 
 describe("a complete game by picking the first valid move", () => {
   test("eventually finishes", () => {
-    const s = (options: Result[]) => options && options[0];
+    const s = makeApplied((options: Result[]) => options && options[0]);
     let game = h.newGame();
     game.turn = c.WHITE;
     let turnCount = 0;

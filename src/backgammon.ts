@@ -1,4 +1,4 @@
-import { counts, Strategy } from "./strategies";
+import { counts, Strategy, AppliedStrategy } from "./strategies";
 
 // binary game representation
 const WHITE = 0b00010000;
@@ -228,6 +228,7 @@ const validMoves = _validMoves;
 
 // prettier-ignore
 function _validMoves(game: Game, r: Roll): Result[] {
+  if (!r) { throw new Error("no roll") }
   counts.validMoves++
   // doubles act twice
   const doubles = r[0] == r[1];
@@ -429,14 +430,8 @@ function show(moves: Move): string {
   return result;
 }
 
-// TODO: move generation of valid moves to the strategy
-function takeTurn(game: Game, roll: Roll, strategy: Strategy): Result {
-  const options = validMoves(game, roll);
-  let choice;
-  if (options.length) {
-    choice = strategy(options);
-  }
-
+function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
+  let choice = strategy(game, roll); 
   let move = choice ? choice[0] : nullMove;
   let next = choice ? choice[1] : game;
   next.turn = game.turn == BLACK ? WHITE : BLACK;
@@ -458,6 +453,6 @@ const helpers = {
 };
 
 // types
-export { Player, Game, Result, Roll };
+export { Player, Game, Result, Roll, Move };
 
 export { helpers, constants };

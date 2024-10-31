@@ -1,17 +1,37 @@
-import type { Result, Player, Game } from "./backgammon";
+import type { Result, Player, Game, Roll } from "./backgammon";
 import { constants as c, helpers as h, generateGameKey } from "./backgammon";
 import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
+import { useMCTS } from "./mcts"
 
 export type Strategy = (options: Result[]) => Result;
+export type AppliedStrategy = (game: Game, roll: Roll) => Result;
+
+function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
+  const options = h.validMoves(game, roll);
+  let choice;
+  if (options.length) {
+    choice = strategy(options);
+  }
+  return choice
+}
+
+function makeApplied(strategy: Strategy): AppliedStrategy {
+  return function(game, roll) {
+    return applyStrategy(game, roll, strategy);
+  }
+}
 
 // handful of random-ish strategies
+// todo: make these applied
 const first = (options: Result[]) => options && options[0];
 const second = (options: Result[]) => (options && options[1]) || options[0];
 const last = (options: Result[]) => options && options[options.length - 1];
-function random(options: Result[]): Result {
+function _random(options: Result[]): Result {
   let choice = options[Math.floor(Math.random() * options.length)];
   return choice;
 }
+
+const random = makeApplied(_random);
 
 var randi = 0;
 const pseudorandom = (options: Result[]) => {
@@ -27,14 +47,14 @@ function cheapmod(options: Result[]): Result {
 }
 
 // strategies use an evaluation function (depth = 0)
-function useEval(evalFn: EvaluationFunction): Strategy {
-  return (options: Result[]) => {
+function useEval(evalFn: EvaluationFunction): AppliedStrategy {
+  return makeApplied((options: Result[]) => {
     if (!options) return;
     return options.reduce((best, current) => {
       const player = current[1].turn;
       return evalFn(current[1], player) > evalFn(best[1], player) ? current : best;
     });
-  };
+  });
 }
 
 const safety = useEval(evaluate(f.safetyFactors));
@@ -280,21 +300,24 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
   return _speedExpecti;
 }
 
-const aggressiveExpecti = useExpectimax(evaluate(f.aggressiveFactors), 2);
-const balancedExpecti = useExpectimax(evaluate(f.balancedFactors), 2);
-const claudeExpecti = useExpectimax(evaluate(f.claudeFactors), 2);
+const aggressiveExpecti = makeApplied(useExpectimax(evaluate(f.aggressiveFactors), 2));
+const balancedExpecti = makeApplied(useExpectimax(evaluate(f.balancedFactors), 2));
+const claudeExpecti = makeApplied(useExpectimax(evaluate(f.claudeFactors), 2));
 
 // pruning, which...ugh.
-const balancedAbPrune = useAbPruning(evaluate(f.balancedFactors), 2);
-const claudeAbPrune = useAbPruning(evaluate(f.claudeFactors), 2);
+const balancedAbPrune = makeApplied(useAbPruning(evaluate(f.balancedFactors), 2));
+const claudeAbPrune = makeApplied(useAbPruning(evaluate(f.claudeFactors), 2));
 
 // sampling for speed!
-const speedOne = useSpeedExpectimax(evaluate(f.balancedFactors), 1);
-const balancedSpeedExpecti = useSpeedExpectimax(evaluate(f.balancedFactors), 3);
-const claudeSpeedExpecti = useSpeedExpectimax(evaluate(f.claudeFactors), 3);
+const speedOne = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1));
+const balancedSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 2));
+const claudeSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.claudeFactors), 3));
+
+const mcts = useMCTS();
 
 const Strategies = {
-  // random,
+  random,
+  mcts,
   // aggressive,
   // safety,
   // claude,
@@ -307,4 +330,4 @@ const Strategies = {
   // balancedAbPrune,
   // claudeAbPrune,
 };
-export { Strategies, useExpectimax, useAbPruning, useSpeedExpectimax, random };
+export { Strategies, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, random };
