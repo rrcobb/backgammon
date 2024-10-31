@@ -313,7 +313,11 @@ const speedOne = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1))
 const balancedSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 2));
 const claudeSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.claudeFactors), 3));
 
-const mcts = useMCTS();
+const mcts = useMCTS({
+  explore: 0.2,
+  simulations: 10,
+  rolloutStrategy: balanced,
+});
 
 const Strategies = {
   random,

@@ -16,9 +16,6 @@ function maxBy<T>(list: T[], func: (a: T) => number) {
   return max;
 }
 
-const EXPLORE = 0.3;
-const SIMULATIONS = 10;
-
 class MCTSNode {
   rolloutStrategy: AppliedStrategy;
   state: Game;
@@ -32,13 +29,18 @@ class MCTSNode {
   untriedActions: Result[];
   move?: Move;
 
-  constructor(state: Game, player: Player, rolloutStrategy: AppliedStrategy, parent?: MCTSNode, roll?: Roll, move?: Move) {
+  explore: number;
+  simulations: number;
+
+  constructor(state: Game, player: Player, rolloutStrategy: AppliedStrategy, parent?: MCTSNode, roll?: Roll, move?: Move, explore?: number, simulations?: number) {
     this.rolloutStrategy = rolloutStrategy;
     this.state = state;
     this.player = player;
     this.parent = parent;
     this.roll = roll;
     this.move = move;
+    this.explore = explore;
+    this.simulations = simulations;
 
     this.visitCount = 0;
     this.wins = 0;
@@ -77,7 +79,7 @@ class MCTSNode {
   }
 
   // find the best child node using the ucb/t formula
-  bestChild(explore: number = EXPLORE): MCTSNode {
+  bestChild(explore: number = this.explore): MCTSNode {
     return maxBy(
       this.children, 
       // upper confidence bound formula
@@ -113,10 +115,15 @@ class MCTSNode {
   }
 
   evaluate() {
-    for (let i = 0; i < SIMULATIONS; i++) {
+    for (let i = 0; i < this.simulations; i++) {
       let node = this.select();
       if (!node) { // no valid options
-        return null
+        if (!this.children.length && !this.untriedActions.length) {
+          return null
+        } else {
+          // what happened?
+          throw new Error("got no node from select, but there were children or untried actions");
+        }
       }
       let winner = node.simulate();
       node.backpropagate(winner == this.player);
@@ -126,9 +133,25 @@ class MCTSNode {
   }
 }
 
-function useMCTS(): AppliedStrategy {
+type MCTSOptions = {
+  explore: number,
+  simulations: number,
+  rolloutStrategy: AppliedStrategy,
+  // intermediate evaluation function?
+}
+
+function useMCTS(options: MCTSOptions): AppliedStrategy {
   return function mcts(game: Game, roll: Roll): Result {
-    let best = new MCTSNode(game, game.turn, random, null, roll, null).evaluate();
+    let best = new MCTSNode(
+      game, 
+      game.turn, 
+      options.rolloutStrategy, 
+      null, // parent
+      roll,
+      null, // move
+      options.explore,
+      options.simulations,
+    ).evaluate();
     if (best) {
       return [best.move, best.state]
     }

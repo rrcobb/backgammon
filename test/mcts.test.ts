@@ -8,7 +8,9 @@ describe("mcts", () => {
     const game = genGame();
     const strategy = random;
     const roll = [4,6];
-    const gameNode = new MCTSNode(game, game.turn, strategy, null, roll, null);
+    const explore = 0.1;
+    const simulations = 4;
+    const gameNode = new MCTSNode(game, game.turn, strategy, null, roll, null, explore, simulations);
     const result = gameNode.evaluate();
     expect(result).not.toBe(null);
   });

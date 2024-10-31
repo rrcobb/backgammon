@@ -481,6 +481,23 @@ It's unclear -- maybe I'm on net hurting the evaluation by looking at some subse
   - in theory, if our eval function can predict the winner with pretty high confidence, we could bail early from the rollout
 - should we limit the search space with the eval function? (only search promising nodes)
 
+Phfew! Got lots of MCTS running, it's a bit finicky.
+- there's tons of nodes and tree stuff in the code; it's... kinda  slow
+- it seems like it works! as in, at least it returns options
+- it's using a random evaluation function, which is definitely not great
+- and it's not choosing which nodes to initially explore carefully at all, no evaluation at that step
+- so, lots of room for improvement
+
+Required redoing the way a strategy works -- feels a bit hacky. Made an "appliedstrategy" type helper and a function to turn one into the other. Strategies are responsible for generating their own sets of valid moves, and returning the move and the next game state. Seems okay, but likely getting punished for the indirection unless the JIT truly is magical.
+
+Lots of parameters to explore tuning for making mcts good instead of bad.
+
+
+WOWOOOOWW adding a halfway decent evaluation function to the rollouts makes a huuuge difference to mcts. Like, it was bad before and now it's good. 
+
+NOPE! I was reversing good and bad and also it was just nooping because I forgot to pass the parameters. :o
+
+MCTS is indeed kinda slow and kinda crappy, though it at least beats random. Still, lots to try to fix.
 
 ## neural net thoughts
 
