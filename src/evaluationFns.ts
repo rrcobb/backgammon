@@ -188,17 +188,17 @@ const runnerFactors: Factors = {
 
 // see learnFactors.ts
 const learnedFactors = {
-  barPenalty: 0.22876622375585035,
-  barReward: 0.49096267126357535,
-  homeReward: 1.3321862510782542e-14,
-  homePenalty: 1.0098412113260764e-15,
-  blotPenalty: 0.6458829889661252,
-  primeReward: 0.9037464446891452,
-  racingPipReward: 4.933952283984441,
-  contactPipReward: 2.2236427038650183e-12,
-  positionDecay: 4.4991013053922035,
-  homeBonus: 3.9518134141757386,
-  anchorBonus: 3.021909915679011,
+  barPenalty: 2.8577146378058176,
+  barReward: 0.4188982082393629,
+  homeReward: 5.122164733901995e-7,
+  homePenalty: 0.013411714047474464,
+  blotPenalty: 4.368993890410287,
+  primeReward: 0.04429203520650831,
+  racingPipReward: 1.4665429485597468,
+  contactPipReward: 5.440890570982201,
+  positionDecay: 0.9116816976545165,
+  homeBonus: 0.000015592459995818623,
+  anchorBonus: 0.5818135290036965,
 }
 
 const factors = { balancedFactors, runnerFactors, learnedFactors };

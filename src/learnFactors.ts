@@ -62,10 +62,12 @@ function trainFactors(
 
     const opponents = [
       useEval(evaluate(f.balancedFactors)),
+      useEval(evaluate(f.balancedFactors)),
+      useEval(evaluate(f.balancedFactors)),
       useEval(evaluate(f.runnerFactors)),
       useEval(evaluate(currentFactors))  // self-play
     ];
-    let opponent = opponents[count % 3]; // just cycle through
+    let opponent = opponents[count % opponents.length]; // just cycle through
 
     let game = h.newGame()
     game.turn = c.WHITE as Player;

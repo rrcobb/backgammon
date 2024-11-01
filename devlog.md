@@ -515,6 +515,28 @@ However... the mcts we have right now seems pretty bad, whether because of the l
 - learning (src/learnFactors.ts) seems like it does generate some factors, but it's unclear if they are good
 - the factors may be bad because the learning is bad, or because I have fucked something else up somewhere
 
+Training against the opponents we are likely to encounter might uhh bias the results a bit towards beating them. Hopefully. Maybe not! Maybe not trained hard enough?
+
+```sh
+$ bun evals/tournament.ts
+1000 games per round. Strategies: balanced, runner, learned
+[6/6] learned    vs learned
+
+        	balanced	  runner	 learned
+balanced	    50.0%	    20.7%	    33.8%
+  runner	    79.3%	    50.0%	    97.7%
+ learned	    66.2%	     2.3%	    50.0%
+3 strategies. 6 matchups. 6000 games played.
+best: balanced with 65.2% average win rate
+worst: runner with 24.3% average win rate
+Total time: 30.41s.
+5.07s per matchup of 1000 games
+```
+
+Huh. It hammers the Runner strat, but loses more to balanced? idk, maybe there's more tweaking to do. Maybe add more copies of the balanced strat to the opponents in training. `¯\_(ツ)_/¯`
+
+Re-training ends up with mostly-similar weights, which, I guess is interesting? It's now getting the best avg, and only losing to balanced 56% of the time, so that's kind of interesting.
+
 ## neural net thoughts
 
 - what is the shape of the input?
