@@ -6,6 +6,7 @@ import { Strategies } from "./strategies";
 var game;
 var whiteStrategy;
 var blackStrategy;
+var gameHistory;
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
@@ -76,13 +77,21 @@ function render(game: Game): void {
   home.appendChild(blackHome);
   home.appendChild(whiteHome);
 
+  let frame = document.createElement("div")
+  frame.classList.add("frame")
+
   let top = document.createElement("div");
   top.classList.add("top");
   let bottom = document.createElement("div");
   bottom.classList.add("bottom");
+  let right = document.createElement("div")
+  right.classList.add("right")
+
   board?.appendChild(home);
+  board?.appendChild(frame)
   board?.appendChild(top);
   board?.appendChild(bottom);
+  board?.appendChild(right);
 
   game.positions.forEach((v: number, i: number) => {
     let triangle = document.createElement("div");
@@ -184,8 +193,9 @@ function enableTurns() {
 }
 
 function initGame() {
+  gameHistory = [];
   game = h.newGame();
-  game.turn = c.WHITE;
+  game.turn = c.WHITE; // white goes first, for now
   render(game);
   enableTurns();
   clearTranscript();

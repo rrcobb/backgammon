@@ -10,6 +10,8 @@
   --piece-border: black;
   --ui-font: "Lucida Grande";
   --heading-font: "Palatino";
+  --frame-width: 40px;
+  --board-height: 412px;
 }
 
 * {
@@ -24,6 +26,8 @@ div#board {
   width: 652px;
   background: var(--board-bg);
   text-align: center;
+  position: relative;
+  margin-right: 40px;
 }
 
 div#strategy {
@@ -43,8 +47,8 @@ div#strategy {
 
 div.home {
   position: absolute;
-  height: 372px;
-  width: 40px;
+  height: var(--board-height);
+  width: var(--frame-width);
   background-color: var(--board-frame);
   display: flex;
   flex-direction: column;
@@ -53,14 +57,31 @@ div.home {
 }
 
 .home-count {
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
+}
+
+.frame {
+  margin-left: var(--frame-width);
+  height: var(--frame-width);
+  background: var(--board-frame);
+}
+
+.right {
+  position: absolute;
+  height: calc(1px + var(--board-height) + var(--frame-width));
+  width: var(--frame-width);
+  background: var(--board-frame);
+  top: -2px;
+  right: -40px;
+  border: 2px solid black;
+  border-left: 0;
 }
 
 .top,
 .bottom {
   display: flex;
-  margin-left: 40px;
+  margin-left: var(--frame-width);
 }
 
 .bottom {
@@ -69,8 +90,8 @@ div.home {
 
 .roll {
   position: absolute;
-  top: 165px;
-  left: 365px;
+  top: 195px;
+  left: 165px;
 }
 
 .roll img {
@@ -125,7 +146,8 @@ div.home {
 .angle .label {
   position: relative;
   z-index: 2;
-  font-size: small;
+  font-size: 12px;
+  margin: 2px;
 }
 
 .angle .pieces {
@@ -135,12 +157,12 @@ div.home {
 
 .w {
   background: var(--white-piece);
-  box-shadow: 0 0 1px var(--piece-border);
+  box-shadow: 0 0 2px 0px var(--piece-border);
 }
 
 .b {
   background: var(--black-piece);
-  box-shadow: 0 0 1px var(--piece-border);
+  box-shadow: 0 0 1px 0px var(--piece-border);
 }
 
 .piece {
@@ -149,7 +171,7 @@ div.home {
   width: 20px;
   height: 20px;
   margin-left: 14px;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .piece:hover {
