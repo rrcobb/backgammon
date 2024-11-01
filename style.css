@@ -12,6 +12,7 @@
   --heading-font: "Palatino";
   --frame-width: 32px;
   --board-height: 380px;
+  --side-panel-width: 25vw;
 }
 
 * {
@@ -33,6 +34,7 @@ div#strategy {
   border: 1px solid black;
   padding: 4px;
   margin: 0 10px;
+  width: var(--side-panel-width);
 }
 
 #strategy select {
@@ -179,9 +181,18 @@ div.home {
 }
 
 #transcript {
-  width: 400px;
+  display: none;
+  width: var(--side-panel-width);
   height: 80vh;
   margin-left: 10px;
+}
+
+#history {
+  border: 1px solid black;
+  width: var(--side-panel-width);
+  height: 80vh;
+  overflow: auto;
+  margin: 0 4px;
 }
 
 #interface {
@@ -219,4 +230,73 @@ button {
   padding: 10px;
   padding-left: 45px; /* centering, account for right frame */
   text-align: center;
+}
+
+.history-turn {
+  padding: 2px 0;
+  display: grid;
+  /* Three columns: turn number, dice roll, and moves */
+  grid-template-columns: 1em 3em 1fr;
+  gap: 4px;
+  align-items: center;
+}
+
+.turn-number {
+  font-size: 0.6em;
+  color: #666;
+  text-align: center;
+  padding-left: 2px;
+}
+
+.turn-roll {
+  font-size: 1.5em;
+  line-height: 1em;
+  display: inline-block;
+  min-width: 3em;
+  vertical-align: middle;
+  position: relative;
+  top: -0.1em;  /* Fine-tune this value as needed */
+}
+
+.turn-moves {
+  padding-left: 8px;
+  margin-left: 4px;
+  /* Prevent wrapping of moves if possible */
+  white-space: nowrap;
+  overflow: clip;
+  text-overflow: clip;
+}
+
+.turn-moves.no-moves {
+  font-style: italic;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.turn-moves.has-passes {
+  font-style: italic;
+  color: #333;
+}
+
+.white-turn {
+  border-left: 4px solid var(--white-piece);
+  box-shadow: inset 1px 0 0 #ccc;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.black-turn {
+  border-left: 4px solid var(--black-piece);
+  box-shadow: inset 1px 0 0 #ccc;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.turn-pair-start {
+  margin-top: 4px;
+}
+
+.winner-banner {
+  text-align: center;
+  font-weight: bold;
+  padding: 4px 0;
+  color: #333;
 }

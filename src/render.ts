@@ -7,6 +7,7 @@ var game;
 var whiteStrategy;
 var blackStrategy;
 var gameHistory;
+var turnNo;
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
@@ -170,16 +171,80 @@ function renderRoll(roll) {
   board.appendChild(rollDiv);
 }
 
-const transcript: HTMLTextAreaElement = document.getElementById("transcript") as HTMLTextAreaElement;
-
-function log(...rest: string[]) {
-  rest.forEach((msg) => {
-    transcript.value = "\n" + msg + transcript?.value;
-  });
+function showDie(n: number): string {
+  return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
 }
 
-function clearTranscript() {
-  transcript.value = "";
+function showRoll(roll: [number, number]): string {
+  if (roll[0] === roll[1]) {
+    // For doubles, show all four dice
+    return new Array(4).fill(showDie(roll[0])).join('')
+  }
+  return showDie(roll[0]) + showDie(roll[1]);
+}
+
+function showMoves(moves: Move): string {
+  let passes = 0
+  let result = "";
+  for (let m in moves) {
+    let move = moves[m];
+    if (move) {
+      result += 1 + move[0] + "→" + (1 + move[1]);
+    } else {
+      passes +=1
+      if (passes == moves.length) {
+        return "no moves possible"
+      }
+      result += "pass";
+    }
+    if (+m < moves.length - 1) result += ",";
+  }
+  return result;
+}
+
+function renderHistory(gameHistory) {
+  const history = document.getElementById("history");
+  history.innerHTML = ""; // clear first
+  gameHistory.slice().reverse().forEach((turn, index) => {
+    const turnDiv = document.createElement('div');
+    turnDiv.classList.add('history-turn');
+    turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
+
+    if (index === 0 && h.checkWinner(turn.game)) {
+      turnDiv.classList.add('winning-turn');
+      const winnerBanner = document.createElement('div');
+      winnerBanner.classList.add('winner-banner');
+      winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
+      history.appendChild(winnerBanner);
+    }
+
+    if (turn.roll == null) {
+      return
+    }
+
+    const num = document.createElement('span')
+    num.innerText = turn.turnNo
+    num.classList.add('turn-number')
+    turnDiv.appendChild(num);
+
+    const rollSpan = document.createElement('span');
+    rollSpan.innerText = showRoll(turn.roll);
+    rollSpan.classList.add('turn-roll')
+    turnDiv.appendChild(rollSpan);
+
+    const moves = document.createElement('span');
+    const movesText = showMoves(turn.move);
+    moves.innerText = movesText;
+    moves.classList.add('turn-moves');
+    if (movesText === "no moves possible") {
+      moves.classList.add('no-moves');
+    } else if (movesText.includes(' pass')) {
+      moves.classList.add('has-passes');
+    }
+    turnDiv.appendChild(moves)
+
+    history.appendChild(turnDiv);
+  });
 }
 
 function disableTurns() {
@@ -193,32 +258,30 @@ function enableTurns() {
 }
 
 function initGame() {
+  turnNo = 0;
   gameHistory = [];
   game = h.newGame();
   game.turn = c.WHITE; // white goes first, for now
+  gameHistory.push({turnNo: 0, move: null, roll: null, turn: game.turn, game});
   render(game);
   enableTurns();
-  clearTranscript();
 }
 
 function playTurn() {
   if (h.checkWinner(game)) return;
+  turnNo++;
   const roll = h.generateRoll();
   const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
   const player = game.turn == c.WHITE ? "w" : "b";
   const [move, next] = h.takeTurn(game, roll, strat);
-  if (move && move.length) {
-    log(h.show(move));
-  } else {
-    log("no moves");
-  }
-  log(`${roll}`);
-  log(player);
-  log("\n");
+
+
+  const finished = h.checkWinner(next);
   game = next;
+  gameHistory.push({turnNo, move, player, roll, game}) 
   render(game);
   renderRoll(roll);
-  const finished = h.checkWinner(game);
+  renderHistory(gameHistory);
   if (finished) {
     showWinner(finished);
     disableTurns();

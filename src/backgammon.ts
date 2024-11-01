@@ -415,21 +415,6 @@ function isBearingOff(player: Player, game: Game) {
   return 15 == pieceCount;
 }
 
-function show(moves: Move): string {
-  let result = "(";
-  for (let m in moves) {
-    let move = moves[m];
-    if (move) {
-      result += 1 + move[0] + "=>" + (1 + move[1]);
-    } else {
-      result += "none";
-    }
-    if (+m < moves.length - 1) result += ",";
-  }
-  result += ")";
-  return result;
-}
-
 function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
   let choice = strategy(game, roll); 
   let move = choice ? choice[0] : nullMove;
@@ -449,7 +434,6 @@ const helpers = {
   apply,
   takeTurn,
   checkWinner,
-  show,
 };
 
 // types

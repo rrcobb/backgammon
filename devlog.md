@@ -533,7 +533,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 ## UI / TODO
 
 - game history
+  - undo / redo
+  - improved history display (instead of transcript)
 - tweak game controls
+- separate roll from move
 
 - show the valid moves
 - show what moved (arrows? shadows?)
@@ -541,9 +544,9 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - strategy descriptions
   - show probabilities of hits / other events
   - show current pip count for each player
+  - what the strategy thinks about the different factors / what's the current evaluation
   - highlight blots
   - highlight primes
-- undo / redo
 
 - first roll // first turn
 - starting roll
@@ -551,8 +554,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - scorekeeping between games
 
 - interactive mode / "human player" strategy -- play against the AI
-- strategy for user to play against the computer
-- fuzz / property testing
+  - strategy for user to play against the computer
+
+## Other Todos...
+
 - eventually, if the game really needs faster play, we can try optimizing again
   - parallelize, maybe bun workers
   - see if we can find hotspots and optimize them down
