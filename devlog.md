@@ -537,6 +537,10 @@ Huh. It hammers the Runner strat, but loses more to balanced? idk, maybe there's
 
 Re-training ends up with mostly-similar weights, which, I guess is interesting? It's now getting the best avg, and only losing to balanced 56% of the time, so that's kind of interesting.
 
+What if we train for longer? Will we still end up in a similar spot? Maybe we could train until we reach that spot (difference between updates is small, or something) and then bail there (e.g. when we've converged / loss is not dropping any more, though we don't have a proper loss exactly right now).
+
+So, cool! We can train some parameters in a heuristic function. Next, the world!
+
 ## neural net thoughts
 
 - what is the shape of the input?

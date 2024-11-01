@@ -120,5 +120,5 @@ const initialFactors: Factors = {
 }
 
 // Train against a balanced opponent for 1000 games
-const finalFactors = trainFactors(initialFactors, 10000, 0.01)
+const finalFactors = trainFactors(initialFactors, 20000, 0.01)
 console.log("Training complete:", finalFactors)
