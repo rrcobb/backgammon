@@ -509,6 +509,12 @@ If there are obvious wins, and they would reliably improve the mcts quality... i
 
 However... the mcts we have right now seems pretty bad, whether because of the limited number of simulations or because the implementation is wrong somehow.
 
+## Better heuristics and a learned linear approximator
+
+- more complicated doesn't seem much better
+- learning (src/learnFactors.ts) seems like it does generate some factors, but it's unclear if they are good
+- the factors may be bad because the learning is bad, or because I have fucked something else up somewhere
+
 ## neural net thoughts
 
 - what is the shape of the input?

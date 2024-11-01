@@ -49,9 +49,9 @@ const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, play
 
   const isRacing = lastWhite < firstBlack;
   if (isRacing) {
-    score += pipDiff * f.racingPipReward;  
+    score += (pipDiff/24) * f.racingPipReward;  
   } else {
-    score += pipDiff * f.contactPipReward;  
+    score += (pipDiff/24) * f.contactPipReward;  
   }
 
   return score;
@@ -143,7 +143,7 @@ function blotHitChance(game, blotPosition, player) {
   return Math.min(1, totalProb); // Cap at 100% chance
 }
 
-type Factors = {
+export type Factors = {
   barPenalty: number,
   barReward: number,
   homeReward: number,
@@ -186,6 +186,21 @@ const runnerFactors: Factors = {
   anchorBonus: 0,
 };
 
-const factors = { balancedFactors, runnerFactors };
+// see learnFactors.ts
+const learnedFactors = {
+  barPenalty: 0.22876622375585035,
+  barReward: 0.49096267126357535,
+  homeReward: 1.3321862510782542e-14,
+  homePenalty: 1.0098412113260764e-15,
+  blotPenalty: 0.6458829889661252,
+  primeReward: 0.9037464446891452,
+  racingPipReward: 4.933952283984441,
+  contactPipReward: 2.2236427038650183e-12,
+  positionDecay: 4.4991013053922035,
+  homeBonus: 3.9518134141757386,
+  anchorBonus: 3.021909915679011,
+}
+
+const factors = { balancedFactors, runnerFactors, learnedFactors };
 
 export { evaluate, factors };

@@ -266,6 +266,7 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
 
 const balanced = useEval(evaluate(f.balancedFactors));
 const runner = useEval(evaluate(f.runnerFactors));
+const learned = useEval(evaluate(f.learnedFactors));
 
 const balancedExpecti = makeApplied(useExpectimax(evaluate(f.balancedFactors), 2));
 // pruning, which...ugh.
@@ -282,6 +283,7 @@ const Strategies = {
   // random,
   balanced,
   runner,
+  learned,
   // balancedAbPrune, // ... pruning isn't very good...
   // balancedExpecti,
   // balancedSpeedExpecti,
@@ -289,4 +291,4 @@ const Strategies = {
   // mctsR,
   // mctsB,
 };
-export { Strategies, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, random };
+export { Strategies, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };
