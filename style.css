@@ -10,8 +10,8 @@
   --piece-border: black;
   --ui-font: "Lucida Grande";
   --heading-font: "Palatino";
-  --frame-width: 40px;
-  --board-height: 412px;
+  --frame-width: 32px;
+  --board-height: 380px;
 }
 
 * {
@@ -23,11 +23,10 @@
 
 div#board {
   border: 2px solid black;
-  width: 652px;
   background: var(--board-bg);
   text-align: center;
   position: relative;
-  margin-right: 40px;
+  margin-right: var(--frame-width);
 }
 
 div#strategy {
@@ -47,16 +46,16 @@ div#strategy {
 
 div.home {
   position: absolute;
-  height: var(--board-height);
+  height: calc(var(--board-height) + var(--frame-width));
   width: var(--frame-width);
   background-color: var(--board-frame);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px 0;
 }
 
 .home-count {
+  margin-top: var(--frame-width);
   font-size: 12px;
   text-align: center;
 }
@@ -69,11 +68,11 @@ div.home {
 
 .right {
   position: absolute;
-  height: calc(1px + var(--board-height) + var(--frame-width));
+  height: calc(var(--board-height) + 2 * var(--frame-width));
   width: var(--frame-width);
   background: var(--board-frame);
   top: -2px;
-  right: -40px;
+  right: calc(0px - var(--frame-width));
   border: 2px solid black;
   border-left: 0;
 }
@@ -90,7 +89,7 @@ div.home {
 
 .roll {
   position: absolute;
-  top: 195px;
+  top: 186px;
   left: 165px;
 }
 
@@ -218,5 +217,6 @@ button {
   font-weight: normal;
   background-color: var(--board-frame);
   padding: 10px;
+  padding-left: 45px; /* centering, account for right frame */
   text-align: center;
 }
