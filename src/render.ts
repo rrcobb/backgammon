@@ -183,13 +183,19 @@ function showRoll(roll: [number, number]): string {
   return showDie(roll[0]) + showDie(roll[1]);
 }
 
+function showPos(move: Move) {
+  const start = move[0] == c.BAR ? '┃' : (1 + move[0]);
+  const end = move[1] == c.HOME ? '☗' : (1 + move[1]);
+  return start + "→" + end;
+}
+
 function showMoves(moves: Move): string {
   let passes = 0
   let result = "";
   for (let m in moves) {
     let move = moves[m];
     if (move) {
-      result += 1 + move[0] + "→" + (1 + move[1]);
+      result += showPos(move)
     } else {
       passes +=1
       if (passes == moves.length) {
