@@ -217,7 +217,7 @@ function playTurn() {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderStrategySection();
-  setStrategy(c.WHITE, "claudeExpecti");
+  setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
   initGame();
 

@@ -42,14 +42,15 @@ Because the branching factor of the game is large (~400?), search depth-limited.
 
 In this implementation, there's a basic version of expectimax that attempts to evaluate all the nodes, and there's two versions that try to speed things up. One uses a/b pruning, and the other uses sampling. A/b pruning should be equivalent to vanilla expectimax, but skips searching deep into nodes that the player won't care about. Sampling trades accuracy for depth of search. Neither seem to help enough with the search depth to improve results.
 
+The other strategies include:
+- mcts (mcts.ts)
+- more sophisticated heuristic evaluation functions
+- learned parameters for the heuristic evaluation function
+
 ## Planned strategies
 
 Planned strategies:
-- improved heuristic functions
-- MCTS and variants
 - linear function approximator, with features from pure heuristic evaluation functions
 - Neuro-gammon (NN but trained on some expert examples etc, features, etc)
 - TD learning, like a td-gammon style RL neural net (TD0, TD1, TD2, TD3)
-- maybe others? see ML notes
-
-Separate strategies for doubling cube / evaluating gammons and backgammons
+- Separate strategies for doubling cube / evaluating gammons and backgammons

@@ -50,5 +50,4 @@ In some sense, predicting the winner is _pretty_ similar to a strategy. Sort of 
 - https://github.com/tensorflow/tfjs
   - and also this?
 
-
 Doing just a raw array of floats is also okay for baby stuff.

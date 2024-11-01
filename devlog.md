@@ -231,32 +231,6 @@ Maybe also displaying the valid moves (as a precursor to allowing human vs. AI p
   - e.g. cut off dumb lines of search earlier
 - we could also sample from the rolls instead of evaluating all of them
 
-## TODO
-
-- first roll // first turn
-- starting roll
-- doubling cube
-- scorekeeping between games
-
-- show the valid moves
-- show what moved (arrows? shadows?)
-- display about the strategy
-
-  - show probabilities of hits / other events
-  - show current pip count for each player
-  - highlight blots
-  - highlight primes
-
-- evaluation / strategy comparison
-- implement ai strategies
-- play against the ai
-- interactive mode / "human player" strategy -- play against the AI
-- fuzz / property testing
-- eventually, if the game really needs faster play, we can try optimizing again
-  - parallelize, maybe bun workers
-  - see if we can find hotspots and optimize them down
-- knip cleanup
-
 ## More ideas for speed improvements... pending finding legit hotspots
 
 can do movement checks in a bitwise op:
@@ -540,6 +514,51 @@ Re-training ends up with mostly-similar weights, which, I guess is interesting? 
 What if we train for longer? Will we still end up in a similar spot? Maybe we could train until we reach that spot (difference between updates is small, or something) and then bail there (e.g. when we've converged / loss is not dropping any more, though we don't have a proper loss exactly right now).
 
 So, cool! We can train some parameters in a heuristic function. Next, the world!
+
+### improving heuristic parameter learning
+
+would it make sense to have some decay for the learning for earlier moves in the game? or... ones that are more decisive?
+
+maybe we can do something where we model the winning percentages, and use rollouts to update the model from different points, which could lead to less bias from bad games -- or at least, lead to a better loss function, because we have a proper error term, rather than just propagating the binary win/loss?
+
+Likely we need to rewrite the evaluation function so that it predicts within some fixed scale (0-1 or -1 to 1 or something) instead of just arbitrary reals.
+
+Also: we are currently hill-climbing, which means we could get trapped in local maxima. Should we have something that injects some randomness / starts in a different configuration / learns and mixes (genetically or similar?)
+
+## UI / done...
+
+- fonts
+- colors
+
+## UI / TODO
+
+- game history
+- tweak game controls
+
+- show the valid moves
+- show what moved (arrows? shadows?)
+- display about the strategy
+  - strategy descriptions
+  - show probabilities of hits / other events
+  - show current pip count for each player
+  - highlight blots
+  - highlight primes
+- undo / redo
+
+- first roll // first turn
+- starting roll
+- doubling cube
+- scorekeeping between games
+
+- interactive mode / "human player" strategy -- play against the AI
+- strategy for user to play against the computer
+- fuzz / property testing
+- eventually, if the game really needs faster play, we can try optimizing again
+  - parallelize, maybe bun workers
+  - see if we can find hotspots and optimize them down
+- evaluation / strategy comparison
+  - we have the tournament, but we could add a difference-of-rollouts method
+  - find differences, then rollout from the differences to compare (e.g. how they do 'real' evals between top-of-the-line models)
 
 ## neural net thoughts
 

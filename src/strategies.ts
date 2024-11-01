@@ -280,15 +280,15 @@ const mctsR = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random, 
 const mctsB = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced, });
 
 const Strategies = {
-  // random,
+  random,
   balanced,
   runner,
   learned,
   // balancedAbPrune, // ... pruning isn't very good...
-  // balancedExpecti,
-  // balancedSpeedExpecti,
-  // speedOne,
-  // mctsR,
-  // mctsB,
+  balancedExpecti,
+  balancedSpeedExpecti,
+  speedOne,
+  mctsR,
+  mctsB,
 };
 export { Strategies, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

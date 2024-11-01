@@ -1,13 +1,28 @@
+:root {
+  --board-frame: #D4A373;
+  --board-bg: #FAEDCD;
+  --stripe: #9093B6;
+  --alt-stripe: #77ACBB;
+  --white-piece: #eee;
+  --black-piece: #222;
+  --stripe-border: black;
+  --board-border: black;
+  --piece-border: black;
+  --ui-font: "Lucida Grande";
+  --heading-font: "Palatino";
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: "Lucida Grande";
 }
 
 div#board {
   border: 2px solid black;
   width: 652px;
-  background: #4c3ed0c2;
+  background: var(--board-bg);
   text-align: center;
 }
 
@@ -30,7 +45,7 @@ div.home {
   position: absolute;
   height: 372px;
   width: 40px;
-  background-color: #fdd;
+  background-color: var(--board-frame);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -71,7 +86,7 @@ div.home {
   display: inline-block;
   width: 32px;
   height: 186px;
-  background-color: #c99;
+  background-color: var(--board-frame);
 }
 
 .bar .piece {
@@ -81,11 +96,11 @@ div.home {
 }
 
 .angle.red::before {
-  background: #e88;
+  background: var(--stripe);
 }
 
 .angle.gray::before {
-  background: #bbb;
+  background: var(--alt-stripe);
 }
 
 .angle {
@@ -110,6 +125,7 @@ div.home {
 .angle .label {
   position: relative;
   z-index: 2;
+  font-size: small;
 }
 
 .angle .pieces {
@@ -118,11 +134,13 @@ div.home {
 }
 
 .w {
-  background: #eee;
+  background: var(--white-piece);
+  box-shadow: 0 0 1px var(--piece-border);
 }
 
 .b {
-  background: #222;
+  background: var(--black-piece);
+  box-shadow: 0 0 1px var(--piece-border);
 }
 
 .piece {
@@ -176,8 +194,7 @@ button {
 #turn-indicator {
   font-size: 14px;
   font-weight: normal;
-  background-color: #fdd;
+  background-color: var(--board-frame);
   padding: 10px;
   text-align: center;
-  border-top: 1px solid black;
 }
