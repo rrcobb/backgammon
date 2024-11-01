@@ -11,7 +11,6 @@
   "dependencies": {
     "esbuild": "0.24.0",
     "fast-check": "^3.22.0",
-    "js-pytorch": "^0.7.2",
     "mitata": "^1.0.10"
   },
   "devDependencies": {
