@@ -183,13 +183,13 @@ function showRoll(roll: [number, number]): string {
   return showDie(roll[0]) + showDie(roll[1]);
 }
 
-function showPos(move: Move) {
+function showPos(move) {
   const start = move[0] == c.BAR ? '┃' : (1 + move[0]);
   const end = move[1] == c.HOME ? '☗' : (1 + move[1]);
   return start + "→" + end;
 }
 
-function showMoves(moves: Move): string {
+function showMoves(moves): string {
   let passes = 0
   let result = "";
   for (let m in moves) {
@@ -208,6 +208,55 @@ function showMoves(moves: Move): string {
   return result;
 }
 
+function describeLocation(point: number, player: string, to: boolean): string {
+  if (point == c.BAR) return "the bar";
+  if (point == c.HOME) return "home";
+
+  // Adjust point numbers based on player perspective
+  const adjustedPoint = player === 'b' ? point + 1 : 24 - point;
+  if (!to) return "" + adjustedPoint;
+
+  // Determine board area
+  if (adjustedPoint <= 6) return `${adjustedPoint} in the home board`;
+  if (adjustedPoint <= 12) return `${adjustedPoint} in the outer board`;
+  if (adjustedPoint <= 18) return `${adjustedPoint} in opponent's outer board`;
+  return `${adjustedPoint} in opponent's home board`;
+}
+
+function describeRoll([d1, d2]: [number, number]): string {
+  if (d1 === d2) {
+    return `double ${d1}s`;
+  }
+  return `${d1}, ${d2}`;
+}
+
+function describeTurn(turn): string {
+  const player = turn.player === 'w' ? 'White' : 'Black';
+  let description = `${player} rolled ${describeRoll(turn.roll)}. `;
+
+  if (showMoves(turn.move) === "no moves possible") {
+    return description + "No legal moves available.";
+  }
+
+  const moves = turn.move.filter(m => m !== null);
+  if (moves.length === 0) {
+    return description + "No moves made.";
+  }
+
+  const moveDescriptions = moves.map((move, i) => {
+    const fromDesc = describeLocation(move[0], turn.player, false);
+    const toDesc = describeLocation(move[1], turn.player, true);
+    return `from ${fromDesc} to ${toDesc}`;
+  });
+
+  if (moveDescriptions.length === 1) {
+    return description + "Moved " + moveDescriptions[0] + ".";
+  }
+
+  const lastMove = moveDescriptions.pop();
+  return description + "Moved " + moveDescriptions.join(', ') + ', and ' + lastMove + ".";
+}
+
 function renderHistory(gameHistory) {
   const history = document.getElementById("history");
   history.innerHTML = ""; // clear first
@@ -216,12 +265,22 @@ function renderHistory(gameHistory) {
     turnDiv.classList.add('history-turn');
     turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
 
-    if (index === 0 && h.checkWinner(turn.game)) {
-      turnDiv.classList.add('winning-turn');
-      const winnerBanner = document.createElement('div');
-      winnerBanner.classList.add('winner-banner');
-      winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
-      history.appendChild(winnerBanner);
+    if (index === 0) {
+      if (h.checkWinner(turn.game)) {
+        turnDiv.classList.add('winning-turn');
+        const winnerBanner = document.createElement('div');
+        winnerBanner.classList.add('winner-banner');
+        winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
+        history.appendChild(winnerBanner);
+      } else {
+        // detailed description for this turn
+        const descriptionDiv = document.createElement('div');
+        const description = describeTurn(turn);
+        descriptionDiv.classList.add('turn-description');
+        descriptionDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
+        descriptionDiv.innerText = description;
+        history.appendChild(descriptionDiv);
+      }
     }
 
     if (turn.roll == null) {

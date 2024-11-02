@@ -279,13 +279,13 @@ button {
 }
 
 .white-turn {
-  border-left: 4px solid var(--white-piece);
+  border-left: 6px solid var(--white-piece);
   box-shadow: inset 1px 0 0 #ccc;
   background-color: rgba(255, 255, 255, 0.4);
 }
 
 .black-turn {
-  border-left: 4px solid var(--black-piece);
+  border-left: 6px solid var(--black-piece);
   box-shadow: inset 1px 0 0 #ccc;
   background-color: rgba(0, 0, 0, 0.05);
 }
@@ -299,4 +299,10 @@ button {
   font-weight: bold;
   padding: 4px 0;
   color: #333;
+}
+
+.turn-description {
+  font-size: 13px;
+  padding: 6px;
+  height: 6em;
 }
