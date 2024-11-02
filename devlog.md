@@ -533,12 +533,12 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - explain move
   - text description of move
 - render bar pieces in the middle
+- reveal longer description from the short summary line
 
 ## UI / TODO
 
-- reveal longer description from the short summary line
 - show what moved (arrows? shadows?)
-  - show on hover
+  - show when we hover / when we expand
 - undo / reset to a position
 - reorder game panels so it fits on different screen sizes
   - history below

@@ -189,7 +189,7 @@ div.home {
   margin-left: 10px;
 }
 
-#history {
+#historyEl {
   border: 1px solid black;
   width: var(--side-panel-width);
   height: 80vh;
@@ -221,7 +221,6 @@ body {
 button {
   padding: 0.5rem;
   border-radius: 4px;
-  margin: 4px 6rem;
   font-size: 14px;
 }
 
@@ -339,4 +338,26 @@ button {
 .history-turn.expanded .turn-description {
   font-size: 13px;
   grid-column: 1 / -1;  /* span all columns */
+}
+
+.history-controls {
+  position: fixed; 
+  bottom: 14vh;
+  right: 16px;
+  padding: 4px;
+  display: flex;
+}
+
+.history-control {
+  font-size: 0.7em;
+  padding: 3px 8px;
+  border: 1px solid #ccc;
+  margin: 4px;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+
+.history-control:hover {
+  background: #f5f5f5;
 }

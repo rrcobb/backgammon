@@ -153,11 +153,16 @@ function describeTurn(turn, prev): string {
   }
 
   const groups = groupMoves(turn.move)
+  let seenMulti = false;
   const sequenceDescriptions = groups.map((group, i) => {
     let [sequence, count] = group;
     if (count == 1) {
+      if (seenMulti) {
+        return `once piece ${describeSequence(sequence, turn.player)}`
+      }
       return describeSequence(sequence, turn.player)
     } else {
+      seenMulti = true;
       return `${count} pieces ${describeSequence(sequence, turn.player)}`
     }
   });
@@ -181,7 +186,7 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
-function expandTurn(turnDiv, turn, indicator) {
+function expandTurn(turnDiv, turn, indicator, prev) {
   const isExpanded = turnDiv.classList.toggle('expanded');
   indicator.innerText = isExpanded ? '−' : '+';
       
@@ -191,7 +196,7 @@ function expandTurn(turnDiv, turn, indicator) {
     if (!desc) {
       const descDiv = document.createElement('div');
       descDiv.classList.add('turn-description');
-      descDiv.innerText = describeTurn(turn);
+      descDiv.innerText = describeTurn(turn, prev);
       turnDiv.appendChild(descDiv);
     }
   } else if (desc) {
@@ -200,8 +205,8 @@ function expandTurn(turnDiv, turn, indicator) {
 }
 
 function renderHistory(gameHistory) {
-  const history = document.getElementById("history");
-  history.innerHTML = ""; // clear first
+  const historyEl = document.getElementById("historyEl");
+  historyEl.innerHTML = ""; // clear first
   const reverseChronology = gameHistory.slice().reverse();
   reverseChronology.forEach((turn, index) => {
     const prev = reverseChronology[index + 1] // index + 1 because we are reversed
@@ -216,7 +221,7 @@ function renderHistory(gameHistory) {
         const winnerBanner = document.createElement('div');
         winnerBanner.classList.add('winner-banner');
         winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
-        history.appendChild(winnerBanner);
+        historyEl.appendChild(winnerBanner);
       } else {
         // detailed description for this turn
         const descriptionDiv = document.createElement('div');
@@ -224,7 +229,7 @@ function renderHistory(gameHistory) {
         descriptionDiv.classList.add('turn-description');
         descriptionDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
         descriptionDiv.innerText = description;
-        history.appendChild(descriptionDiv);
+        historyEl.appendChild(descriptionDiv);
       }
     }
 
@@ -253,14 +258,43 @@ function renderHistory(gameHistory) {
     }
     turnDiv.appendChild(moves)
 
-    const indicator = document.createElement('span');
-    indicator.classList.add('expand-indicator');
-    indicator.innerText = '+';
-    turnDiv.appendChild(indicator);
-    turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator));
+    if (index !== 0) { // skip for most recent turn
+      const indicator = document.createElement('span');
+      indicator.classList.add('expand-indicator');
+      indicator.innerText = '+';
+      turnDiv.appendChild(indicator);
+      turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator, prev));
+    }
 
-    history.appendChild(turnDiv);
+    historyEl.appendChild(turnDiv);
   });
+  addHistoryControls(historyEl);
 }
+
+function addHistoryControls(historyEl) {
+  const controls = document.createElement('div');
+  controls.classList.add('history-controls');
+  
+  const expandAll = document.createElement('button');
+  expandAll.innerText = 'Expand All';
+  expandAll.classList.add('history-control');
+  expandAll.addEventListener('click', () => {
+    const turns = historyEl.querySelectorAll('.history-turn:not(.expanded)');
+    turns.forEach(turn => turn.click());
+  });
+  
+  const collapseAll = document.createElement('button');
+  collapseAll.innerText = 'Collapse All';
+  collapseAll.classList.add('history-control');
+  collapseAll.addEventListener('click', () => {
+    const turns = historyEl.querySelectorAll('.history-turn.expanded');
+    turns.forEach(turn => turn.click());
+  });
+  
+  controls.appendChild(expandAll);
+  controls.appendChild(collapseAll);
+  historyEl.appendChild(controls);
+}
+
 
 export { renderHistory }
