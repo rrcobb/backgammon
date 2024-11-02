@@ -1,4 +1,4 @@
-import type { Player, Game } from "./backgammon";
+import type { Player, Game, Move } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies } from "./strategies";
 import { renderHistory } from "./history";

@@ -154,21 +154,31 @@ div#strategy {
   display: inline-block;
   width: 32px;
   height: 186px;
-  background-color: color-mix(in srgb, var(--board-frame) 85%, black);  /* Slightly darker than frame */
-  filter: url(#mahogany-filter-vertical);
+  position: relative;  /* For pseudo-element positioning */
   border-left: 1px solid var(--board-border);
   border-right: 1px solid var(--board-border);
   box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-  /* show pieces in the middle */
   transform: rotate(180deg);
 }
 
+.bar::before {
+  content: '';
+  position: absolute;
+  background-color: var(--board-frame);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  filter: url(#mahogany-filter-vertical);
+  pointer-events: none;
+}
+
 .bar .piece {
-  margin-left: 7px;
-  margin-bottom: 4px;
-  margin-top: 4px;
-  z-index: 2;
-  box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.4);
+  margin-left: 5px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  isolation: isolate;
+  box-shadow: 0 0 5px 1px rgba(255, 255, 255, 0.4);
 }
 
 .piece.just-moved {
