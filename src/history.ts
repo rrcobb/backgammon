@@ -13,19 +13,26 @@ function showRoll(roll: [number, number]): string {
   return showDie(roll[0]) + showDie(roll[1]);
 }
 
-function showPos(move) {
+function showPos(move, isHit) {
   const start = move[0] == c.BAR ? 'bar' : (1 + move[0]);
   const end = move[1] == c.HOME ? 'home' : (1 + move[1]);
-  return start + "→" + end;
+  return start + "→" + end + (isHit ? '⊗' : '');
 }
 
-function showMoves(moves): string {
+function showMoves(moves, turn, prev): string {
   let passes = 0
   let result = "";
+
+  let hitLocs = [];
+  if (checkHit(turn, prev)) {
+    hitLocs = hitLocations(turn, prev);
+  }
+
   for (let m in moves) {
     let move = moves[m];
     if (move) {
-      result += showPos(move)
+      const isHit = hitLocs.includes(move[1]);
+      result += showPos(move, isHit);
     } else {
       passes +=1
       if (passes == moves.length) {
@@ -103,11 +110,45 @@ function describeSequence(sequence, player) {
   }
 }
 
-function describeTurn(turn): string {
+function checkHit(turn: Turn, prev: Turn): boolean {
+  if (!prev) return false;
+  
+  // Check if opponent's bar count increased
+  let prevBarCount, newBarCount;
+  if(turn.player === 'w') {
+    prevBarCount = prev.game.bBar;
+    newBarCount = turn.game.bBar;
+  } else {
+    prevBarCount = prev.game.wBar;
+    newBarCount = turn.game.wBar;
+  }
+  
+  return newBarCount > prevBarCount;
+}
+
+function hitLocations(turn: Turn, prev: Turn): number[] {
+  const opponent = turn.player === 'w' ? c.BLACK : c.WHITE;
+  const hits: number[] = [];
+  
+  // Check each position for disappeared opponent blots
+  for (let pos = 0; pos < 24; pos++) {
+    const prevBlot = (prev.game.positions[pos] ^ opponent) == 1;
+    if (prevBlot) {
+      const noOpponent = (turn.game.positions[pos] & opponent) != opponent;
+      if (noOpponent) {
+        hits.push(pos);
+      }
+    }
+  }
+  
+  return hits;
+}
+
+function describeTurn(turn, prev): string {
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
-  if (showMoves(turn.move) === "no moves possible") {
+  if (showMoves(turn.move, turn, prev) === "no moves possible") {
     return description + "No legal moves available.";
   }
 
@@ -122,21 +163,31 @@ function describeTurn(turn): string {
   });
 
   if (sequenceDescriptions.length === 1) {
-    return description + "Moved " + sequenceDescriptions[0] + ".";
+    description += "Moved " + sequenceDescriptions[0] + ".";
+  } else if (sequenceDescriptions.length === 2) {
+    description += "Moved " + sequenceDescriptions[0] + ' and ' + sequenceDescriptions[1] + ".";
+  } else {
+    const lastMove = sequenceDescriptions.pop();
+    description += "Moved " + sequenceDescriptions.join(', ') + ', and ' + lastMove + ".";
   }
 
-  if (sequenceDescriptions.length === 2) {
-    return description + "Moved " + sequenceDescriptions[0] + ' and ' + sequenceDescriptions[1] + ".";
+  if (checkHit(turn, prev)) {
+    const hitLocs = hitLocations(turn, prev);
+    let hitDesc = `Hit ${turn.player === 'w' ? 'Black' : 'White'}'s blot`
+    hitDesc += hitLocs.map(pos => ` on ${pos + 1}`).join(' and');
+    description += ` ${hitDesc}.`;
   }
 
-  const lastMove = sequenceDescriptions.pop();
-  return description + "Moved " + sequenceDescriptions.join(', ') + ', and ' + lastMove + ".";
+  return description;
 }
 
 function renderHistory(gameHistory) {
   const history = document.getElementById("history");
   history.innerHTML = ""; // clear first
-  gameHistory.slice().reverse().forEach((turn, index) => {
+  const reverseChronology = gameHistory.slice().reverse();
+  reverseChronology.forEach((turn, index) => {
+    const prev = reverseChronology[index + 1] // index + 1 because we are reversed
+    const hitOpponent = checkHit(turn, prev);
     const turnDiv = document.createElement('div');
     turnDiv.classList.add('history-turn');
     turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
@@ -151,7 +202,7 @@ function renderHistory(gameHistory) {
       } else {
         // detailed description for this turn
         const descriptionDiv = document.createElement('div');
-        const description = describeTurn(turn);
+        const description = describeTurn(turn, prev);
         descriptionDiv.classList.add('turn-description');
         descriptionDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
         descriptionDiv.innerText = description;
@@ -174,7 +225,7 @@ function renderHistory(gameHistory) {
     turnDiv.appendChild(rollSpan);
 
     const moves = document.createElement('span');
-    const movesText = showMoves(turn.move);
+    const movesText = showMoves(turn.move, turn, prev);
     moves.innerText = movesText;
     moves.classList.add('turn-moves');
     if (movesText === "no moves possible") {
