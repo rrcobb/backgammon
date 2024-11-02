@@ -181,6 +181,24 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
+function expandTurn(turnDiv, turn, indicator) {
+  const isExpanded = turnDiv.classList.toggle('expanded');
+  indicator.innerText = isExpanded ? '−' : '+';
+      
+  // Show/hide description
+  const desc = turnDiv.querySelector('.turn-description');
+  if (isExpanded) {
+    if (!desc) {
+      const descDiv = document.createElement('div');
+      descDiv.classList.add('turn-description');
+      descDiv.innerText = describeTurn(turn);
+      turnDiv.appendChild(descDiv);
+    }
+  } else if (desc) {
+    desc.remove();
+  }
+}
+
 function renderHistory(gameHistory) {
   const history = document.getElementById("history");
   history.innerHTML = ""; // clear first
@@ -234,6 +252,12 @@ function renderHistory(gameHistory) {
       moves.classList.add('has-passes');
     }
     turnDiv.appendChild(moves)
+
+    const indicator = document.createElement('span');
+    indicator.classList.add('expand-indicator');
+    indicator.innerText = '+';
+    turnDiv.appendChild(indicator);
+    turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator));
 
     history.appendChild(turnDiv);
   });

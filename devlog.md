@@ -531,20 +531,21 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - colors
 - improved history display (instead of transcript)
 - explain move
-  - text description of move, reveal from the short summary line
+  - text description of move
+- render bar pieces in the middle
 
 ## UI / TODO
 
-- render bar pieces in the middle
-- game history
-  - undo / redo
+- reveal longer description from the short summary line
+- show what moved (arrows? shadows?)
+  - show on hover
+- undo / reset to a position
 - reorder game panels so it fits on different screen sizes
   - history below
 - tweak game controls
 - separate roll from move
 
 - show the valid moves
-- show what moved (arrows? shadows?)
 - display about the strategy
   - strategy descriptions
   - show probabilities of hits / other events

@@ -308,3 +308,35 @@ button {
   height: 4em;
   text-wrap: balance;
 }
+
+/* show / collapse the longer description */
+.history-turn {
+  cursor: pointer;
+  position: relative;  /* for positioning the indicator */
+}
+
+.history-turn:hover {
+  transition: border-left-width 0.2s;
+}
+
+.expand-indicator {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+.history-turn:hover .expand-indicator {
+  display: inline;
+}
+
+.history-turn.expanded .expand-indicator {
+  display: inline;
+}
+
+.history-turn.expanded .turn-description {
+  font-size: 13px;
+  grid-column: 1 / -1;  /* span all columns */
+}
