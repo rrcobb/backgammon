@@ -109,6 +109,8 @@ div.home {
   width: 32px;
   height: 186px;
   background-color: var(--board-frame);
+  /* show pieces in the middle */
+  transform: rotate(180deg);
 }
 
 .bar .piece {
@@ -239,6 +241,7 @@ button {
   grid-template-columns: 1em 3em 1fr;
   gap: 4px;
   align-items: center;
+  overflow-x: clip;
 }
 
 .turn-number {
@@ -259,12 +262,10 @@ button {
 }
 
 .turn-moves {
+  font-size: 13px;
   padding-left: 8px;
   margin-left: 4px;
-  /* Prevent wrapping of moves if possible */
   white-space: nowrap;
-  overflow: clip;
-  text-overflow: clip;
 }
 
 .turn-moves.no-moves {
@@ -304,5 +305,6 @@ button {
 .turn-description {
   font-size: 13px;
   padding: 6px;
-  height: 6em;
+  height: 4em;
+  text-wrap: balance;
 }

@@ -19,7 +19,7 @@
     "typescript": "^5.6.3"
   },
   "knip": {
-    "entry": ["test/*.test.ts", "src/render.ts"],
+    "entry": ["test/*.test.ts", "src/render.ts", "src/learnFactors.ts"],
     "project": ["**/*.{js,ts}"],
     "exclude": ["binaries"]
   }

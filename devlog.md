@@ -530,13 +530,14 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - fonts
 - colors
 - improved history display (instead of transcript)
+- explain move
+  - text description of move, reveal from the short summary line
 
 ## UI / TODO
 
+- render bar pieces in the middle
 - game history
   - undo / redo
-  - explain move
-    - text description of move, reveal from the short summary line
 - reorder game panels so it fits on different screen sizes
   - history below
 - tweak game controls
