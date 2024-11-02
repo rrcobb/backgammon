@@ -537,16 +537,19 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - collapse / expand all
 - show what moved (arrows? shadows?)
   - show the most recent turn
+  
+  BUG: something about moving more than 1 piece to a position is not highlighting correctly
 
 ## UI / TODO
 
-- show old game (as an option when we expand)
-- undo / reset to a position
-- reorder game panels so it fits on different screen sizes
-  - history below
+- first roll // first turn
+- starting roll
+- separate roll from move
+
+- doubling cube
+- scorekeeping between games / history
 
 - tweak game controls
-- separate roll from move
 - show the valid moves
 - display about the strategy
   - strategy descriptions
@@ -556,10 +559,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - highlight blots
   - highlight primes
 
-- first roll // first turn
-- starting roll
-- doubling cube
-- scorekeeping between games
+- show old game (as an option when we expand)
+- undo / reset to a position
+- reorder game panels so it fits on different screen sizes
+  - history below
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer

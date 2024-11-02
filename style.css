@@ -1,16 +1,25 @@
 :root {
-  --board-frame: #A65D03;  /* Lighter brown frame */
+  --board-frame: #8B4513;
   --board-bg: #F5E6D3;     /* Keep the warm ivory */
   --stripe: #436B95;       /* Muted blue */
   --alt-stripe: #D4C5AA;   /* Light tan/beige */
 
-  --board-texture: repeating-linear-gradient(
+  --board-texture: 
+  repeating-linear-gradient(
     45deg,
-    var(--board-bg),
-    var(--board-bg) 5px,
+    transparent,
+    transparent 5px,
     color-mix(in srgb, var(--board-bg) 98%, black) 5px,
     color-mix(in srgb, var(--board-bg) 98%, black) 6px
-  );
+  ),
+  repeating-linear-gradient(
+    135deg,
+    transparent,
+    transparent 5px,
+    color-mix(in srgb, var(--board-bg) 98%, black) 5px,
+    color-mix(in srgb, var(--board-bg) 98%, black) 6px
+  ),
+  var(--board-bg);
 
   --white-piece: #ddd;
   --black-piece: #222;
@@ -64,17 +73,20 @@ div.home {
   height: calc(var(--board-height) + var(--frame-width));
   width: var(--frame-width);
   background-color: var(--board-frame);
+  filter: url(#mahogany-filter-vertical);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  z-index: 1;
 }
 
 .home-count {
   margin-top: var(--frame-width);
+  margin-bottom: 10px;
   font-size: 12px;
   text-align: center;
   padding: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 2px;
 }
 
@@ -82,6 +94,7 @@ div.home {
   margin-left: var(--frame-width);
   height: var(--frame-width);
   background: var(--board-frame);
+  filter: url(#mahogany-filter-horizontal);
   border-bottom: 2px solid var(--board-border);
 }
 
@@ -90,6 +103,7 @@ div.home {
   height: calc(var(--board-height) + 2.5px + 2 * var(--frame-width));
   width: var(--frame-width);
   background: var(--board-frame);
+  filter: url(#mahogany-filter-vertical);
   top: -2px;
   right: calc(0px - var(--frame-width));
   border: 2px solid var(--board-border);
@@ -116,7 +130,9 @@ div.home {
 }
 
 .roll img {
-  clip-path: inset(10px round 9px);
+  clip-path: inset(8px round 8px);
+  margin-left: -10px;
+  width: 52px;
 }
 
 .bottom .label {
@@ -129,6 +145,7 @@ div.home {
   width: 32px;
   height: 186px;
   background-color: color-mix(in srgb, var(--board-frame) 85%, black);  /* Slightly darker than frame */
+  filter: url(#mahogany-filter-vertical);
   border-left: 1px solid var(--board-border);
   border-right: 1px solid var(--board-border);
   box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
@@ -140,21 +157,19 @@ div.home {
   margin-left: 7px;
   margin-bottom: 4px;
   margin-top: 4px;
-  border: 1px dotted rgba(255,255,255, 0.5);
+  box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 .piece.just-moved {
-  box-shadow: 0 0 3px 1px rgba(255, 166, 0, 0.9),  /* inner orange glow */
-              0 0 6px 2px rgba(255, 166, 0, 0.7);  /* outer orange glow */
+  box-shadow: 0 0 2px 1px rgba(255, 166, 0, 0.9),  /* inner orange glow */
+              0 0 4px 2px rgba(255, 166, 0, 0.7);  /* outer orange glow */
 }
 
 .piece.ghost {
   background: none;
-  border: 2px dotted #fff;  /* white dots */
-  outline: 2px dotted #666; /* gray dots */
-  outline-offset: -4px;     /* align with the border */
-  opacity: 0.9;             /* increase opacity */
-  box-shadow: none;
+  border: 2px dashed rgba(255, 166, 0, 0.9);  /* orange dots */
+  box-shadow: 0 0 8px 2px rgba(100, 100, 100, 0.2),
+    inset 0 0 8px 2px rgba(100, 100, 100, 0.2);
 }
 
 .angle.red::before {
@@ -163,6 +178,7 @@ div.home {
     var(--stripe) 50%,
     color-mix(in srgb, var(--stripe) 95%, black) 100%
   );
+  filter: url(#felt-filter);
 }
 
 .angle.gray::before {
@@ -171,6 +187,7 @@ div.home {
     var(--alt-stripe) 50%,
     color-mix(in srgb, var(--alt-stripe) 95%, black) 100%
   );
+  filter: url(#felt-filter);
 }
 
 .angle {
@@ -282,6 +299,7 @@ button {
   font-size: 14px;
   font-weight: normal;
   background-color: var(--board-frame);
+  filter: url(#mahogany-filter-horizontal);
   padding: 10px;
   padding-left: 45px; /* centering, account for right frame */
   text-align: center;
@@ -291,7 +309,7 @@ button {
 #turn-indicator span {
   padding: 2px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .history-turn {
