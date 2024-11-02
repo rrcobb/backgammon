@@ -22,66 +22,86 @@
   </body>
 
   <!-- defining some textures for use in the game board-->
-
   <svg width="0" height="0">
-    <defs>
-
+  <defs>
     <filter id="mahogany-filter-horizontal" filterUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence 
         type="fractalNoise" 
-        baseFrequency="0.008 0.15" 
-        numOctaves="4" 
+        baseFrequency="0.008 0.25" 
+        numOctaves="5" 
         seed="5" 
       />
+      <feGaussianBlur stdDeviation="0.3"/>
       <feColorMatrix
         type="matrix"
-        values="0.9 0 0 0 0.08
-                0.2 0.85 0 0 0.02
-                0.1 0 0.8 0 0
-                0 0 0 1 0"
+        values="0.95 0 0 0 0.08
+                0.15 0.9 0 0 0.02
+                0.05 0 0.85 0 0
+                0 0 0 0.9 0"
       />
       <feComponentTransfer>
-        <feFuncR type="linear" slope="0.8" intercept="0.2"/>
-        <feFuncG type="linear" slope="0.6" intercept="0.15"/>
-        <feFuncB type="linear" slope="0.5" intercept="0.1"/>
+        <feFuncR type="linear" slope="0.8" intercept="0.15"/>
+        <feFuncG type="linear" slope="0.65" intercept="0.12"/>
+        <feFuncB type="linear" slope="0.55" intercept="0.08"/>
       </feComponentTransfer>
       <feBlend mode="multiply" in2="SourceGraphic"/>
     </filter>
 
-    <!-- Vertical grain (for sides and bar) -->
     <filter id="mahogany-filter-vertical" filterUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence 
         type="fractalNoise" 
-        baseFrequency="0.15 0.008" 
+        baseFrequency="0.20 0.007" 
         numOctaves="4" 
         seed="5" 
       />
+      <feGaussianBlur stdDeviation="0.4"/>
       <feColorMatrix
         type="matrix"
-        values="0.9 0 0 0 0.08
-                0.2 0.85 0 0 0.02
-                0.1 0 0.8 0 0
-                0 0 0 1 0"
+        values="0.95 0 0 0 0.08
+                0.15 0.9 0 0 0.02
+                0.05 0 0.85 0 0
+                0 0 0 0.9 0"
       />
       <feComponentTransfer>
-        <feFuncR type="linear" slope="0.8" intercept="0.2"/>
-        <feFuncG type="linear" slope="0.6" intercept="0.15"/>
-        <feFuncB type="linear" slope="0.5" intercept="0.1"/>
+        <feFuncR type="linear" slope="0.8" intercept="0.15"/>
+        <feFuncG type="linear" slope="0.65" intercept="0.12"/>
+        <feFuncB type="linear" slope="0.55" intercept="0.08"/>
       </feComponentTransfer>
       <feBlend mode="multiply" in2="SourceGraphic"/>
-    </filter>    
-
-
-    <filter id="felt-filter">
-    <feTurbulence 
-            type="fractalNoise" 
-            baseFrequency="0.7" 
-            numOctaves="7" 
-            seed="2" 
-            />
-    <feColorMatrix type="saturate" values="0.1"/>
-    <feBlend mode="soft-light" in2="SourceGraphic"/>
     </filter>
-    </defs>
-  </svg>
+  </defs>
+</svg>
+
+
+  <svg width="0" height="0">
+  <defs>
+    <filter id="felt-filter" filterUnits="userSpaceOnUse" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence 
+        type="fractalNoise" 
+        baseFrequency="1.7" 
+        numOctaves="8" 
+        seed="2"
+        result="noise" 
+      />
+      <feColorMatrix
+        in="noise"
+        type="saturate"
+        values="0.1"
+        result="desaturated"
+      />
+      <!-- Adjust the noise opacity -->
+      <feComponentTransfer in="desaturated" result="adjusted">
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <!-- Blend with original -->
+      <feBlend
+        in="adjusted"
+        in2="SourceGraphic"
+        mode="overlay"
+        result="feltTexture"
+      />
+    </filter>
+  </defs>
+</svg>
+
 </html>
