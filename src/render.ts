@@ -57,7 +57,7 @@ function showWinner(player: Player) {
   indicator.textContent = `${name} wins!`;
 }
 
-function render(game: Game): void {
+function render(game: Game, move?: Move): void {
   let board = document.getElementById("board");
   if (!board) {
     throw new Error("board element not found");
@@ -142,10 +142,34 @@ function render(game: Game): void {
 
     const count = v & 0b00001111;
     const color = v & c.WHITE ? "w" : "b";
+    const pieces = [];
+
     for (let i = 0; i < count; i++) {
       let piece = document.createElement("span");
       piece.classList.add("piece");
       piece.classList.add(color);
+      pieces.push(piece)
+    }
+    if (move) {
+      for (let m of move) { 
+        if (!m) continue;
+        let [from, to] = m;
+        let moved = 0;
+        if (from == i) {
+          let ghost = document.createElement("span");
+          ghost.classList.add("piece", "ghost");
+          pieces.push(ghost);
+        }
+        if (to == i) {
+          // add back to front
+          let justMoved = pieces[pieces.length - (++moved)]
+          if (justMoved) { // could be a ghost has moved on
+            justMoved.classList.add('just-moved');
+          }
+        }
+      }
+    }
+    for (let piece of pieces) {
       piecesContainer.appendChild(piece);
     }
   });
@@ -206,7 +230,7 @@ function playTurn() {
   const finished = h.checkWinner(next);
   game = next;
   gameHistory.push({turnNo, move, player, roll, game}) 
-  render(game);
+  render(game, move);
   renderRoll(roll);
   renderHistory(gameHistory);
   if (finished) {

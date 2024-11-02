@@ -535,18 +535,18 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - render bar pieces in the middle
 - reveal longer description from the short summary line
 - collapse / expand all
+- show what moved (arrows? shadows?)
+  - show the most recent turn
 
 ## UI / TODO
 
-- show what moved (arrows? shadows?)
-  - show the most recent turn
-  - show as an option when we expand
+- show old game (as an option when we expand)
 - undo / reset to a position
 - reorder game panels so it fits on different screen sizes
   - history below
+
 - tweak game controls
 - separate roll from move
-
 - show the valid moves
 - display about the strategy
   - strategy descriptions
