@@ -2,6 +2,78 @@ import type { Player, Game, Move } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies } from "./strategies";
 import { renderHistory } from "./history";
+import { getBoxToBoxArrow } from "perfect-arrows"
+
+function perfectArrow(b1, b2, container) {
+  const cr = container.getBoundingClientRect();
+  const r1 = { x: b1.x - cr.x, y: b1.y - cr.y - 20 , width: b1.width, height: b1.height };
+  const r2 = { x: b2.x - cr.x, y: b2.y - cr.y - 20, width: b2.width, height: b2.height };
+
+  const dx = r2.x - r1.x;
+  const dy = r2.y - r1.y;
+  const startBottomHalf = r1.y > 200;
+  const startLeftHalf = r1.x < 300;
+  const isMovingRight = r2.x > r1.x;
+  const isMovingDown = r2.y > r1.y;
+  const isMovingUp = r1.y > r2.y;
+  const isHorizontalMove = Math.abs(dx) > Math.abs(dy);
+  const isFromBar = r1.x == 328; // sensitive!
+
+  const flip = isHorizontalMove ? 
+    // For primarily horizontal moves:
+    (startBottomHalf ? 
+      (isMovingRight && isMovingUp) || (!isMovingRight && !isMovingDown) : 
+      (isMovingRight && !isMovingUp) || (isMovingDown && !isFromBar)
+    ):
+    // For primarily vertical moves:
+    (startLeftHalf ? (!isMovingRight && isMovingDown) : (!isMovingDown && !isMovingRight) || (isMovingDown && !isMovingRight));
+
+  console.log({flip, startBottomHalf, startLeftHalf, isHorizontalMove, isMovingRight, isMovingDown, r1, r2})
+
+  let bow = 0.3; 
+  if (Math.abs(dy) > Math.abs(dx)) {
+    bow = 0.1;
+  }
+
+  const arrow = getBoxToBoxArrow( 
+    r1.x, r1.y, r1.width, r1.height, 
+    r2.x, r2.y, r2.width, r2.height,
+    {
+      bow,
+      stretch: 0.5,      
+      stretchMin: 15,
+      stretchMax: 400,
+      padStart: 0,
+      padEnd: 5,
+      flip,
+      straights: false,
+    }
+  );
+
+  const [sx, sy, cx, cy, ex, ey, ae, as, ec] = arrow
+  const endAngleAsDegrees = ae * (180 / Math.PI)
+
+  return (`<svg
+          viewBox="0 0 ${cr.width} ${cr.height}"
+          style="width: 100%; height: 100%"
+          stroke="#000"
+          fill="#000"
+          strokeWidth="1.5"
+          >
+          <path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" fill="none" stroke-dasharray="5,5,5"/>
+          <polygon
+            points="0,-4 8,0, 0,4"
+            transform="translate(${ex},${ey}) rotate(${endAngleAsDegrees})"
+          />
+          </svg>`)
+}
+
+function showArrow(fromPiece, toPiece, container) {
+  let from = fromPiece.getBoundingClientRect();
+  let to = toPiece.getBoundingClientRect();
+  let arrow = perfectArrow(from, to, container)
+  container.innerHTML += arrow;
+}
 
 // globals
 var game;
@@ -98,6 +170,7 @@ function render(game: Game, move?: Move): void {
   game.positions.forEach((v: number, i: number) => {
     let triangle = document.createElement("div");
     triangle.classList.add("angle");
+    triangle.classList.add(`position-${i}`);
     if (i % 2 == 0) {
       triangle.classList.add("red");
     } else {
@@ -150,28 +223,45 @@ function render(game: Game, move?: Move): void {
       piece.classList.add(color);
       pieces.push(piece)
     }
-    if (move) {
-      let moved = 0;
-      for (let m of move) { 
-        if (!m) continue;
-        let [from, to] = m;
-        if (from == i) {
-          let ghost = document.createElement("span");
-          ghost.classList.add("piece", "ghost");
-          pieces.push(ghost);
-        } else if (to == i) {
-          // add back to front
-          let justMoved = pieces[pieces.length - (++moved)]
-          if (justMoved) {
-            justMoved.classList.add('just-moved');
-          }
-        }
-      }
-    }
+
     for (let piece of pieces) {
       piecesContainer.appendChild(piece);
     }
   });
+
+  if (move) {
+    let arrows = move.map(_ => [])
+    for (let n in move) { 
+      let m = move[n]
+      if (!m) continue;
+      let [from, to] = m;
+      let ghost = document.createElement("span");
+      ghost.classList.add("piece", "ghost");
+      let fromPieces = document.querySelector(`.position-${from} .pieces`);
+      if (from == c.BAR) {
+        fromPieces = document.querySelector('.bar')
+      }
+      fromPieces.appendChild(ghost)
+      arrows[n].push(ghost) 
+    }
+
+    for (let n in move) { 
+      let m = move[n]
+      if (!m) continue;
+      let [from, to] = m;
+      let toPieces = document.querySelectorAll(`.position-${to} .pieces .piece`);
+      let dest = toPieces[toPieces.length - 1]
+      if (to == c.HOME) {
+        dest = document.querySelector('.home-count')  
+      }
+      dest.classList.add('just-moved');
+      arrows[n].push(dest) 
+    }
+    const arrowContainer = document.createElement('div');
+    arrowContainer.classList.add('arrow-container');
+    board.insertAdjacentElement("beforeend", arrowContainer);
+    arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer))
+  }
 
   let turnIndicator = document.createElement("div");
   turnIndicator.id = "turn-indicator";

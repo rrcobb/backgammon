@@ -537,8 +537,17 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - collapse / expand all
 - show what moved (arrows? shadows?)
   - show the most recent turn
-  
-  BUG: something about moving more than 1 piece to a position is not highlighting correctly
+- FIXED: something about moving more than 1 piece to a position is not highlighting correctly
+- wood grains
+- felt filter
+- gradients and shadows
+- arrows
+- arrow/highlight improvements
+  - only picking the first when multiple destinations are on the same spot
+  - always showing moving off the bar from black's bar
+  - arrow heads are weird
+  - arrow curves aren't around the pieces
+  - arrows are heavily drawn
 
 ## UI / TODO
 
