@@ -1,12 +1,21 @@
 :root {
-  --board-frame: #D4A373;
-  --board-bg: #FAEDCD;
-  --stripe: #9093B6;
-  --alt-stripe: #77ACBB;
-  --white-piece: #eee;
+  --board-frame: #A65D03;  /* Lighter brown frame */
+  --board-bg: #F5E6D3;     /* Keep the warm ivory */
+  --stripe: #436B95;       /* Muted blue */
+  --alt-stripe: #D4C5AA;   /* Light tan/beige */
+
+  --board-texture: repeating-linear-gradient(
+    45deg,
+    var(--board-bg),
+    var(--board-bg) 5px,
+    color-mix(in srgb, var(--board-bg) 98%, black) 5px,
+    color-mix(in srgb, var(--board-bg) 98%, black) 6px
+  );
+
+  --white-piece: #ddd;
   --black-piece: #222;
   --stripe-border: black;
-  --board-border: black;
+  --board-border: #4A2800;
   --piece-border: black;
   --ui-font: "Lucida Grande";
   --heading-font: "Palatino";
@@ -24,10 +33,14 @@
 
 div#board {
   border: 2px solid black;
-  background: var(--board-bg);
+  background: var(--board-texture);
   text-align: center;
   position: relative;
   margin-right: var(--frame-width);
+
+  border: 2px solid var(--board-border);
+  z-index: 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 div#strategy {
@@ -60,12 +73,16 @@ div.home {
   margin-top: var(--frame-width);
   font-size: 12px;
   text-align: center;
+  padding: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
 .frame {
   margin-left: var(--frame-width);
   height: var(--frame-width);
   background: var(--board-frame);
+  border-bottom: 2px solid var(--board-border);
 }
 
 .right {
@@ -75,14 +92,17 @@ div.home {
   background: var(--board-frame);
   top: -2px;
   right: calc(0px - var(--frame-width));
-  border: 2px solid black;
-  border-left: 0;
+  border: 2px solid var(--board-border);
+  border-left: none;
 }
 
 .top,
 .bottom {
   display: flex;
   margin-left: var(--frame-width);
+  border: 2px solid var(--board-border);
+  border-top: none;
+  border-bottom: none;
 }
 
 .bottom {
@@ -108,7 +128,10 @@ div.home {
   display: inline-block;
   width: 32px;
   height: 186px;
-  background-color: var(--board-frame);
+  background-color: color-mix(in srgb, var(--board-frame) 85%, black);  /* Slightly darker than frame */
+  border-left: 1px solid var(--board-border);
+  border-right: 1px solid var(--board-border);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.2);  /* subtle depth */
   /* show pieces in the middle */
   transform: rotate(180deg);
 }
@@ -120,11 +143,19 @@ div.home {
 }
 
 .angle.red::before {
-  background: var(--stripe);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--stripe) 85%, white) 0%,
+    var(--stripe) 50%,
+    color-mix(in srgb, var(--stripe) 95%, black) 100%
+  );
 }
 
 .angle.gray::before {
-  background: var(--alt-stripe);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--alt-stripe) 85%, white) 0%,
+    var(--alt-stripe) 50%,
+    color-mix(in srgb, var(--alt-stripe) 95%, black) 100%
+  );
 }
 
 .angle {
@@ -151,6 +182,8 @@ div.home {
   z-index: 2;
   font-size: 12px;
   margin: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
 .angle .pieces {
@@ -159,12 +192,18 @@ div.home {
 }
 
 .w {
-  background: var(--white-piece);
+  background: radial-gradient(circle at 35% 35%, 
+    white 30%, 
+    var(--white-piece) 100%
+  );
   box-shadow: 0 0 2px 0px var(--piece-border);
 }
 
 .b {
-  background: var(--black-piece);
+  background: radial-gradient(circle at 35% 35%, 
+    #444 30%, 
+    var(--black-piece) 100%
+  );
   box-shadow: 0 0 1px 0px var(--piece-border);
 }
 
@@ -231,6 +270,13 @@ button {
   padding: 10px;
   padding-left: 45px; /* centering, account for right frame */
   text-align: center;
+  border-top: 2px solid var(--board-border);
+}
+
+#turn-indicator span {
+  padding: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .history-turn {

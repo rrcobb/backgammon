@@ -534,11 +534,13 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - text description of move
 - render bar pieces in the middle
 - reveal longer description from the short summary line
+- collapse / expand all
 
 ## UI / TODO
 
 - show what moved (arrows? shadows?)
-  - show when we hover / when we expand
+  - show the most recent turn
+  - show as an option when we expand
 - undo / reset to a position
 - reorder game panels so it fits on different screen sizes
   - history below

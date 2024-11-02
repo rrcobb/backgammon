@@ -152,7 +152,9 @@ function render(game: Game): void {
 
   let turnIndicator = document.createElement("div");
   turnIndicator.id = "turn-indicator";
-  turnIndicator.textContent = game.turn === c.WHITE ? "White to play" : "Black to play";
+  let turnSpan = document.createElement('span');
+  turnSpan.innerText = game.turn === c.WHITE ? "White to play" : "Black to play";
+  turnIndicator.appendChild(turnSpan);
   board.insertAdjacentElement("beforeend", turnIndicator);
 }
 

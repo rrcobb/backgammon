@@ -110,7 +110,7 @@ function describeSequence(sequence, player) {
   }
 }
 
-function checkHit(turn: Turn, prev: Turn): boolean {
+function checkHit(turn, prev): boolean {
   if (!prev) return false;
   
   // Check if opponent's bar count increased
@@ -126,7 +126,7 @@ function checkHit(turn: Turn, prev: Turn): boolean {
   return newBarCount > prevBarCount;
 }
 
-function hitLocations(turn: Turn, prev: Turn): number[] {
+function hitLocations(turn, prev): number[] {
   const opponent = turn.player === 'w' ? c.BLACK : c.WHITE;
   const hits: number[] = [];
   
