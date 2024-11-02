@@ -167,6 +167,7 @@ div#strategy {
   margin-left: 7px;
   margin-bottom: 4px;
   margin-top: 4px;
+  z-index: 2;
   box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 

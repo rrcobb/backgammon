@@ -151,19 +151,18 @@ function render(game: Game, move?: Move): void {
       pieces.push(piece)
     }
     if (move) {
+      let moved = 0;
       for (let m of move) { 
         if (!m) continue;
         let [from, to] = m;
-        let moved = 0;
         if (from == i) {
           let ghost = document.createElement("span");
           ghost.classList.add("piece", "ghost");
           pieces.push(ghost);
-        }
-        if (to == i) {
+        } else if (to == i) {
           // add back to front
           let justMoved = pieces[pieces.length - (++moved)]
-          if (justMoved) { // could be a ghost has moved on
+          if (justMoved) {
             justMoved.classList.add('just-moved');
           }
         }
