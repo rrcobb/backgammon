@@ -572,6 +572,9 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - reorder game panels so it fits on different screen sizes
   - history below
+- board zoom?
+- screen size awareness
+  - expand/collapse buttons placement
 
 - show previous game state (as an option when we expand)
 - undo / reset to a position

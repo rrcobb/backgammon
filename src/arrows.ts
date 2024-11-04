@@ -34,7 +34,9 @@ function perfectArrow(b1, b2, container) {
     (startLeftHalf ? 
      (isMovingDown && !isMovingRight) || (!isMovingDown && isMovingRight || !startBottomHalf) : 
      (!isMovingDown && !isMovingRight) || (isMovingDown && !isMovingRight));
-  console.log({flip, isHorizontalMove, startLeftHalf, isMovingRight, isMovingDown, isFromBar, isMovingUp, startBottomHalf })
+
+  // handy for debugging arrow curve issues...
+  // console.log({flip, isHorizontalMove, startLeftHalf, isMovingRight, isMovingDown, isFromBar, isMovingUp, startBottomHalf })
 
   let bow = 0.3; 
   if (Math.abs(dy) > Math.abs(dx)) {
