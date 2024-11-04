@@ -543,22 +543,29 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - gradients and shadows
 - arrows
 - arrow/highlight improvements
-  - only picking the first when multiple destinations are on the same spot
-  - always showing moving off the bar from black's bar
   - arrow heads are weird
-  - arrow curves aren't around the pieces
   - arrows are heavily drawn
+  - arrow curves aren't around the pieces
 
 ## UI / TODO
 
+- arrow issues
+  - only picking the first when multiple destinations are on the same spot
+  - always showing moving off the bar from black's bar
+  - always showing moving to black's home
+  - start/end a little off? particularly the end
+
 - first roll // first turn
 - starting roll
-- separate roll from move
 
 - doubling cube
 - scorekeeping between games / history
 
 - tweak game controls
+  - play / fast forward (10) / play to end
+  - rewind a move
+
+- separate roll from move
 - show the valid moves
 - display about the strategy
   - strategy descriptions
@@ -568,7 +575,7 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - highlight blots
   - highlight primes
 
-- show old game (as an option when we expand)
+- show previous game state (as an option when we expand)
 - undo / reset to a position
 - reorder game panels so it fits on different screen sizes
   - history below
@@ -576,10 +583,12 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
 
+- web play / pvp
+- web strategy simulator
+
 ## Other Todos...
 
-- eventually, if the game really needs faster play, we can try optimizing again
-  - parallelize, maybe bun workers
+- eventually, if the game really needs faster play, we can try optimizing again parallelize, maybe bun workers
   - see if we can find hotspots and optimize them down
 - evaluation / strategy comparison
   - we have the tournament, but we could add a difference-of-rollouts method

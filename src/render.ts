@@ -44,7 +44,7 @@ function perfectArrow(b1, b2, container) {
       stretchMin: 15,
       stretchMax: 400,
       padStart: 0,
-      padEnd: 5,
+      padEnd: 10,
       flip,
       straights: false,
     }
