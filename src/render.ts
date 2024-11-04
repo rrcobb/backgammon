@@ -55,8 +55,11 @@ function renderStrategySection() {
 
 function showWinner(player: Player) {
   let indicator = document.getElementById("turn-indicator");
+  indicator.innerHTML = "";
   let name = player == c.WHITE ? "White" : "Black";
-  indicator.textContent = `${name} wins!`;
+  let winner = document.createElement('span');
+  winner.innerText = `${name} wins!`;
+  indicator.appendChild(winner);
 }
 
 function render(game: Game, move?: Move): void {
@@ -284,7 +287,11 @@ function handleTurn(roll: Roll) {
 }
 
 function playTurn() {
-  if (h.checkWinner(game)) return;
+  const finished = h.checkWinner(game);
+  if (finished) {
+    showWinner(finished);
+    disableTurns();
+  }
 
   if (!game.turn) {
     // Handle roll-off to start the game
@@ -303,13 +310,18 @@ document.addEventListener("DOMContentLoaded", () => {
   initGame();
 
   if (window.location.hash) {
-    restoreGameHistoryFromUrl(window.location.hash).then((h) => {
-      gameHistory = h;
+    restoreGameHistoryFromUrl(window.location.hash).then((urlHistory) => {
+      gameHistory = urlHistory;
       let last = gameHistory[gameHistory.length - 1]
       game = last.game
       render(game, last.move)
       renderHistory(gameHistory)
       renderRoll(last.roll)
+      const finished = h.checkWinner(game);
+      if (finished) {
+        showWinner(finished);
+        disableTurns();
+      }
       console.log("game restored at turn", last.turnNo)
     })
   }

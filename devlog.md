@@ -558,13 +558,13 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - start/end a little off? particularly the end
   - fixed by going point to point, instead of using the boxes thing
 
-## UI / TODO
-
 - first roll // first turn
 - starting roll
 
-- doubling cube
+## UI / TODO
+
 - scorekeeping between games / history
+- doubling cube
 
 - tweak game controls
   - play / fast forward (10) / play to end
