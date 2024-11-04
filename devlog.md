@@ -547,12 +547,18 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - arrows are heavily drawn
   - arrow curves aren't around the pieces
 
-## UI / TODO
+- web: url to restore a game state... or even a game history? (game history would require some compression, we only have some ~16k (32k?) bytes in the address...  (https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers/417184#417184)
+  - `JSON.stringify(window.gameHistory).length == 16957` after a 38 turn game, and that's pretty compressible, so I think we could make it work
+  - Big note: This was amazingly easy. So fucking cool. Claude++
 
 - arrow issues
   - only picking the first when multiple destinations are on the same spot
   - always showing moving off the bar from black's bar
   - always showing moving to black's home
+
+## UI / TODO
+
+- arrow issues
   - start/end a little off? particularly the end
 
 - first roll // first turn
@@ -565,8 +571,16 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - play / fast forward (10) / play to end
   - rewind a move
 
+- reorder game panels so it fits on different screen sizes
+  - history below
+
+- show previous game state (as an option when we expand)
+- undo / reset to a position
+
 - separate roll from move
+
 - show the valid moves
+
 - display about the strategy
   - strategy descriptions
   - show probabilities of hits / other events
@@ -575,19 +589,11 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - highlight blots
   - highlight primes
 
-- show previous game state (as an option when we expand)
-- undo / reset to a position
-- reorder game panels so it fits on different screen sizes
-  - history below
-
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
 
 - web play / pvp
 - web strategy simulator
-
-- web: url to restore a game state... or even a game history? (game history would require some compression, we only have some ~16k (32k?) bytes in the address...  (https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers/417184#417184)
-  - `JSON.stringify(window.gameHistory).length == 16957` after a 38 turn game, and that's pretty compressible, so I think we could make it work
 
 ## Other Todos...
 

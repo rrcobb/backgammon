@@ -72,10 +72,12 @@ function render(game: Game, move?: Move): void {
   // show count for pieces in home
   let blackHome = document.createElement("div");
   blackHome.classList.add("home-count");
+  blackHome.classList.add("black-home");
   blackHome.textContent = `Black ${game.bHome}`;
 
   let whiteHome = document.createElement("div");
   whiteHome.classList.add("home-count");
+  whiteHome.classList.add("white-home");
   whiteHome.textContent = `White ${game.wHome}`;
 
   home.appendChild(blackHome);
@@ -161,37 +163,56 @@ function render(game: Game, move?: Move): void {
 
   if (move) {
     let arrows = move.map(_ => [])
-    for (let n in move) { 
-      let m = move[n]
-      if (!m) continue;
-      let [from, to] = m;
-      let ghost = document.createElement("span");
-      ghost.classList.add("piece", "ghost");
-      let fromPieces = document.querySelector(`.position-${from} .pieces`);
-      if (from == c.BAR) {
-        fromPieces = document.querySelector('.bar')
-      }
-      fromPieces.appendChild(ghost)
-      arrows[n].push(ghost) 
-    }
+    let moveCountByPosition = {}
+    // note: we're showing the previous move, the turn has updated, so this is reversed
+    const getBarElement = () => document.querySelector(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
+    const getHomeElement = () => document.querySelector(game.turn == c.BLACk ? '.white-home' : '.black-home');
 
     for (let n in move) { 
-      let m = move[n]
-      if (!m) continue;
-      let [from, to] = m;
-      let toPieces = document.querySelectorAll(`.position-${to} .pieces .piece`);
-      let dest = toPieces[toPieces.length - 1]
-      if (to == c.HOME) {
-        dest = document.querySelector('.home-count')  
-      }
-      dest.classList.add('just-moved');
-      arrows[n].push(dest) 
+        let m = move[n]
+        if (!m) continue;
+        let [from, to] = m;
+        moveCountByPosition[to] = (moveCountByPosition[to] || 0) + 1
+        let ghost = document.createElement("span");
+        ghost.classList.add("piece", "ghost");
+        let fromPieces = document.querySelector(`.position-${from} .pieces`);
+        if (from == c.BAR) {
+          fromPieces = getBarElement()
+        }
+        fromPieces.appendChild(ghost)
+        arrows[n].push(ghost) 
     }
+    
+    for (let n in move) { 
+        let m = move[n]
+        if (!m) continue;
+        let [from, to] = m;
+        
+        if (to == c.HOME) {
+            let dest = getHomeElement();
+            dest.classList.add('just-moved');
+            arrows[n].push(dest)
+        } else {
+            let toPieces = document.querySelectorAll(`.position-${to} .pieces .piece`);
+            let moveCount = moveCountByPosition[to]
+            
+            // Get the appropriate piece from the back, counting backward from total pieces
+            let destIndex = toPieces.length - moveCount
+            let dest = toPieces[destIndex]
+            moveCountByPosition[to]--
+            
+            if (dest) {
+                dest.classList.add('just-moved');
+                arrows[n].push(dest)
+            }
+        }
+    }
+    
     const arrowContainer = document.createElement('div');
     arrowContainer.classList.add('arrow-container');
     board.insertAdjacentElement("beforeend", arrowContainer);
     arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer))
-  }
+}
 
   let turnIndicator = document.createElement("div");
   turnIndicator.id = "turn-indicator";
@@ -278,6 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
       game = last.game
       render(game, last.move)
       renderHistory(gameHistory)
+      renderRoll(last.roll)
       console.log("game restored at turn", last.turnNo)
     })
   }
