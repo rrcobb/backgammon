@@ -166,7 +166,7 @@ function render(game: Game, move?: Move): void {
     let moveCountByPosition = {}
     // note: we're showing the previous move, the turn has updated, so this is reversed
     const getBarElement = () => document.querySelector(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
-    const getHomeElement = () => document.querySelector(game.turn == c.BLACk ? '.white-home' : '.black-home');
+    const getHomeElement = () => document.querySelector(game.turn == c.BLACK ? '.white-home' : '.black-home');
 
     for (let n in move) { 
         let m = move[n]

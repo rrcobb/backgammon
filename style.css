@@ -196,7 +196,7 @@ div#strategy {
 
 .piece.ghost {
   background: none;
-  border: 2px solid rgba(180, 180, 180, 0.7);
+  border: 2px dashed rgba(180, 180, 180, 0.7);
   --ghost-shadow: rgba(255, 255, 255, 0.5);
   --ghost-shadow-outer: rgba(255, 255, 255, 0.2);
   box-shadow: 0 0 1px 1px var(--ghost-shadow),  

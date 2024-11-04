@@ -10,21 +10,31 @@ function perfectArrow(b1, b2, container) {
   const dx = r2.x - r1.x;
   const dy = r2.y - r1.y;
   const startBottomHalf = r1.y > 200;
-  const startLeftHalf = r1.x < 300;
+  const startLeftHalf = r1.x < 335;
   const isMovingRight = r2.x > r1.x;
   const isMovingDown = r2.y > r1.y;
   const isMovingUp = r1.y > r2.y;
   const isHorizontalMove = Math.abs(dx) > Math.abs(dy);
-  const isFromBar = r1.x == 328; // sensitive!
+  const isFromBar = r1.x > 335 && r1.x < 340;
+
+  const isToHome = r2.x < 32;
+
+  if (isToHome) {
+    r2.x += 10;
+    r2.y += 10;
+  }
 
   const flip = isHorizontalMove ? 
     // For primarily horizontal moves:
     (startBottomHalf ? 
-      (isMovingRight && isMovingUp) || (!isMovingRight && !isMovingDown) : 
+      (isMovingRight && isMovingUp) || (!isMovingRight && !isMovingDown && !isFromBar) : 
       (isMovingRight && !isMovingUp) || (isMovingDown && !isFromBar)
     ):
     // For primarily vertical moves:
-    (startLeftHalf ? (!isMovingRight && isMovingDown) : (!isMovingDown && !isMovingRight) || (isMovingDown && !isMovingRight));
+    (startLeftHalf ? 
+     (isMovingDown && !isMovingRight) || (!isMovingDown && isMovingRight || !startBottomHalf) : 
+     (!isMovingDown && !isMovingRight) || (isMovingDown && !isMovingRight));
+  console.log({flip, isHorizontalMove, startLeftHalf, isMovingRight, isMovingDown, isFromBar, isMovingUp, startBottomHalf })
 
   let bow = 0.3; 
   if (Math.abs(dy) > Math.abs(dx)) {
@@ -36,7 +46,7 @@ function perfectArrow(b1, b2, container) {
     r2.x, r2.y,
     {
       bow,
-      stretch: 0.5,      
+      stretch: 0.4,
       stretchMin: 15,
       stretchMax: 400,
       padStart: 10,
@@ -56,7 +66,16 @@ function perfectArrow(b1, b2, container) {
           fill="#000"
           strokeWidth="1.5"
           >
-          <path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" fill="none" stroke-dasharray="5,5,5"/>
+          <!-- path outline -->
+          <path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" 
+                fill="none" 
+                stroke="rgba(250,250,250,0.4)" 
+                stroke-width="2" />
+          <!-- dashed path -->
+          <path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" 
+                fill="none" 
+                stroke-dasharray="5,5,5"/>
+          <!-- arrow head -->
           <polygon
             points="0,-4 8,0, 0,4"
             transform="translate(${ex},${ey}) rotate(${endAngleAsDegrees})"
