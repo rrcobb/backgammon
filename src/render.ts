@@ -4,6 +4,7 @@ import { Strategies } from "./strategies";
 import { renderHistory } from "./history";
 import { showArrow } from './arrows'
 import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
+import { renderScoreboard, recordGameResult } from './scores';
 
 // globals
 var game;
@@ -14,6 +15,8 @@ var turnNo;
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
+  div.classList.add('picker')
+
   const select = document.createElement("select");
   select.id = `${player}-strategy`;
 
@@ -24,7 +27,9 @@ function strategyPicker(player: "white" | "black") {
     select.appendChild(option);
   });
 
-  div.appendChild(document.createTextNode(player));
+  let label = document.createElement('label')
+  label.innerText = player
+  div.appendChild(label);
   div.appendChild(select);
   return div;
 }
@@ -32,25 +37,26 @@ function strategyPicker(player: "white" | "black") {
 function setStrategy(player, stratName) {
   if (player == c.WHITE) {
     whiteStrategy = Strategies[stratName];
+    whiteStrategy.sname = stratName;
     (document.getElementById("white-strategy") as HTMLSelectElement).value = stratName;
   } else {
     blackStrategy = Strategies[stratName];
+    blackStrategy.sname = stratName;
     (document.getElementById("black-strategy") as HTMLSelectElement).value = stratName;
   }
 }
 
 function renderStrategySection() {
   let strategySection = document.getElementById("strategy");
-  strategySection.innerHTML = "";
   let title = document.createElement("span");
   title.appendChild(document.createTextNode("Strategies"));
-  strategySection.appendChild(title);
   let whitePicker = strategyPicker("white");
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value));
   let blackPicker = strategyPicker("black");
   blackPicker.addEventListener("change", (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value));
-  strategySection.appendChild(whitePicker);
-  strategySection.appendChild(blackPicker);
+  strategySection.insertAdjacentElement("afterBegin", whitePicker);
+  strategySection.insertAdjacentElement("afterBegin", blackPicker);
+  strategySection.insertAdjacentElement("afterBegin", title);
 }
 
 function showWinner(player: Player) {
@@ -256,6 +262,7 @@ function initGame() {
   gameHistory = [];
   game = h.newGame();
   render(game);
+  renderScoreboard();
   enableTurns();
 }
 
@@ -281,7 +288,13 @@ function handleTurn(roll: Roll) {
 
   const finished = h.checkWinner(game);
   if (finished) {
+    const result = {
+      winningStrategy: finished === c.WHITE ? whiteStrategy.sname : blackStrategy.sname,
+      losingStrategy: finished === c.WHITE ? blackStrategy.sname : whiteStrategy.sname
+    };
+    recordGameResult(result);
     showWinner(finished);
+    renderScoreboard();
     disableTurns();
   }
 }
@@ -291,6 +304,7 @@ function playTurn() {
   if (finished) {
     showWinner(finished);
     disableTurns();
+    return;
   }
 
   if (!game.turn) {
