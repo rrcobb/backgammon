@@ -2,78 +2,8 @@ import type { Player, Game, Move } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies } from "./strategies";
 import { renderHistory } from "./history";
-import { getBoxToBoxArrow } from "perfect-arrows"
-
-function perfectArrow(b1, b2, container) {
-  const cr = container.getBoundingClientRect();
-  const r1 = { x: b1.x - cr.x, y: b1.y - cr.y - 20 , width: b1.width, height: b1.height };
-  const r2 = { x: b2.x - cr.x, y: b2.y - cr.y - 20, width: b2.width, height: b2.height };
-
-  const dx = r2.x - r1.x;
-  const dy = r2.y - r1.y;
-  const startBottomHalf = r1.y > 200;
-  const startLeftHalf = r1.x < 300;
-  const isMovingRight = r2.x > r1.x;
-  const isMovingDown = r2.y > r1.y;
-  const isMovingUp = r1.y > r2.y;
-  const isHorizontalMove = Math.abs(dx) > Math.abs(dy);
-  const isFromBar = r1.x == 328; // sensitive!
-
-  const flip = isHorizontalMove ? 
-    // For primarily horizontal moves:
-    (startBottomHalf ? 
-      (isMovingRight && isMovingUp) || (!isMovingRight && !isMovingDown) : 
-      (isMovingRight && !isMovingUp) || (isMovingDown && !isFromBar)
-    ):
-    // For primarily vertical moves:
-    (startLeftHalf ? (!isMovingRight && isMovingDown) : (!isMovingDown && !isMovingRight) || (isMovingDown && !isMovingRight));
-
-  console.log({flip, startBottomHalf, startLeftHalf, isHorizontalMove, isMovingRight, isMovingDown, r1, r2})
-
-  let bow = 0.3; 
-  if (Math.abs(dy) > Math.abs(dx)) {
-    bow = 0.1;
-  }
-
-  const arrow = getBoxToBoxArrow( 
-    r1.x, r1.y, r1.width, r1.height, 
-    r2.x, r2.y, r2.width, r2.height,
-    {
-      bow,
-      stretch: 0.5,      
-      stretchMin: 15,
-      stretchMax: 400,
-      padStart: 0,
-      padEnd: 10,
-      flip,
-      straights: false,
-    }
-  );
-
-  const [sx, sy, cx, cy, ex, ey, ae, as, ec] = arrow
-  const endAngleAsDegrees = ae * (180 / Math.PI)
-
-  return (`<svg
-          viewBox="0 0 ${cr.width} ${cr.height}"
-          style="width: 100%; height: 100%"
-          stroke="#000"
-          fill="#000"
-          strokeWidth="1.5"
-          >
-          <path d="M${sx},${sy} Q${cx},${cy} ${ex},${ey}" fill="none" stroke-dasharray="5,5,5"/>
-          <polygon
-            points="0,-4 8,0, 0,4"
-            transform="translate(${ex},${ey}) rotate(${endAngleAsDegrees})"
-          />
-          </svg>`)
-}
-
-function showArrow(fromPiece, toPiece, container) {
-  let from = fromPiece.getBoundingClientRect();
-  let to = toPiece.getBoundingClientRect();
-  let arrow = perfectArrow(from, to, container)
-  container.innerHTML += arrow;
-}
+import { showArrow } from './arrows'
+import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
 
 // globals
 var game;
@@ -307,6 +237,12 @@ function initGame() {
   enableTurns();
 }
 
+function newGame() {
+  window.location.hash = "";
+  initGame()
+  renderHistory([])
+}
+
 function playTurn() {
   if (h.checkWinner(game)) return;
   turnNo++;
@@ -319,7 +255,7 @@ function playTurn() {
   const finished = h.checkWinner(next);
   game = next;
   gameHistory.push({turnNo, move, player, roll, game}) 
-  gameHistoryToUrl(gameHistory);
+  saveGameHistoryToUrl(gameHistory);
   render(game, move);
   renderRoll(roll);
   renderHistory(gameHistory);
@@ -327,85 +263,6 @@ function playTurn() {
     showWinner(finished);
     disableTurns();
   }
-}
-
-async function compressString(str) {
-  // Convert string to stream
-  const stream = new Blob([str]).stream();
-
-  // Compress the stream
-  const compressedStream = stream.pipeThrough(new CompressionStream("gzip"));
-
-  // Convert compressed stream back to string (base64)
-  const compressedResponse = await new Response(compressedStream);
-  const buffer = await compressedResponse.arrayBuffer();
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
-}
-
-async function decompressString(base64Str) {
-  // Convert base64 back to binary
-  const binaryStr = atob(base64Str);
-  const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
-
-  // Create blob and stream
-  const blob = new Blob([bytes]);
-  const decompressedStream = blob.stream().pipeThrough(new DecompressionStream("gzip"));
-
-  // Convert back to string
-  const decompressedResponse = await new Response(decompressedStream);
-  return await decompressedResponse.text();
-}
-
-async function objectToUrl(obj) {
-    try {
-        // Custom replacer to handle Uint8Array
-        const jsonStr = JSON.stringify(obj, (key, value) => {
-            if (value instanceof Uint8Array) {
-                return {
-                    type: 'Uint8Array',
-                    data: Array.from(value)  // Convert to regular array for JSON
-                };
-            }
-            return value;
-        });
-        
-        const compressed = await compressString(jsonStr);
-        return `#data=${compressed}`;
-    } catch (err) {
-        console.error('Failed to convert object to URL:', err);
-        throw err;
-    }
-}
-
-async function objectFromUrl(url) {
-    try {
-        const hash = url.split('#data=')[1];
-        if (!hash) throw new Error('No data found in URL');
-        
-        const decompressed = await decompressString(hash);
-        
-        // Custom reviver to restore Uint8Array
-        return JSON.parse(decompressed, (key, value) => {
-            if (value && value.type === 'Uint8Array' && Array.isArray(value.data)) {
-                return new Uint8Array(value.data);
-            }
-            return value;
-        });
-    } catch (err) {
-        console.error('Failed to parse object from URL:', err);
-        throw err;
-    }
-}
-
-async function restoreGameHistoryFromUrl(hash) {
-  const data = await objectFromUrl(hash);
-  // todo: restore game state and gameHistory from this data 
-  return data
-}
-
-async function gameHistoryToUrl(gHistory) {
-  const url = await objectToUrl(gHistory);
-  window.location.hash = url;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -419,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
       gameHistory = h;
       let last = gameHistory[gameHistory.length - 1]
       game = last.game
-      console.log({game, last, h})
       render(game, last.move)
       renderHistory(gameHistory)
       console.log("game restored at turn", last.turnNo)
@@ -434,5 +290,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("new")?.addEventListener("click", initGame);
+  document.getElementById("new")?.addEventListener("click", newGame);
 });

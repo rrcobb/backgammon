@@ -296,5 +296,4 @@ function addHistoryControls(historyEl) {
   historyEl.appendChild(controls);
 }
 
-
 export { renderHistory }
