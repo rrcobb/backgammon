@@ -292,7 +292,6 @@ function playTurn() {
     game.turn = winner;
     handleTurn(roll);
   } else {
-    console.log(game.turn)
     handleTurn(h.generateRoll());
   }
 }

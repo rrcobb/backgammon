@@ -148,6 +148,11 @@ function describeTurn(turn, prev): string {
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
+  if (turn.turnNo === 1) {
+    const [whiteRoll, blackRoll] = turn.roll;
+    description = `White rolled ${whiteRoll}, Black rolled ${blackRoll}. ${player} goes first. `;
+  }
+
   if (showMoves(turn.move, turn, prev) === "no moves possible") {
     return description + "No legal moves available.";
   }
