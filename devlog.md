@@ -555,11 +555,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - only picking the first when multiple destinations are on the same spot
   - always showing moving off the bar from black's bar
   - always showing moving to black's home
+  - start/end a little off? particularly the end
+  - fixed by going point to point, instead of using the boxes thing
 
 ## UI / TODO
-
-- arrow issues
-  - start/end a little off? particularly the end
 
 - first roll // first turn
 - starting roll

@@ -1,10 +1,12 @@
-import { getBoxToBoxArrow } from "perfect-arrows"
+import { getArrow } from "perfect-arrows"
 
 function perfectArrow(b1, b2, container) {
   const cr = container.getBoundingClientRect();
-  const r1 = { x: b1.x - cr.x, y: b1.y - cr.y - 20 , width: b1.width, height: b1.height };
-  const r2 = { x: b2.x - cr.x, y: b2.y - cr.y - 20, width: b2.width, height: b2.height };
-
+  // adjustments to stick the arrows on the outsides of the circles:
+  // - adjust the frame of reference to the container by subtracting off cr.x and cr.y
+  // - shift by +10 x and -10 y to account for the element size; this was found by testing
+  const r1 = { x: b1.x - cr.x + 10, y: b1.y - cr.y - 10 };
+  const r2 = { x: b2.x - cr.x + 10, y: b2.y - cr.y - 10 };
   const dx = r2.x - r1.x;
   const dy = r2.y - r1.y;
   const startBottomHalf = r1.y > 200;
@@ -29,16 +31,16 @@ function perfectArrow(b1, b2, container) {
     bow = 0.1;
   }
 
-  const arrow = getBoxToBoxArrow( 
-    r1.x, r1.y, r1.width, r1.height, 
-    r2.x, r2.y, r2.width, r2.height,
+  const arrow = getArrow( 
+    r1.x, r1.y,
+    r2.x, r2.y,
     {
       bow,
       stretch: 0.5,      
       stretchMin: 15,
       stretchMax: 400,
-      padStart: 0,
-      padEnd: 10,
+      padStart: 10,
+      padEnd: 22,
       flip,
       straights: false,
     }
