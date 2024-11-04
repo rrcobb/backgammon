@@ -586,6 +586,9 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - web play / pvp
 - web strategy simulator
 
+- web: url to restore a game state... or even a game history? (game history would require some compression, we only have some ~16k (32k?) bytes in the address...  (https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers/417184#417184)
+  - `JSON.stringify(window.gameHistory).length == 16957` after a 38 turn game, and that's pretty compressible, so I think we could make it work
+
 ## Other Todos...
 
 - eventually, if the game really needs faster play, we can try optimizing again parallelize, maybe bun workers
