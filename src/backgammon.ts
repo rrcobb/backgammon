@@ -118,8 +118,25 @@ function checkWinner(game: Game): Player | false {
 
 type Die = 1 | 2 | 3 | 4 | 5 | 6;
 type Roll = [Die, Die];
+function rollOff(): [Player, Roll] {
+  let whiteRoll: Die, blackRoll: Die;
+  do {
+    whiteRoll = generateDie();
+    blackRoll = generateDie();
+  } while (whiteRoll === blackRoll);
+  
+  return [
+    whiteRoll > blackRoll ? WHITE : BLACK, 
+    [whiteRoll, blackRoll] as Roll
+  ];
+}
+
+function generateDie(): Die {
+  return Math.ceil(Math.random() * 6) as Die;
+}
+
 function generateRoll(): Roll {
-  return [Math.ceil(Math.random() * 6) as Die, Math.ceil(Math.random() * 6) as Die];
+  return [generateDie(), generateDie()];
 }
 
 const dice: Die[] = [1, 2, 3, 4, 5, 6];
@@ -415,9 +432,10 @@ const helpers = {
   apply,
   takeTurn,
   checkWinner,
+  rollOff,
 };
 
 // types
-export { Player, Game, Result, Roll, Move };
+export { Player, Game, Result, Die, Roll, Move };
 
 export { helpers, constants };

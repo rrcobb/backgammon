@@ -1,4 +1,4 @@
-import type { Player, Game, Move } from "./backgammon";
+import type { Player, Game, Move, Roll, Die } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies } from "./strategies";
 import { renderHistory } from "./history";
@@ -252,8 +252,6 @@ function initGame() {
   turnNo = 0;
   gameHistory = [];
   game = h.newGame();
-  game.turn = c.WHITE; // white goes first, for now
-  gameHistory.push({turnNo: 0, move: null, roll: null, turn: game.turn, game});
   render(game);
   enableTurns();
 }
@@ -264,25 +262,38 @@ function newGame() {
   renderHistory([])
 }
 
-function playTurn() {
-  if (h.checkWinner(game)) return;
+function handleTurn(roll: Roll) {
   turnNo++;
-  const roll = h.generateRoll();
   const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
   const player = game.turn == c.WHITE ? "w" : "b";
   const [move, next] = h.takeTurn(game, roll, strat);
-
-
-  const finished = h.checkWinner(next);
   game = next;
+
   gameHistory.push({turnNo, move, player, roll, game}) 
   saveGameHistoryToUrl(gameHistory);
+
   render(game, move);
   renderRoll(roll);
   renderHistory(gameHistory);
+
+  const finished = h.checkWinner(game);
   if (finished) {
     showWinner(finished);
     disableTurns();
+  }
+}
+
+function playTurn() {
+  if (h.checkWinner(game)) return;
+
+  if (!game.turn) {
+    // Handle roll-off to start the game
+    const [winner, roll] = h.rollOff();
+    game.turn = winner;
+    handleTurn(roll);
+  } else {
+    console.log(game.turn)
+    handleTurn(h.generateRoll());
   }
 }
 
