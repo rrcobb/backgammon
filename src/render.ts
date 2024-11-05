@@ -16,6 +16,7 @@ var turnNo;
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
   div.classList.add('picker')
+  div.classList.add(`${player}-picker`)
 
   const select = document.createElement("select");
   select.id = `${player}-strategy`;

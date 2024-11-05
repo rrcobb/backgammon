@@ -560,10 +560,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - first roll // first turn
 - starting roll
+- scorekeeping between games / history
 
 ## UI / TODO
 
-- scorekeeping between games / history
 - doubling cube
 
 - tweak game controls
@@ -572,14 +572,14 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - reorder game panels so it fits on different screen sizes
   - history below
-- board zoom?
 - screen size awareness
+  - board zoom?
   - expand/collapse buttons placement
 
 - show previous game state (as an option when we expand)
 - undo / reset to a position
 
-- separate roll from move
+- separate roll from move ? (for individual play, at least)
 
 - show the valid moves
 
