@@ -362,17 +362,24 @@ body {
   width: 100%;
 }
 
-@media (max-width: 1434px) {
-  #game {
-    order: 0;
+@media (max-width: 1415px) {
+  body {
+    flex-direction: row;
   }
 
-  #strategy {
-    order: 2;
+  #game {
+    /* clear the other components */
+    margin-left: 500px; 
+    margin-right: 500px;
+    order: 0;
   }
 
   #interface {
     order: 1;
+  }
+
+  #strategy {
+    order: 2;
   }
 }
 
@@ -411,7 +418,7 @@ button#newgame {
   margin: auto;
 }
 
-#back, #end, #reset {
+#back {
   border: 1px solid red;
 }
 

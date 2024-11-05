@@ -250,12 +250,14 @@ function renderRoll(roll) {
 
 function disableTurns() {
   (document.getElementById("play") as HTMLButtonElement).disabled = true;
-  (document.getElementById("ten") as HTMLButtonElement).disabled = true;
+  (document.getElementById("fast") as HTMLButtonElement).disabled = true;
+  (document.getElementById("end") as HTMLButtonElement).disabled = true;
 }
 
 function enableTurns() {
   (document.getElementById("play") as HTMLButtonElement).disabled = false;
-  (document.getElementById("ten") as HTMLButtonElement).disabled = false;
+  (document.getElementById("fast") as HTMLButtonElement).disabled = false;
+  (document.getElementById("end") as HTMLButtonElement).disabled = false;
 }
 
 function initGame() {
@@ -343,11 +345,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("play")?.addEventListener("click", playTurn);
 
-  document.getElementById("ten")?.addEventListener("click", () => {
+  document.getElementById("fast")?.addEventListener("click", () => {
     for (let i = 0; i < 10; i++) {
       playTurn();
     }
   });
 
+  document.getElementById('end')?.addEventListener('click', () => {
+    while (!h.checkWinner(game)) {
+      playTurn();
+    }
+  })
+
   document.getElementById("newgame")?.addEventListener("click", newGame);
+  document.getElementById("reset")?.addEventListener("click", newGame);
 });
