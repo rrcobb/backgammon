@@ -351,9 +351,8 @@ body {
   padding: 8px;
   border: 1px solid black;
   margin: 4px;
-  height: max-content;
+  max-height: calc(var(--board-height) * 1.5);
   min-height: 250px;
-  max-height: 100vh;
 }
 
 #interface {
