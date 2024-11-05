@@ -349,5 +349,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("new")?.addEventListener("click", newGame);
+  document.getElementById("newgame")?.addEventListener("click", newGame);
 });

@@ -43,12 +43,13 @@ h1, h2, h3, h4, h5, h6 { text-wrap: balance; }
   --ui-font: "Lucida Grande";
   --heading-font: "Palatino";
 
-  --board-height: min(45vw, 460px);
+  --board-height: min(45vw, 360px);
   --piece-size: calc(var(--board-height) / 18);
   --frame-width: calc(0.08 * var(--board-height));
   --frame-height: calc(var(--board-height) + 2 * (var(--frame-width)));
   --angle-length: calc(0.45 * var(--board-height));
   --angle-width: calc(var(--angle-length) / 3);
+  --board-width: calc(12 * var(--angle-width) + 3 * var(--frame-width));
 
   /* faint checkered stripe pattern for board background */
   --bg-check: color-mix(in srgb, var(--board-bg) 95%, black);
@@ -281,8 +282,8 @@ div#board {
 .angle .label {
   position: relative;
   z-index: 2;
-  font-size: 12px;
-  margin: 2px;
+  font-size: 10px;
+  /* margin: 2px; */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
 }
@@ -345,14 +346,13 @@ body {
 }
 
 #interface, #strategy {
-  min-width: 356px;
-  width: -webkit-fill-available;
-  max-width: 680px;
+  width: 330px;
   padding: 8px;
   border: 1px solid black;
   margin: 4px;
   max-height: calc(var(--board-height) * 1.5);
   min-height: 250px;
+  overflow-y: auto;
 }
 
 #interface {
@@ -370,34 +370,53 @@ body {
   width: 100%;
 }
 
-#controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr; 
-  grid-template-rows: 1fr 1fr; 
-  grid-template-areas: 
-    ". . . . ."
-    ". new new new ."; 
-  justify-content: center;
+@media (max-width: 1434px) {
+  #game {
+    order: 0;
+  }
+
+  #strategy {
+    order: 2;
+  }
+
+  #interface {
+    order: 1;
+  }
+}
+
+#steppers {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
   align-items: center;
-  padding: 1rem 0;
+  justify-content: center;
+  gap: 0.5rem 0;
+  margin: 1rem 0;
+  max-width: var(--board-width);
 }
 
 #controls button {
-  padding: 0.5rem 0.8rem;
+  padding: 0.2em 0.5em;
   border-radius: 4px;
-  font-size: 18px;
+  font-size: 1.1rem;
   margin: 0 0.5rem;
   height: max-content;
+  min-width: 50px;
+}
+
+#controls div {
+  width: 100%;
 }
 
 button#play {
-  padding: 1rem 2rem;
+  padding: 0.5em 1em;
   border-radius: 4px;
   font-size: 20px;
 }
 
-#new {
-  grid-area: new;
+button#newgame {
+  display: block;
+  margin: auto;
 }
 
 #back, #end, #reset {
