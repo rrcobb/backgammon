@@ -5,8 +5,8 @@ function perfectArrow(b1, b2, container) {
   // adjustments to stick the arrows on the outsides of the circles:
   // - adjust the frame of reference to the container by subtracting off cr.x and cr.y
   // - shift by +10 x and -10 y to account for the element size; this was found by testing
-  const r1 = { x: b1.x - cr.x + 10, y: b1.y - cr.y - 10 };
-  const r2 = { x: b2.x - cr.x + 10, y: b2.y - cr.y - 10 };
+  const r1 = { x: b1.x - cr.x + 10, y: b1.y - cr.y - 6 };
+  const r2 = { x: b2.x - cr.x + 10, y: b2.y - cr.y - 6 };
   const dx = r2.x - r1.x;
   const dy = r2.y - r1.y;
   const startBottomHalf = r1.y > 200;
@@ -52,7 +52,7 @@ function perfectArrow(b1, b2, container) {
       stretchMin: 15,
       stretchMax: 400,
       padStart: 10,
-      padEnd: 22,
+      padEnd: 20,
       flip,
       straights: false,
     }
