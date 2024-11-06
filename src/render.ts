@@ -12,6 +12,7 @@ var whiteStrategy;
 var blackStrategy;
 var gameHistory;
 var turnNo;
+var backCount;
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
@@ -267,12 +268,24 @@ function initGame() {
   render(game);
   renderScoreboard();
   enableTurns();
+  backCount = 0;
 }
 
 function newGame() {
   window.location.hash = "";
   initGame()
   renderHistory([])
+}
+
+function back() {
+  // render the previous element on the history stack
+  backCount++;
+  let prevTurn = gameHistory[gameHistory.length - 1 - backCount];
+  if (prevTurn) {
+    render(prevTurn.game, prevTurn.move);
+    renderRoll(prevTurn.roll);
+    renderHistory(gameHistory, backCount);
+  }
 }
 
 function handleTurn(roll: Roll) {
@@ -357,6 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
+  document.getElementById("back")?.addEventListener('click', back);
   document.getElementById("newgame")?.addEventListener("click", newGame);
   document.getElementById("reset")?.addEventListener("click", newGame);
 });

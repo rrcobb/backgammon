@@ -209,14 +209,16 @@ function expandTurn(turnDiv, turn, indicator, prev) {
   }
 }
 
-function renderHistory(gameHistory) {
+function renderHistory(gameHistory, backCount=0) {
   const historyEl = document.getElementById("historyEl");
   historyEl.innerHTML = ""; // clear first
   const reverseChronology = gameHistory.slice().reverse();
   reverseChronology.forEach((turn, index) => {
     const prev = reverseChronology[index + 1] // index + 1 because we are reversed
     const hitOpponent = checkHit(turn, prev);
+    
     const turnDiv = document.createElement('div');
+
     turnDiv.classList.add('history-turn');
     turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
 
@@ -236,6 +238,8 @@ function renderHistory(gameHistory) {
         descriptionDiv.innerText = description;
         historyEl.appendChild(descriptionDiv);
       }
+    } else {
+      if (index == backCount) turnDiv.classList.add('history-current');
     }
 
     if (turn.roll == null) {
