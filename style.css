@@ -401,6 +401,12 @@ body {
   margin: 0 0.5rem;
   height: max-content;
   min-width: 50px;
+  cursor: pointer;
+}
+
+#controls button:hover {
+  /* border: 1px solid skyblue; */
+  box-shadow: 0 0 2px 1px skyblue;
 }
 
 #controls div {
@@ -416,6 +422,11 @@ button#play {
 button#newgame {
   display: block;
   margin: auto;
+}
+
+button#reset {
+  padding: 0;
+  font-size: 1.6rem;
 }
 
 #turn-indicator {

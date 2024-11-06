@@ -8,10 +8,10 @@ import { renderScoreboard, recordGameResult } from './scores';
 
 // globals
 var game;
+var turnNo;
 var whiteStrategy;
 var blackStrategy;
 var gameHistory;
-var turnNo;
 var backCount;
 
 function strategyPicker(player: "white" | "black") {
@@ -249,16 +249,36 @@ function renderRoll(roll) {
   board.appendChild(rollDiv);
 }
 
+function enable(elid) {
+  (document.getElementById(elid) as HTMLButtonElement).disabled = false;
+
+}
+function disable (elid) {
+  (document.getElementById(elid) as HTMLButtonElement).disabled = true;
+}
+
 function disableTurns() {
-  (document.getElementById("play") as HTMLButtonElement).disabled = true;
-  (document.getElementById("fast") as HTMLButtonElement).disabled = true;
-  (document.getElementById("end") as HTMLButtonElement).disabled = true;
+  disable("play");
+  disable("fast");
+  disable("end");
 }
 
 function enableTurns() {
-  (document.getElementById("play") as HTMLButtonElement).disabled = false;
-  (document.getElementById("fast") as HTMLButtonElement).disabled = false;
-  (document.getElementById("end") as HTMLButtonElement).disabled = false;
+  enable("play");
+  enable("fast");
+  enable("end");
+}
+
+function disableBack() { disable("back") }
+function enableBack() { enable("back") }
+
+function disableJumps() { 
+  disable("reset");
+  disable("current");
+}
+function enableJumps() {
+  enable("reset");
+  enable("current");
 }
 
 function initGame() {
@@ -286,6 +306,34 @@ function back() {
     renderRoll(prevTurn.roll);
     renderHistory(gameHistory, backCount);
   }
+  disableTurns();
+  enableJumps();
+
+  if (backCount == gameHistory.length - 1) {
+    disableBack();
+  }
+}
+
+function reset() {
+  // actually go back to the game shown
+  gameHistory = gameHistory.slice(0, gameHistory.length - backCount);
+  let target = gameHistory[gameHistory.length - 1];
+  game = target.game
+  turnNo = turnNo - backCount;
+  backCount = 0;
+  renderHistory(gameHistory, backCount);
+  enableTurns();
+  disableJumps();
+}
+
+function current() {
+  backCount = 0;
+  let currentTurn = gameHistory[gameHistory.length - 1];
+  render(game, currentTurn.move);
+  renderRoll(currentTurn.roll);
+  renderHistory(gameHistory, backCount);
+  enableTurns();
+  disableJumps();
 }
 
 function handleTurn(roll: Roll) {
@@ -331,10 +379,12 @@ function playTurn() {
   } else {
     handleTurn(h.generateRoll());
   }
+  enableBack();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   renderStrategySection();
+  disableJumps();
   setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
   initGame();
@@ -344,6 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
       gameHistory = urlHistory;
       let last = gameHistory[gameHistory.length - 1]
       game = last.game
+      turnNo = last.turnNo
       render(game, last.move)
       renderHistory(gameHistory)
       renderRoll(last.roll)
@@ -371,6 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   document.getElementById("back")?.addEventListener('click', back);
+  document.getElementById("reset")?.addEventListener("click", reset);
   document.getElementById("newgame")?.addEventListener("click", newGame);
-  document.getElementById("reset")?.addEventListener("click", newGame);
+  document.getElementById("current")?.addEventListener("click", current);
 });
