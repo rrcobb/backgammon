@@ -562,26 +562,31 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - starting roll
 - scorekeeping between games / history
 
-## UI / TODO
-
-- doubling cube
+- reorder game panels so it fits on different screen sizes
+  - history below
 
 - tweak game controls
   - play / fast forward (10) / play to end
   - rewind a move
+  - undo / reset to a position
 
-- reorder game panels so it fits on different screen sizes
-  - history below
 - screen size awareness
   - board zoom?
-  - expand/collapse buttons placement
 
-- show previous game state (as an option when we expand)
-- undo / reset to a position
+- expand/collapse buttons placement
+
+## UI / TODO
+
+- show previous game state, as an option when we expand
+
+- interactive mode / "human player" strategy -- play against the AI
+  - strategy for user to play against the computer
+
+- show the valid moves, given a roll
 
 - separate roll from move ? (for individual play, at least)
-
-- show the valid moves
+  - slow down animation (optionally)
+  - show that the game play is happening, for slow games (slow strats)
 
 - display about the strategy
   - strategy descriptions
@@ -591,11 +596,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - highlight blots
   - highlight primes
 
-- interactive mode / "human player" strategy -- play against the AI
-  - strategy for user to play against the computer
-
 - web play / pvp
 - web strategy simulator
+
+- doubling cube
 
 ## Other Todos...
 

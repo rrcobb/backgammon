@@ -198,12 +198,10 @@ function expandTurn(turnDiv, turn, indicator, prev) {
   // Show/hide description
   const desc = turnDiv.querySelector('.turn-description');
   if (isExpanded) {
-    if (!desc) {
-      const descDiv = document.createElement('div');
-      descDiv.classList.add('turn-description');
-      descDiv.innerText = describeTurn(turn, prev);
-      turnDiv.appendChild(descDiv);
-    }
+    const descDiv = document.createElement('div');
+    descDiv.classList.add('turn-description');
+    descDiv.innerText = describeTurn(turn, prev);
+    turnDiv.appendChild(descDiv);
   } else if (desc) {
     desc.remove();
   }
