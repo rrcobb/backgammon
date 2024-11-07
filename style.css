@@ -43,7 +43,7 @@ h1, h2, h3, h4, h5, h6 { text-wrap: balance; }
   --ui-font: "Lucida Grande";
   --heading-font: "Palatino";
 
-  --board-height: min(45vw, 360px);
+  --board-height: min(45vw, 400px);
   --piece-size: calc(var(--board-height) / 18);
   --frame-width: calc(0.08 * var(--board-height));
   --frame-height: calc(var(--board-height) + 2 * (var(--frame-width)));
@@ -164,10 +164,10 @@ div#board {
 }
 
 .roll {
-  --clip-size: calc(var(--board-height) / 60);
+  --clip-size: calc(var(--board-height) / 50);
   --die-size: calc(6.5 * var(--clip-size));
   position: absolute;
-  top: calc(var(--angle-length) + var(--frame-width));
+  top: calc(var(--angle-length) + var(--frame-width) - var(--clip-size));
   left: 165px;
 }
 
@@ -585,7 +585,7 @@ button#reset {
   display: flex;
 }
 
-.reset-scores, .history-control {
+.reset-scores, .history-control, .show-turn {
   font-size: 0.7rem;
   padding: 3px 8px;
   border: 1px solid #ccc;
@@ -593,6 +593,7 @@ button#reset {
   border-radius: 3px;
   background: none;
   cursor: pointer;
+  width: fit-content;
 }
 
 .history-control:hover {

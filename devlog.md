@@ -601,6 +601,15 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - doubling cube
 
+## Controls
+
+- history navigation
+- click on state shows it
+- jump to states
+- 'play from here'
+- maybe all of it should be through the history?
+- get rid of expand/collapse all
+
 ## Other Todos...
 
 - eventually, if the game really needs faster play, we can try optimizing again parallelize, maybe bun workers

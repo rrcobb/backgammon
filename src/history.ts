@@ -193,7 +193,7 @@ function describeTurn(turn, prev): string {
 
 function expandTurn(turnDiv, turn, indicator, prev) {
   const isExpanded = turnDiv.classList.toggle('expanded');
-  indicator.innerText = isExpanded ? '−' : '+';
+  indicator.innerText = isExpanded ? '◉' : '○';
       
   // Show/hide description
   const desc = turnDiv.querySelector('.turn-description');
@@ -227,18 +227,9 @@ function renderHistory(gameHistory, backCount=0) {
         winnerBanner.classList.add('winner-banner');
         winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
         historyEl.appendChild(winnerBanner);
-      } else {
-        // detailed description for this turn
-        const descriptionDiv = document.createElement('div');
-        const description = describeTurn(turn, prev);
-        descriptionDiv.classList.add('turn-description');
-        descriptionDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
-        descriptionDiv.innerText = description;
-        historyEl.appendChild(descriptionDiv);
       }
-    } else {
-      if (index == backCount) turnDiv.classList.add('history-current');
     }
+    
 
     if (turn.roll == null) {
       return
@@ -265,13 +256,20 @@ function renderHistory(gameHistory, backCount=0) {
     }
     turnDiv.appendChild(moves)
 
-    if (index !== 0) { // skip for most recent turn
-      const indicator = document.createElement('span');
-      indicator.classList.add('expand-indicator');
-      indicator.innerText = '+';
-      turnDiv.appendChild(indicator);
-      turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator, prev));
+    if (index == backCount) {
+      turnDiv.classList.add('history-current');
+      turnDiv.classList.add('expanded');
+      const descDiv = document.createElement('div');
+      descDiv.classList.add('turn-description');
+      descDiv.innerText = describeTurn(turn, prev);
+      turnDiv.appendChild(descDiv);
     }
+
+    const indicator = document.createElement('span');
+    indicator.classList.add('expand-indicator');
+    indicator.innerText = '○';
+    turnDiv.appendChild(indicator);
+    turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator, prev));
 
     historyEl.appendChild(turnDiv);
   });

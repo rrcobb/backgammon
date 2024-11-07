@@ -258,13 +258,11 @@ function disable (elid) {
 }
 
 function disableTurns() {
-  disable("play");
   disable("fast");
   disable("end");
 }
 
 function enableTurns() {
-  enable("play");
   enable("fast");
   enable("end");
 }
@@ -289,6 +287,7 @@ function initGame() {
   renderScoreboard();
   enableTurns();
   backCount = 0;
+  disableBack()
 }
 
 function newGame() {
@@ -314,6 +313,20 @@ function back() {
   }
 }
 
+function forward() {
+  backCount--;
+  let nextTurn = gameHistory[gameHistory.length - 1 - backCount];
+  if (!nextTurn) throw new Error("no next turn on forward");
+  
+  render(nextTurn.game, nextTurn.move);
+  renderRoll(nextTurn.roll)
+  renderHistory(gameHistory, backCount);
+  if (backCount == 0) {
+    enableTurns();
+    disableJumps();
+  }
+}
+
 function reset() {
   // actually go back to the game shown
   gameHistory = gameHistory.slice(0, gameHistory.length - backCount);
@@ -326,7 +339,7 @@ function reset() {
   disableJumps();
 }
 
-function current() {
+function jumpToLatest() {
   backCount = 0;
   let currentTurn = gameHistory[gameHistory.length - 1];
   render(game, currentTurn.move);
@@ -382,6 +395,14 @@ function playTurn() {
   enableBack();
 }
 
+function play() {
+  if (backCount == 0) {
+    playTurn();
+  } else {
+    forward();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderStrategySection();
   disableJumps();
@@ -407,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  document.getElementById("play")?.addEventListener("click", playTurn);
+  document.getElementById("play")?.addEventListener("click", play);
 
   document.getElementById("fast")?.addEventListener("click", () => {
     for (let i = 0; i < 10; i++) {
@@ -424,5 +445,5 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("back")?.addEventListener('click', back);
   document.getElementById("reset")?.addEventListener("click", reset);
   document.getElementById("newgame")?.addEventListener("click", newGame);
-  document.getElementById("current")?.addEventListener("click", current);
+  document.getElementById("current")?.addEventListener("click", jumpToLatest);
 });
