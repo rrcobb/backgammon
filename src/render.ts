@@ -49,25 +49,23 @@ function setStrategy(player, stratName) {
 }
 
 function renderStrategySection() {
-  let strategySection = document.getElementById("strategy");
-  let title = document.createElement("span");
-  title.appendChild(document.createTextNode("Strategies"));
+  let strategySection = document.getElementById("strategy-selectors");
   let whitePicker = strategyPicker("white");
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value));
   let blackPicker = strategyPicker("black");
   blackPicker.addEventListener("change", (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value));
   strategySection.insertAdjacentElement("afterBegin", whitePicker);
   strategySection.insertAdjacentElement("afterBegin", blackPicker);
-  strategySection.insertAdjacentElement("afterBegin", title);
+  renderScoreboard();
 }
 
 function showWinner(player: Player) {
-  let indicator = document.getElementByClassName("frame-bottom");
-  indicator.innerHTML = "";
+  // let indicator = document.querySelector(".frame-bottom");
+  // indicator.innerHTML = "";
   let name = player == c.WHITE ? "White" : "Black";
   let winner = document.createElement('span');
   winner.innerText = `${name} wins!`;
-  indicator.appendChild(winner);
+  // indicator.appendChild(winner);
 }
 
 function render(game: Game, move?: Move): void {
@@ -274,7 +272,6 @@ function initGame() {
   gameHistory = [];
   game = h.newGame();
   render(game);
-  renderScoreboard();
   enableTurns();
   backCount = 0;
   disableBack()
