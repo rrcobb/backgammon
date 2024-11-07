@@ -62,7 +62,7 @@ function renderStrategySection() {
 }
 
 function showWinner(player: Player) {
-  let indicator = document.getElementById("turn-indicator");
+  let indicator = document.getElementByClassName("frame-bottom");
   indicator.innerHTML = "";
   let name = player == c.WHITE ? "White" : "Black";
   let winner = document.createElement('span');
@@ -225,12 +225,9 @@ function render(game: Game, move?: Move): void {
     arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer))
 }
 
-  let turnIndicator = document.createElement("div");
-  turnIndicator.id = "turn-indicator";
-  let turnSpan = document.createElement('span');
-  turnSpan.innerText = game.turn === c.WHITE ? "White to play" : "Black to play";
-  turnIndicator.appendChild(turnSpan);
-  board.insertAdjacentElement("beforeend", turnIndicator);
+  let frameBottom = document.createElement("div");
+  frameBottom.classList.add("frame-bottom");
+  board.insertAdjacentElement("beforeend", frameBottom);
 }
 
 function renderRoll(roll) {

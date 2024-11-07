@@ -139,11 +139,8 @@ div#board {
   z-index: 1;
 }
 
-.frame, .right, .home, #turn-indicator {
+.frame, .right, .home, .frame-bottom {
   background: var(--board-frame);
-}
-
-.frame, .home, #turn-indicator {
   box-shadow:
     inset 0 1px 2px rgba(255,255,255,0.1),
     inset 0 -1px 2px rgba(0,0,0,0.2);
@@ -442,7 +439,7 @@ button#reset {
   font-size: 1.6rem;
 }
 
-#turn-indicator {
+.frame-bottom {
   font-size: 14px;
   font-weight: normal;
   filter: url(#mahogany-filter-horizontal);
@@ -450,13 +447,6 @@ button#reset {
   padding-left: 45px; /* centering, account for right frame */
   text-align: center;
   border-top: 2px solid var(--board-border);
-}
-
-#turn-indicator span {
-  vertical-align: -webkit-baseline-middle;
-  padding: 2px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.6);
 }
 
 .history-turn {

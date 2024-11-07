@@ -584,6 +584,14 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 ## UI / TODO
 
+- arrow keys for navigation
+
+- revise turn indicator
+  - show when we're looking at a past turn
+  - show turn number
+  - show whose turn it is
+  - show winner
+
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
 
