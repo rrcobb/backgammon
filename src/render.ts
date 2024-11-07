@@ -269,15 +269,8 @@ function enableTurns() {
 
 function disableBack() { disable("back") }
 function enableBack() { enable("back") }
-
-function disableJumps() { 
-  disable("reset");
-  disable("current");
-}
-function enableJumps() {
-  enable("reset");
-  enable("current");
-}
+function disableCurrent() { disable("current"); }
+function enableCurrent() { enable("current"); }
 
 function initGame() {
   turnNo = 0;
@@ -297,24 +290,15 @@ function newGame() {
 }
 
 function back() {
-  // render the previous element on the history stack
-  backCount++;
-  let prevTurn = gameHistory[gameHistory.length - 1 - backCount];
-  if (prevTurn) {
-    render(prevTurn.game, prevTurn.move);
-    renderRoll(prevTurn.roll);
-    renderHistory(gameHistory, backCount);
-  }
-  disableTurns();
-  enableJumps();
-
-  if (backCount == gameHistory.length - 1) {
-    disableBack();
-  }
+  setBackCount(backCount+1);
 }
 
 function forward() {
-  backCount--;
+  setBackCount(backCount-1);
+}
+
+export function setBackCount(count) {
+  backCount = count;
   let nextTurn = gameHistory[gameHistory.length - 1 - backCount];
   if (!nextTurn) throw new Error("no next turn on forward");
   
@@ -323,11 +307,17 @@ function forward() {
   renderHistory(gameHistory, backCount);
   if (backCount == 0) {
     enableTurns();
-    disableJumps();
+    disableCurrent();
+  } else {
+    disableTurns();
+    enableCurrent();
+  }
+  if (backCount == gameHistory.length - 1) {
+    disableBack();
   }
 }
 
-function reset() {
+export function playFromHere() {
   // actually go back to the game shown
   gameHistory = gameHistory.slice(0, gameHistory.length - backCount);
   let target = gameHistory[gameHistory.length - 1];
@@ -336,17 +326,18 @@ function reset() {
   backCount = 0;
   renderHistory(gameHistory, backCount);
   enableTurns();
-  disableJumps();
+  disableCurrent();
 }
 
-function jumpToLatest() {
+
+export function jumpToLatest() {
   backCount = 0;
   let currentTurn = gameHistory[gameHistory.length - 1];
   render(game, currentTurn.move);
   renderRoll(currentTurn.roll);
   renderHistory(gameHistory, backCount);
   enableTurns();
-  disableJumps();
+  disableCurrent();
 }
 
 function handleTurn(roll: Roll) {
@@ -405,7 +396,7 @@ function play() {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderStrategySection();
-  disableJumps();
+  disableCurrent();
   setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
   initGame();
@@ -419,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
       render(game, last.move)
       renderHistory(gameHistory)
       renderRoll(last.roll)
+      enableBack()
       const finished = h.checkWinner(game);
       if (finished) {
         showWinner(finished);
@@ -443,7 +435,6 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   document.getElementById("back")?.addEventListener('click', back);
-  document.getElementById("reset")?.addEventListener("click", reset);
   document.getElementById("newgame")?.addEventListener("click", newGame);
   document.getElementById("current")?.addEventListener("click", jumpToLatest);
 });

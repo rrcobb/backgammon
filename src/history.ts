@@ -1,5 +1,6 @@
 import type { Player, Game, Move } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
+import { playFromHere, jumpToLatest, setBackCount } from './render'
 
 function showDie(n: number): string {
   return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
@@ -191,22 +192,6 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
-function expandTurn(turnDiv, turn, indicator, prev) {
-  const isExpanded = turnDiv.classList.toggle('expanded');
-  indicator.innerText = isExpanded ? '◉' : '○';
-      
-  // Show/hide description
-  const desc = turnDiv.querySelector('.turn-description');
-  if (isExpanded) {
-    const descDiv = document.createElement('div');
-    descDiv.classList.add('turn-description');
-    descDiv.innerText = describeTurn(turn, prev);
-    turnDiv.appendChild(descDiv);
-  } else if (desc) {
-    desc.remove();
-  }
-}
-
 function renderHistory(gameHistory, backCount=0) {
   const historyEl = document.getElementById("historyEl");
   historyEl.innerHTML = ""; // clear first
@@ -256,7 +241,8 @@ function renderHistory(gameHistory, backCount=0) {
     }
     turnDiv.appendChild(moves)
 
-    if (index == backCount) {
+    const isCurrentTurn = index == backCount
+    if (isCurrentTurn) {
       turnDiv.classList.add('history-current');
       turnDiv.classList.add('expanded');
       const descDiv = document.createElement('div');
@@ -267,37 +253,35 @@ function renderHistory(gameHistory, backCount=0) {
 
     const indicator = document.createElement('span');
     indicator.classList.add('expand-indicator');
-    indicator.innerText = '○';
+    indicator.innerText = isCurrentTurn ? '◉' : '○';
     turnDiv.appendChild(indicator);
-    turnDiv.addEventListener('click', () => expandTurn(turnDiv, turn, indicator, prev));
+    turnDiv.addEventListener('click', () => setBackCount(index));
 
     historyEl.appendChild(turnDiv);
   });
-  addHistoryControls(historyEl);
+  addHistoryControls(historyEl, backCount);
 }
 
-function addHistoryControls(historyEl) {
+function addHistoryControls(historyEl, backCount) {
   const controls = document.createElement('div');
   controls.classList.add('history-controls');
+
+  const isShowingLatest = backCount == 0;
   
-  const expandAll = document.createElement('button');
-  expandAll.innerText = 'Expand All';
-  expandAll.classList.add('history-control');
-  expandAll.addEventListener('click', () => {
-    const turns = historyEl.querySelectorAll('.history-turn:not(.expanded)');
-    turns.forEach(turn => turn.click());
-  });
+  const playFromHereButton = document.createElement('button');
+  playFromHereButton.innerText = 'Play from here';
+  playFromHereButton.classList.add('history-control');
+  playFromHereButton.addEventListener('click', () => playFromHere());
+  if (isShowingLatest) playFromHereButton.disabled = true;
   
-  const collapseAll = document.createElement('button');
-  collapseAll.innerText = 'Collapse All';
-  collapseAll.classList.add('history-control');
-  collapseAll.addEventListener('click', () => {
-    const turns = historyEl.querySelectorAll('.history-turn.expanded');
-    turns.forEach(turn => turn.click());
-  });
+  const jumpLatestButton = document.createElement('button');
+  jumpLatestButton.innerText = '↪ Back to latest';
+  jumpLatestButton.classList.add('history-control');
+  jumpLatestButton.addEventListener('click', () => jumpToLatest());
+  if (isShowingLatest) jumpLatestButton.disabled = true;
   
-  controls.appendChild(expandAll);
-  controls.appendChild(collapseAll);
+  controls.appendChild(jumpLatestButton);
+  controls.appendChild(playFromHereButton);
   historyEl.appendChild(controls);
 }
 
