@@ -570,6 +570,30 @@ button#reset {
 }
 
 /* secondary buttons */
+
+
+.reset-scores, .history-control, .show-turn {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border: 1px solid #ccc;
+  margin: 4px;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.reset-scores[disabled], .history-control[disabled], .show-turn[disabled] {
+  cursor: unset;
+}
+.reset-scores:hover[disabled], .history-control:hover[disabled], .show-turn:hover[disabled] {
+  background: unset;
+}
+
+.history-control:hover {
+  background: #f5f5f5;
+}
+
 .reset-scores {
   align-self: end;
 }
@@ -583,21 +607,6 @@ button#reset {
   bottom: 0;
   padding: 4px;
   display: flex;
-}
-
-.reset-scores, .history-control, .show-turn {
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border: 1px solid #ccc;
-  margin: 4px;
-  border-radius: 3px;
-  background: none;
-  cursor: pointer;
-  width: fit-content;
-}
-
-.history-control:hover {
-  background: #f5f5f5;
 }
 
 .arrow-container {
