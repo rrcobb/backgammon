@@ -281,6 +281,7 @@ function initGame() {
   enableTurns();
   backCount = 0;
   disableBack()
+  disableCurrent()
 }
 
 function newGame() {
@@ -290,14 +291,14 @@ function newGame() {
 }
 
 function back() {
-  setBackCount(backCount+1);
+  viewTurn(backCount+1);
 }
 
 function forward() {
-  setBackCount(backCount-1);
+  viewTurn(backCount-1);
 }
 
-export function setBackCount(count) {
+export function viewTurn(count) {
   backCount = count;
   let nextTurn = gameHistory[gameHistory.length - 1 - backCount];
   if (!nextTurn) throw new Error("no next turn on forward");

@@ -1,6 +1,6 @@
 import type { Player, Game, Move } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
-import { playFromHere, jumpToLatest, setBackCount } from './render'
+import { playFromHere, jumpToLatest, viewTurn } from './render'
 
 function showDie(n: number): string {
   return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
@@ -255,7 +255,7 @@ function renderHistory(gameHistory, backCount=0) {
     indicator.classList.add('expand-indicator');
     indicator.innerText = isCurrentTurn ? '◉' : '○';
     turnDiv.appendChild(indicator);
-    turnDiv.addEventListener('click', () => setBackCount(index));
+    turnDiv.addEventListener('click', () => viewTurn(index));
 
     historyEl.appendChild(turnDiv);
   });

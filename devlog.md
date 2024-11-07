@@ -575,9 +575,14 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - expand/collapse buttons placement
 
-## UI / TODO
+- history navigation
+- click on state shows it
+- jump to states
+- 'play from here'
+- maybe all of it should be through the history?
+- get rid of expand/collapse all
 
-- show previous game state, as an option when we expand
+## UI / TODO
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
@@ -600,15 +605,6 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - web strategy simulator
 
 - doubling cube
-
-## Controls
-
-- history navigation
-- click on state shows it
-- jump to states
-- 'play from here'
-- maybe all of it should be through the history?
-- get rid of expand/collapse all
 
 ## Other Todos...
 
