@@ -79,11 +79,10 @@ function renderInfo(turn, turnHistory) {
     if (winner) {
       info += (winner == c.WHITE ? " White" : " Black") + " wins!";
     } else {
+      // note the inversion; turn.player is the previous turn
       info += (turn.player == 'w' ? ' Black' : ' White') + ' to play.';
-      // highlight game info
-      //  - pieces on the bar
-      //  - available moves
-      //  - bearing off or not
+      if (turn.game.wBar && turn.player == 'b') info += ` White has ${turn.game.wBar} on the bar.`;
+      if (turn.game.bBar && turn.player == 'w') info += ` Black has ${turn.game.bBar} on the bar.`;
     }
   }
   const infoDiv = document.getElementById('turn-info');
@@ -324,7 +323,9 @@ function newGame() {
 }
 
 function back() {
-  viewTurn(backCount+1);
+  if (backCount < gameHistory.length - 1) {
+    viewTurn(backCount+1);
+  }
 }
 
 function forward() {
@@ -446,4 +447,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("back")?.addEventListener('click', back);
   document.getElementById("newgame")?.addEventListener("click", newGame);
   document.getElementById("current")?.addEventListener("click", jumpToLatest);
+
+  // register keys for navigation
+  document.body.addEventListener('keydown', (e) => {
+    if (e.key == 'k' || e.key == 'ArrowUp' || e.key == 'ArrowRight') {
+      play();
+    }
+
+    if (e.key == ' ' || e.key == 'Enter') {
+      if (backCount == 0) {
+        playTurn();
+      }
+    }
+
+    if (e.key == 'j' || e.key == 'ArrowDown' || e.key == 'ArrowLeft') {
+      back()
+    }
+  })
 });

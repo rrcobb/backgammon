@@ -581,28 +581,28 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - 'play from here'
 - maybe all of it should be through the history?
 - get rid of expand/collapse all
-
-## UI / TODO
-
-- arrow keys for navigation
-
 - revise turn indicator
   - show when we're looking at a past turn
   - show turn number
   - show whose turn it is
   - show winner
 
+- arrow keys for navigation
+
+## UI / TODO
+
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
 
-- show the valid moves, given a roll
+- strategy descriptions
 
 - separate roll from move ? (for individual play, at least)
   - slow down animation (optionally)
   - show that the game play is happening, for slow games (slow strats)
 
+- show the valid moves, given a roll
+
 - display about the strategy
-  - strategy descriptions
   - show probabilities of hits / other events
   - show current pip count for each player
   - what the strategy thinks about the different factors / what's the current evaluation
