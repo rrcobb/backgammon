@@ -161,7 +161,7 @@ function useMCTS(options: MCTSOptions): AppliedStrategy {
     ).evaluate();
 
     if (!best) {
-      throw ("No valid moves available")
+      return null;
     }
     return [best.move, best.state]
   }

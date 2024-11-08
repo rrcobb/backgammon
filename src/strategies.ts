@@ -5,7 +5,6 @@ import { useMCTS } from "./mcts"
 
 export type Strategy = (options: Result[]) => Result;
 export type AppliedStrategy = (game: Game, roll: Roll) => Result;
-
 function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = h.validMoves(game, roll);
   let choice;
@@ -294,12 +293,12 @@ expectimax.description = `Looks at future moves to (try) to choose the best path
 
 2-ply depth (searches 2 turns ahead). Considers all possible dice rolls.
 
-Uses balanced evaluation for position assessment. More defensive due to considering opponent responses. 
+Uses balanced evaluation for position assessment.
 
 High branching factor limits search depth.`
 
 const samplingExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 3, 5, 5));
-samplingExpectimax.description = `Fast expectimax variant, using sampling.
+samplingExpectimax.description = `Faster expectimax variant, using sampling.
 
 Instead of exploring all possible future states, this looks at 10 dice rolls and 5 moves.
 
@@ -312,14 +311,14 @@ fastOnePlyExpectimax.description = `Ultra-fast single-ply sampling expectimax. S
 and 5 moves, but only looks one move ahead. Quick responses while maintaining some probability assessment.`
 
 const mcts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced });
-mcts.description = `Monte Carlo Tree Search with balanced evaluation rollouts.
+mcts.description = `(slow) Monte Carlo Tree Search with balanced evaluation rollouts.
 
 Uses 50 simulations per move with 0.3 exploration constant.
 
-Currently underperforming vs direct evaluation, possibly due to limited simulation count.`
+Currently not performing well, possibly due to limited simulation count.`
 
 const mctsRandomRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random });
-mctsRandomRollouts.description = `MCTS using random move selection for rollouts.
+mctsRandomRollouts.description = `(slow) MCTS using random move selection for rollouts.
 
 Same parameters as balanced MCTS (50 sims, 0.3 explore) but uses random moves during rollouts. 
 
@@ -333,8 +332,8 @@ const Strategies = {
   expectimax,
   samplingExpectimax,
   fastOnePlyExpectimax,
-  mctsRandomRollouts,
   mcts,
+  mctsRandomRollouts,
 };
-const forCompare = { balanced, learned, fastOnePlyExpectimax }
+const forCompare = { balanced, learned, samplingExpectimax }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

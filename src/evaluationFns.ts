@@ -157,7 +157,6 @@ export type Factors = {
   anchorBonus: number,
 }
 
-// example factors -- could be tweaked or, ideally, learned via some linear approximation
 const balancedFactors: Factors = {
   barPenalty: 0.3,
   barReward: 0.2,

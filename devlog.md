@@ -590,6 +590,8 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - arrow keys for navigation
 
 - slight delay in fast fwd, to show turn movement
+  - slow down animation (optionally)
+  - show that the game play is happening, for slow games (slow strats)
 
 - strategy descriptions
 
@@ -597,12 +599,9 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
-
 - separate roll from move ? (for individual play, at least)
-  - slow down animation (optionally)
-  - show that the game play is happening, for slow games (slow strats)
-
 - show the valid moves, given a roll
+   - play by choosing among the valid moves
 
 - improved turn info
 
@@ -627,6 +626,8 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - we have the tournament, but we could add a difference-of-rollouts method
   - find differences, then rollout from the differences to compare (e.g. how they do 'real' evals between top-of-the-line models)
 
+- show who beat who in scoreboard (not just wins and losses)
+
 - eventually, if the game really needs faster play, we can try optimizing again:
   - parallelize, maybe bun workers
   - see if we can find hotspots and optimize them down
@@ -639,3 +640,8 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - what is the backprop implementation like?
 
 Let's just get to it, huh?
+
+
+## winners
+
+all of a sudden, the fast 3-ply expectimax is actually good? who knew
