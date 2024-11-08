@@ -591,9 +591,9 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - slight delay in fast fwd, to show turn movement
 
-## UI / TODO
-
 - strategy descriptions
+
+## UI / TODO
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer

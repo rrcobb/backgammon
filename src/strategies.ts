@@ -21,31 +21,6 @@ function makeApplied(strategy: Strategy): AppliedStrategy {
   }
 }
 
-// handful of random-ish strategies
-// todo: make these applied
-const first = (options: Result[]) => options && options[0];
-const second = (options: Result[]) => (options && options[1]) || options[0];
-const last = (options: Result[]) => options && options[options.length - 1];
-function _random(options: Result[]): Result {
-  let choice = options[Math.floor(Math.random() * options.length)];
-  return choice;
-}
-
-const random = makeApplied(_random);
-
-var randi = 0;
-const pseudorandom = (options: Result[]) => {
-  return options && options[randi++ % options.length];
-};
-
-var i = 0;
-function cheapmod(options: Result[]): Result {
-  i = (i & 0b00011111) + 1;
-  const index = i & (options.length - 1);
-  let choice = options && options[index];
-  return choice;
-}
-
 // strategies use an evaluation function (depth = 0)
 function useEval(evalFn: EvaluationFunction): AppliedStrategy {
   return makeApplied((options: Result[]) => {
@@ -264,37 +239,102 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
   return _speedExpecti;
 }
 
+// handful of random-ish strategies
+const first = (options: Result[]) => options && options[0];
+const second = (options: Result[]) => (options && options[1]) || options[0];
+const last = (options: Result[]) => options && options[options.length - 1];
+function _random(options: Result[]): Result {
+  let choice = options[Math.floor(Math.random() * options.length)];
+  return choice;
+}
+
+const random = makeApplied(_random);
+random.description = `Chooses a random valid move each turn.`
+
 const balanced = useEval(evaluate(f.balancedFactors));
-balanced.description = `An evaluation function with balanced factors. 
-Looks at the resulting board state from 
-each valid move, and takes the best value 
-for the weighted combination.
-${JSON.stringify(f.balancedFactors, null, 2)}`
+balanced.description = `A well-rounded evaluation strategy.  
+
+Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
+
+'balanced' mixes defensive positioning (blot protection, anchors), race progress, board control (primes, home board), and risk management.
+
+Weights:
+${JSON.stringify(f.balancedFactors, null, 2)}
+
+Has proven most effective in practice.`
+
 const runner = useEval(evaluate(f.runnerFactors));
+runner.description = `An aggressive racing strategy. Bring the pieces home!
+
+Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
+
+The racing strategy values pip count, with low weights on defensive positioning, and strong preference for home board occupation.
+
+Features:
+${JSON.stringify(f.runnerFactors, null, 2)}`
+
 const learned = useEval(evaluate(f.learnedFactors));
+learned.description = `An evaluation using machine-learned weights.
 
-const balancedExpecti = makeApplied(useExpectimax(evaluate(f.balancedFactors), 2));
-// pruning, which...ugh.
-const balancedAbPrune = makeApplied(useAbPruning(evaluate(f.balancedFactors), 2));
+Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
 
-// sampling for speed!
-const speedOne = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1, 10, 5));
-const balancedSpeedExpecti = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 2, 10, 5));
+Notable patterns: 
+- high blot penalty (4.45 vs 0.2 in balanced),
+- emphasis on contact pip count (6.20 vs 0.005),
+- low home board value
+- moderate anchor importance
 
-const mctsR = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random, });
-const mctsB = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced, });
+Features:
+${JSON.stringify(f.learnedFactors, null, 2)}
+
+See src/learnFactors.ts for details.`
+
+const expectimax = makeApplied(useExpectimax(evaluate(f.balancedFactors), 2));
+expectimax.description = `Looks at future moves to (try) to choose the best path.
+
+2-ply depth (searches 2 turns ahead). Considers all possible dice rolls.
+
+Uses balanced evaluation for position assessment. More defensive due to considering opponent responses. 
+
+High branching factor limits search depth.`
+
+const samplingExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 3, 5, 5));
+samplingExpectimax.description = `Fast expectimax variant, using sampling.
+
+Instead of exploring all possible future states, this looks at 10 dice rolls and 5 moves.
+
+Trades complete analysis for speed, which allows deeper search: 3 moves ahead instead of 2 for vanilla expectimax.
+
+Uses balanced factors for evaluation.`
+
+const fastOnePlyExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1, 10, 5));
+fastOnePlyExpectimax.description = `Ultra-fast single-ply sampling expectimax. Samples 10 rolls 
+and 5 moves, but only looks one move ahead. Quick responses while maintaining some probability assessment.`
+
+const mcts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced });
+mcts.description = `Monte Carlo Tree Search with balanced evaluation rollouts.
+
+Uses 50 simulations per move with 0.3 exploration constant.
+
+Currently underperforming vs direct evaluation, possibly due to limited simulation count.`
+
+const mctsRandomRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random });
+mctsRandomRollouts.description = `MCTS using random move selection for rollouts.
+
+Same parameters as balanced MCTS (50 sims, 0.3 explore) but uses random moves during rollouts. 
+
+Interesting comparison point for heuristic impact on MCTS.`;
 
 const Strategies = {
   random,
   balanced,
   runner,
   learned,
-  // balancedAbPrune, // ... pruning is not good, basically equivalent to vanilla expectimax
-  balancedExpecti,
-  balancedSpeedExpecti,
-  speedOne,
-  mctsR,
-  mctsB,
+  expectimax,
+  samplingExpectimax,
+  fastOnePlyExpectimax,
+  mctsRandomRollouts,
+  mcts,
 };
-const forCompare = { balanced, learned, speedOne }
+const forCompare = { balanced, learned, fastOnePlyExpectimax }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

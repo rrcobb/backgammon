@@ -79,8 +79,7 @@ function renderStrategyInfo() {
   const setDescription = (strat) => description.innerText = descriptions[strat];
   select.addEventListener('change', (e) => { setDescription(e.target.value)})
 
-  select.value = blackStrategy.sname;
-  setDescription(blackStrategy.sname);
+  setDescription(select.value);
 
   infoSection.appendChild(select);
   infoSection.appendChild(description);
