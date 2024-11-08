@@ -83,7 +83,8 @@ class MCTSNode {
   // find the best child node using the ucb/t formula
   bestChild(explore = this.explore): MCTSNode {
     if (this.children.length === 0) {
-      throw new Error("Cannot select best child; no children available");
+      return null;
+      // throw new Error("Cannot select best child; no children available");
     }
     return maxBy(
       this.children,

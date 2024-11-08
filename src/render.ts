@@ -14,6 +14,9 @@ var blackStrategy;
 var gameHistory;
 var backCount;
 
+// settings
+var delay = true;
+
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
   div.classList.add('picker')
@@ -413,6 +416,10 @@ function play() {
   }
 }
 
+async function sleep(s) {
+  await new Promise(resolve => setTimeout(resolve, s))
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers();
   setStrategy(c.WHITE, "learned");
@@ -433,14 +440,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderCurrentTurn();
   setButtons();
 
-  document.getElementById("fast")?.addEventListener("click", () => {
+  
+
+  document.getElementById("fast")?.addEventListener("click", async () => {
     for (let i = 0; i < 10; i++) {
       playTurn();
+      if (delay) {
+        await sleep(0.3)
+      }
     }
   });
-  document.getElementById('end')?.addEventListener('click', () => {
+  document.getElementById('end')?.addEventListener('click', async () => {
     while (!h.checkWinner(game)) {
       playTurn();
+      if (delay) {
+        await sleep(0.1);
+      } 
     }
   })
   document.getElementById("play")?.addEventListener("click", play);
@@ -461,7 +476,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (e.key == 'j' || e.key == 'ArrowDown' || e.key == 'ArrowLeft') {
-      back()
+      back();
+    }
+
+    if (e.key == 'n') {
+      newGame()
     }
   })
 });
