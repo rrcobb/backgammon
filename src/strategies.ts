@@ -272,6 +272,7 @@ The racing strategy values pip count, with low weights on defensive positioning,
 Features:
 ${JSON.stringify(f.runnerFactors, null, 2)}`
 
+const prevLearned = useEval(evaluate(f.prevLearned));
 const learned = useEval(evaluate(f.learnedFactors));
 learned.description = `An evaluation using machine-learned weights.
 
@@ -300,11 +301,20 @@ High branching factor limits search depth.`
 const samplingExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 3, 5, 5));
 samplingExpectimax.description = `Faster expectimax variant, using sampling.
 
-Instead of exploring all possible future states, this looks at 10 dice rolls and 5 moves.
+Instead of exploring all possible future states, this looks at 5 dice rolls and 5 moves.
 
 Trades complete analysis for speed, which allows deeper search: 3 moves ahead instead of 2 for vanilla expectimax.
 
 Uses balanced factors for evaluation.`
+
+const learnedFastExp = makeApplied(useSpeedExpectimax(evaluate(f.learnedFactors), 3, 5, 5));
+learnedFastExp.description = `Fast expectimax variant w/ sampling, using learned factors.
+
+Instead of exploring all possible future states, this looks at 5 dice rolls and 5 moves.
+
+Trades complete analysis for speed, which allows deeper search: 3 moves ahead instead of 2 for vanilla expectimax.
+
+Uses learned factors for evaluation.`
 
 const fastOnePlyExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1, 10, 5));
 fastOnePlyExpectimax.description = `Ultra-fast single-ply sampling expectimax. Samples 10 rolls 
@@ -335,5 +345,5 @@ const Strategies = {
   mcts,
   mctsRandomRollouts,
 };
-const forCompare = { balanced, learned, samplingExpectimax }
+const forCompare = { balanced, learned, prevLearned }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

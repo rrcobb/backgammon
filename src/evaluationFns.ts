@@ -200,6 +200,20 @@ const learnedFactors = {
   anchorBonus: 0.47597039411035436,
 }
 
-const factors = { balancedFactors, runnerFactors, learnedFactors };
+const prevLearned = {
+  barPenalty: -1.2216017592192547,
+  barReward: 0.2657044747485048,
+  homeReward: -1.5836819434872464,
+  homePenalty: -2.749881081745257,
+  blotPenalty: -0.15073448364433956,
+  primeReward: 4.50468534720785,
+  racingPipReward: 3.2924719692569937,
+  contactPipReward: -0.08656665309208121,
+  positionDecay: 4.06123028723716,
+  homeBonus: 0.8515813895776875,
+  anchorBonus: 0.8912373355553285,
+}
+
+const factors = { balancedFactors, runnerFactors, learnedFactors, prevLearned };
 
 export { evaluate, factors };

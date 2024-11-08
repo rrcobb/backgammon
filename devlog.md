@@ -618,7 +618,7 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - user-controllable settings
 
 - web play / pvp
-- web strategy simulator
+- web strategy simulator (e.g. dump in some js?)
 
 - doubling cube
 
@@ -629,7 +629,7 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 - show who beat who in scoreboard (not just wins and losses)
 
 - eventually, if the game really needs faster play, we can try optimizing again:
-  - parallelize, maybe bun workers
+  - parallelize, maybe (bun/web) workers
   - see if we can find hotspots and optimize them down
 
 ## neural net thoughts
@@ -642,6 +642,23 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 Let's just get to it, huh?
 
 
-## winners
+## sampling expectimax??
 
 all of a sudden, the fast 3-ply expectimax is actually good? who knew
+
+```sh
+$ bun evals/tournament.ts
+50 games per round. Strategies: balanced, learned, samplingExpectimax
+[6/6] samplingExpectimax vs samplingExpectimax
+
+        	            balanced	 learned	samplingExpectimax
+balanced	              50.0%	    36.0%	    56.0%
+learned	                64.0%	    50.0%	    82.0%
+samplingExpectimax	    44.0%	    18.0%	    50.0%
+
+3 strategies. 6 matchups. 300 games played.
+best: samplingExpectimax with 62.7% average win rate
+worst: learned with 34.7% average win rate
+Total time: 172.86s.
+28.81s per matchup of 50 games
+```
