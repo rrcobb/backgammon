@@ -680,6 +680,20 @@ button#reset {
   background-color: white;
 }
 
+#strategy-info {
+  padding: 4px;
+  margin: 6px;
+}
+
+#strategy-info .strategy-description {
+  border: 1px solid rgba(120, 120, 120, 0.7);
+  padding: 8px;
+  white-space: pre;
+  min-height: 240px;
+  max-height: 320px;
+  overflow: auto;
+}
+
 #scoreboard {
   display: flex;
   flex-direction: column;

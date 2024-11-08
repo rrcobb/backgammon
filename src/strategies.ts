@@ -265,6 +265,11 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
 }
 
 const balanced = useEval(evaluate(f.balancedFactors));
+balanced.description = `An evaluation function with balanced factors. 
+Looks at the resulting board state from 
+each valid move, and takes the best value 
+for the weighted combination.
+${JSON.stringify(f.balancedFactors, null, 2)}`
 const runner = useEval(evaluate(f.runnerFactors));
 const learned = useEval(evaluate(f.learnedFactors));
 
@@ -284,11 +289,12 @@ const Strategies = {
   balanced,
   runner,
   learned,
-  // balancedAbPrune, // ... pruning isn't very good...
+  // balancedAbPrune, // ... pruning is not good, basically equivalent to vanilla expectimax
   balancedExpecti,
   balancedSpeedExpecti,
   speedOne,
   mctsR,
   mctsB,
 };
-export { Strategies, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };
+const forCompare = { balanced, learned, speedOne }
+export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

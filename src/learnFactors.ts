@@ -104,7 +104,6 @@ function trainFactors(
   return currentFactors
 }
 
-// Example usage:
 const initialFactors: Factors = {
   barPenalty: 1,
   barReward: 1,
@@ -119,6 +118,6 @@ const initialFactors: Factors = {
   anchorBonus: 1
 }
 
-// Train against a balanced opponent for 1000 games
+// Train against opponents for 1000 games
 const finalFactors = trainFactors(initialFactors, 20000, 0.01)
 console.log("Training complete:", finalFactors)

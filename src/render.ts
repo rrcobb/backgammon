@@ -61,6 +61,31 @@ function renderStrategyPickers() {
   strategySection.insertAdjacentElement("afterbegin", blackPicker);
 }
 
+function renderStrategyInfo() {
+  const infoSection = document.getElementById("strategy-info");
+  const select = document.createElement('select');
+  const description = document.createElement('div');
+  description.classList.add('strategy-description'); 
+  const descriptions = {};
+
+  Object.keys(Strategies).forEach((stratName) => {
+    const option = document.createElement("option");
+    option.value = stratName;
+    option.textContent = stratName;
+    select.appendChild(option);
+    descriptions[stratName] = Strategies[stratName].description || `The ${stratName} strategy. [TODO: add description]`;
+  });
+
+  const setDescription = (strat) => description.innerText = descriptions[strat];
+  select.addEventListener('change', (e) => { setDescription(e.target.value)})
+
+  select.value = blackStrategy.sname;
+  setDescription(blackStrategy.sname);
+
+  infoSection.appendChild(select);
+  infoSection.appendChild(description);
+}
+
 function renderInfo(turn, turnHistory) {
   let info = "";
   if (!turn) {
@@ -424,6 +449,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers();
   setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
+  renderStrategyInfo();
 
   if (window.location.hash) {
     let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);

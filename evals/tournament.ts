@@ -1,6 +1,6 @@
 import { constants as c, helpers as h } from "../src/backgammon";
 import type { Player } from "../src/backgammon";
-import { Strategies } from "../src/strategies";
+import { forCompare as Strategies } from "../src/strategies";
 
 type StrategyName = keyof typeof Strategies;
 

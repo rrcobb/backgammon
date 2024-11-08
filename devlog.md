@@ -589,18 +589,22 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 - arrow keys for navigation
 
+- slight delay in fast fwd, to show turn movement
+
 ## UI / TODO
+
+- strategy descriptions
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
-
-- strategy descriptions
 
 - separate roll from move ? (for individual play, at least)
   - slow down animation (optionally)
   - show that the game play is happening, for slow games (slow strats)
 
 - show the valid moves, given a roll
+
+- improved turn info
 
 - display about the strategy
   - show probabilities of hits / other events
@@ -609,18 +613,23 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - highlight blots
   - highlight primes
 
+- custom weights for evaluation function / strategy
+  - custom parameters for mcts / expectimax
+
+- user-controllable settings
+
 - web play / pvp
 - web strategy simulator
 
 - doubling cube
 
-## Other Todos...
-
-- eventually, if the game really needs faster play, we can try optimizing again parallelize, maybe bun workers
-  - see if we can find hotspots and optimize them down
 - evaluation / strategy comparison
   - we have the tournament, but we could add a difference-of-rollouts method
   - find differences, then rollout from the differences to compare (e.g. how they do 'real' evals between top-of-the-line models)
+
+- eventually, if the game really needs faster play, we can try optimizing again:
+  - parallelize, maybe bun workers
+  - see if we can find hotspots and optimize them down
 
 ## neural net thoughts
 
