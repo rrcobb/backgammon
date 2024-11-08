@@ -7,7 +7,6 @@ interface StrategyScore {
 }
 
 export interface GameResult {
-  winner: Player;
   winningStrategy: string;
   losingStrategy: string;
 }
