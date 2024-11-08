@@ -1,7 +1,7 @@
 import type { Player, Game, Move, Roll, Die } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies } from "./strategies";
-import { renderHistory } from "./history";
+import { renderHistory, describeTurn } from "./history";
 import { showArrow } from './arrows'
 import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
@@ -58,32 +58,36 @@ function renderStrategyPickers() {
   strategySection.insertAdjacentElement("afterbegin", blackPicker);
 }
 
-function showWinner(player: Player) {
-  let info = document.querySelector("#turn-info");
-  info.innerHTML = "";
-  let name = player == c.WHITE ? "White" : "Black";
-  let winner = document.createElement('span');
-  winner.innerText = `${name} wins!`;
-  info.appendChild(winner);
-}
-
-// TODO: fill out
 function renderInfo(turn, turnHistory) {
-  // (viewing past turn / current turn)
-  // turn 30 (current) or (turn 15 /  30) 
-  // [player] to play
+  let info = "";
+  if (!turn) {
+    info = "New game. Players roll to determine who goes first."
+  } else {
+    // (viewing past turn / current turn)
+    // turn 30 (current) or (turn 15 /  30) 
+    const turnCount = turnHistory.length;
+    const prev = turnHistory[turn.turnNo - 2];
+    if (turnCount == turn.turnNo) {
+      info += `Turn ${turn.turnNo}. `;
+    } else {
+      info += `(${turn.turnNo}/${turnCount}) `;
+    }
 
-  //  winner / reached on turn X
-
-  // "New game. Players will roll to determine who goes first."
-
-  // highlight game info
-  //  - pieces on the bar
-  //  - available moves
-  //  - bearing off or not
-
-  // last roll
-  // last moves (turn description)
+    // last roll and move (turn description)
+    info += describeTurn(turn, prev); 
+    let winner = h.checkWinner(turn.game);
+    if (winner) {
+      info += (winner == c.WHITE ? " White" : " Black") + " wins!";
+    } else {
+      info += (turn.player == 'w' ? ' Black' : ' White') + ' to play.';
+      // highlight game info
+      //  - pieces on the bar
+      //  - available moves
+      //  - bearing off or not
+    }
+  }
+  const infoDiv = document.getElementById('turn-info');
+  infoDiv.textContent = info;
 }
 
 function renderBoard(game: Game, move?: Move): void {
@@ -262,7 +266,7 @@ function renderRoll(roll) {
 function renderTurn(turn, turnHistory, backCount) {
   renderScoreboard();
   renderBoard(turn?.game || game, turn?.move);
-  renderRoll(turn?.roll);
+  if (turn?.roll) { renderRoll(turn.roll); }
   renderHistory(turnHistory, backCount);
   renderInfo(turn, turnHistory);
 }
@@ -273,24 +277,36 @@ function enable(elid) {
 function disable (elid) {
   (document.getElementById(elid) as HTMLButtonElement).disabled = true;
 }
-function disableTurns() { disable("fast"); disable("end"); }
-function enableTurns() { enable("fast"); enable("end"); }
-function disableBack() { disable("back") }
-function enableBack() { enable("back") }
-function disableCurrent() { disable("current"); }
-function enableCurrent() { enable("current"); }
 
+// buttons are:
+// - current
+// - back
+// - play
+// - fast
+// - end
 function setButtons() {
-  if (backCount == 0) {
-    enableTurns();
-    disableCurrent();
+  const finished = h.checkWinner(game);
+  const current = backCount == 0;
+  const start = backCount >= gameHistory.length - 1; 
+
+  // play button is active unless we are at the end of the game
+  if (finished && current) { disable("play") }
+  else { enable("play") }
+
+  // can walk backwards unless we are at the start
+  if (start) { disable("back") }
+  else { enable("back") }
+  
+  // can jump if we are current and not finished
+  if (current && !finished) {
+    enable("fast"); enable("end");
   } else {
-    disableTurns();
-    enableCurrent();
+    disable("fast"); disable("end");
   }
-  if (backCount == gameHistory.length - 1) {
-    disableBack();
-  }
+
+  // can go to current if we are not current
+  if (current) { disable("current") } 
+  else { enable("current") } 
 }
 
 function initGame() {
@@ -318,7 +334,7 @@ function forward() {
 export function viewTurn(count) {
   backCount = count;
   let nextTurn = gameHistory[gameHistory.length - 1 - backCount];
-  if (!nextTurn) throw new Error("no next turn on forward");
+  if (!nextTurn) throw new Error("no turn available");
   
   renderTurn(nextTurn, gameHistory, backCount);
   setButtons();
@@ -331,25 +347,21 @@ export function playFromHere() {
   game = target.game
   turnNo = turnNo - backCount;
   backCount = 0;
-  enableTurns();
-  disableCurrent();
 
-  renderHistory(gameHistory, backCount);
+  setButtons();
+  renderCurrentTurn();
 }
 
 export function jumpToLatest() {
   backCount = 0;
   let currentTurn = gameHistory[gameHistory.length - 1];
 
-  enableTurns();
-  disableCurrent();
-
-  renderBoard(game, currentTurn.move);
-  renderRoll(currentTurn.roll);
-  renderHistory(gameHistory, backCount);
+  setButtons();
+  renderCurrentTurn();
 }
 
 function renderCurrentTurn() {
+  if (!gameHistory) {console.log('no history'); return; }
   const turn = gameHistory[gameHistory.length - 1 - backCount];
   renderTurn(turn, gameHistory, backCount);
 }
@@ -365,8 +377,6 @@ function handleTurn(roll: Roll) {
   gameHistory.push(turn) 
   saveGameHistoryToUrl(gameHistory);
 
-  renderCurrentTurn();
-
   const finished = h.checkWinner(game);
   if (finished) {
     const result = {
@@ -374,19 +384,15 @@ function handleTurn(roll: Roll) {
       losingStrategy: finished === c.WHITE ? blackStrategy.sname : whiteStrategy.sname
     };
     recordGameResult(result);
-    showWinner(finished);
-    renderScoreboard();
-    disableTurns();
   }
+
+  renderCurrentTurn();
+  setButtons();
 }
 
 function playTurn() {
   const finished = h.checkWinner(game);
-  if (finished) {
-    showWinner(finished);
-    disableTurns();
-    return;
-  }
+  if (finished) { return; }
 
   if (!game.turn) {
     // Handle roll-off to start the game
@@ -396,7 +402,6 @@ function playTurn() {
   } else {
     handleTurn(h.generateRoll());
   }
-  enableBack();
 }
 
 function play() {
@@ -407,23 +412,25 @@ function play() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers();
   setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
-  initGame();
 
   if (window.location.hash) {
-    restoreGameHistoryFromUrl(window.location.hash).then((urlHistory) => {
-      gameHistory = urlHistory;
-      let last = gameHistory[gameHistory.length - 1]
-      game = last.game
-      turnNo = last.turnNo
-      renderCurrentTurn()
-      setButtons()
-      console.log("game restored at turn", last.turnNo)
-    })
+    let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);
+    gameHistory = urlHistory;
+    let last = gameHistory[gameHistory.length - 1];
+    game = last.game;
+    turnNo = last.turnNo;
+    backCount = 0;
+    console.log("game restored at turn", last.turnNo)
+  } else {
+    initGame();
   }
+
+  renderCurrentTurn();
+  setButtons();
 
   document.getElementById("fast")?.addEventListener("click", () => {
     for (let i = 0; i < 10; i++) {

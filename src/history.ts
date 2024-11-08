@@ -145,7 +145,7 @@ function hitLocations(turn, prev): number[] {
   return hits;
 }
 
-function describeTurn(turn, prev): string {
+export function describeTurn(turn, prev): string {
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
