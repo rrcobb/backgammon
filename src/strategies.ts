@@ -326,12 +326,16 @@ Uses 50 simulations per move with 0.3 exploration constant.
 
 Currently not performing well, possibly due to limited simulation count.`
 
+
 const mctsRandomRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random });
 mctsRandomRollouts.description = `(slow) MCTS using random move selection for rollouts.
 
 Same parameters as balanced MCTS (50 sims, 0.3 explore) but uses random moves during rollouts. 
 
 Interesting comparison point for heuristic impact on MCTS.`;
+
+const mctsLearnedRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: learned });
+mctsLearnedRollouts.description = `(slow) MCTS using learned evaluation function for rollouts.`
 
 const prev = useEval(evaluate(f.prevLearned));
 const prevPrev = useEval(evaluate(f.prevPrevLearned));
@@ -346,6 +350,7 @@ const Strategies = {
   fastOnePlyExpectimax,
   mcts,
   mctsRandomRollouts,
+  mctsLearnedRollouts,
 };
-const forCompare = { balanced, prev, prevPrev, learned }
+const forCompare = { balanced, prev, learned, learnedFastExp }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };
