@@ -342,6 +342,7 @@ const Strategies = {
   learned,
   expectimax,
   samplingExpectimax,
+  learnedFastExp,
   fastOnePlyExpectimax,
   mcts,
   mctsRandomRollouts,

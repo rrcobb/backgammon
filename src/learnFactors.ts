@@ -13,8 +13,8 @@ const factorScales = {
   homePenalty: 1,
   blotPenalty: 1,
   primeReward: 0.25,  // Primes are rare (0-2), so small divisor = larger effective LR
-  racingPipReward: 30, // Pip differences are large (20-50), so large divisor = smaller effective LR
-  contactPipReward: 30, // Same as racing
+  racingPipReward: 60, // Pip differences are large (20-50), so large divisor = smaller effective LR
+  contactPipReward: 60, // Same as racing
   positionDecay: 0.4,  // Used in exponential, needs smaller effective LR
   homeBonus: 1,
   anchorBonus: 1
@@ -116,8 +116,8 @@ function trainFactors(
   let bestFactors = {...currentFactors};
   let bestWinRate = -Infinity;
   let gamesSinceImprovement = 0;
-  const validationInterval = 300;
-  const escapeThreshold = 3000; // Try escaping after this many games without improvement
+  const validationInterval = 500;
+  const escapeThreshold = 2000; // Try escaping after this many games without improvement
   
   for (let count = 0; count < numGames; count++) {
     const gameHistory: Position[] = []
@@ -174,7 +174,7 @@ function trainFactors(
     );
 
     if (count % validationInterval === 0) {
-      const validationGames = 200;
+      const validationGames = 80;
       let winsVsBalanced = 0;
       let winsVsPrevLearned = 0;
       const balanced = useEval(evaluate(f.balancedFactors));
@@ -259,16 +259,15 @@ function trainFactors(
         const toPerturb = shuffled.slice(0, numFactorsToPerturb);
         
         for (const key of toPerturb) {
-          // Random perturbation between 0.5x and 2x the current value
-          const multiplier = 0.5 + 1.5 * Math.random();
-          escapedFactors[key] = bestFactors[key] * multiplier;
+          // Random perturbation between 0.1x and 5x the current value
+          const multiplier = 0.2 + 5 * Math.random();
+          escapedFactors[key] = bestFactors[key] * multiplier + multiplier;
           
           // Sometimes (10% chance) try taking value from the initial factors
           if (Math.random() < 0.1) {
             escapedFactors[key] = initialFactors[key];
           }
-          // 5% of the time, set key to 1
-          if (Math.random() < 0.05) {
+          if (Math.random() < 0.02) {
             escapedFactors[key] = 1;
           }
         }
@@ -289,10 +288,10 @@ function trainFactors(
   return bestFactors;
 }
 
-const initialFactors: Factors = f.learned;
+const initialFactors: Factors = f.balancedFactors;
 
 // Train against opponents
-const finalFactors = trainFactors(initialFactors, 10000, 0.01)
+const finalFactors = trainFactors(initialFactors, 8000, 0.008)
 learnedFactors.push(finalFactors)
 await Bun.write('src/learnedFactors.json', JSON.stringify(learnedFactors, null, 2)) 
 

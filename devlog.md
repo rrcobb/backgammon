@@ -662,3 +662,5 @@ worst: learned with 34.7% average win rate
 Total time: 172.86s.
 28.81s per matchup of 50 games
 ```
+
+Got really sucked into doing more evaluation function stuff, with genetic algorithms and a pruning thingy. Still really hard to beat the hand-rolled balanced strat tho.

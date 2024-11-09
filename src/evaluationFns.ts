@@ -173,17 +173,17 @@ const balancedFactors: Factors = {
 };
 
 const runnerFactors: Factors = {
-  barPenalty: 0,
-  barReward: 0,
-  homeReward: 10,
-  homePenalty: 0,
-  blotPenalty: 0,
-  primeReward: 0,
+  barPenalty: 0.1,
+  barReward: 0.1,
+  homeReward: 9,
+  homePenalty: 1,
+  blotPenalty: 0.1,
+  primeReward: 0.3,
   racingPipReward: 0.15,
   contactPipReward: 0.05,
-  positionDecay: 5,
-  homeBonus: 0.5,
-  anchorBonus: 0,
+  positionDecay: 2,
+  homeBonus: 0.01,
+  anchorBonus: 0.01,
 };
 
 // see learnFactors.ts

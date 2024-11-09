@@ -4,7 +4,7 @@ import { forCompare as Strategies } from "../src/strategies";
 
 type StrategyName = keyof typeof Strategies;
 
-function compareTwo(a: StrategyName, b: StrategyName, games: number): [number, number] {
+function compareTwo(a: StrategyName, b: StrategyName, games: number, tStrategies): [number, number] {
   let awins = 0;
   let bwins = 0;
 
@@ -14,7 +14,7 @@ function compareTwo(a: StrategyName, b: StrategyName, games: number): [number, n
     game.turn = (i % 2 === 0 ? c.WHITE : c.BLACK) as Player;
 
     while (!h.checkWinner(game)) {
-      const currentStrategy = game.turn === c.WHITE ? Strategies[a] : Strategies[b];
+      const currentStrategy = game.turn === c.WHITE ? tStrategies[a] : tStrategies[b];
       const roll = h.generateRoll();
       [, game] = h.takeTurn(game, roll, currentStrategy);
     }
@@ -69,7 +69,7 @@ function roundRobinTournament(strategies, games: number) {
         results[i][i] = 0.5;
         continue;
       }
-      const [aWins, bWins] = compareTwo(names[i], names[j], games);
+      const [aWins, bWins] = compareTwo(names[i], names[j], games, strategies);
       results[j][i] = aWins / games;
       results[i][j] = bWins / games;
     }
