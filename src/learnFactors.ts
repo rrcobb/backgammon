@@ -1,11 +1,26 @@
 import { Game, Player, Roll, constants as c, helpers as h } from './backgammon'
 import { Factors, factors as f, evaluate } from './evaluationFns';
 import { AppliedStrategy, useEval } from './strategies'
+import { default as learnedFactors } from './learnedFactors.json';
 
 type Position = { game: Game, score: number, roll: Roll }
 type GameOutcome = 1 | -1 // 1 for win, -1 for loss
 
-const getLR = (initialLR: number, gameCount: number, decay = 0.9997) => {
+const factorScales = {
+  barPenalty: 1,
+  barReward: 1, 
+  homeReward: 1,
+  homePenalty: 1,
+  blotPenalty: 1,
+  primeReward: 0.25,  // Primes are rare (0-2), so small divisor = larger effective LR
+  racingPipReward: 30, // Pip differences are large (20-50), so large divisor = smaller effective LR
+  contactPipReward: 30, // Same as racing
+  positionDecay: 0.4,  // Used in exponential, needs smaller effective LR
+  homeBonus: 1,
+  anchorBonus: 1
+};
+
+const getLR = (initialLR: number, gameCount: number, decay = 0.9995) => {
     const minLR = 1e-5;
     return Math.max(
         initialLR * Math.pow(decay, gameCount),
@@ -76,20 +91,17 @@ function updateFactors(
     const prevUpdate = updates.get(key) || 0
     const adaptiveLR = learningRate * (Math.abs(prevUpdate) < 0.1 ? 1.1 : 0.9)
     
+    // Scale learning rate by factor's typical magnitude
+    const effectiveLR = adaptiveLR / factorScales[key]
+    
     // Update with momentum and gradient clipping
     const momentum = 0.5
     const gradientClip = 0.3
     const clampedImprovement = Math.max(Math.min(improvement, gradientClip), -gradientClip)
-    const update = adaptiveLR * clampedImprovement + momentum * prevUpdate
+    const update = effectiveLR * clampedImprovement + momentum * prevUpdate
     
-    newFactors[key] += update
+    newFactors[key] = Math.max(0.0001, newFactors[key] + update) // Keep factors positive
     updates.set(key, update)
-    
-    // Ensure factor doesn't change sign unless very close to zero
-    if (Math.abs(factors[key]) > 0.1 && 
-        Math.sign(newFactors[key]) !== Math.sign(factors[key])) {
-      newFactors[key] = factors[key] * 0.5 // Halve instead of changing sign
-    }
   }
   
   return scaleFactors(newFactors)
@@ -103,28 +115,21 @@ function trainFactors(
   let currentFactors = {...initialFactors};
   let bestFactors = {...currentFactors};
   let bestWinRate = -Infinity;
-  
-  const windowSize = 100;
-  const recentOutcomes: GameOutcome[] = [];
-  const rollingFactors: Factors[] = [];
-  const rollingWindow = 10;
+  let gamesSinceImprovement = 0;
+  const validationInterval = 300;
+  const escapeThreshold = 3000; // Try escaping after this many games without improvement
   
   for (let count = 0; count < numGames; count++) {
     const gameHistory: Position[] = []
     const currentEval = evaluate(currentFactors)
     const currentStrategy = useEval(currentEval);
 
-    // Opponent selection with curriculum learning
-    const winRate = recentOutcomes.length > 0 
-      ? recentOutcomes.filter(o => o === 1).length / recentOutcomes.length
-      : 0;
-      
     const opponents = [ 
       useEval(evaluate(f.balancedFactors)),
-      useEval(evaluate(f.balancedFactors)),
-      useEval(evaluate(initialFactors)),
+      useEval(evaluate(f.learned)),
+      useEval(evaluate(f.prevLearned)),
+      useEval(evaluate(f.prevPrevLearned)),
       useEval(evaluate(bestFactors)),
-      useEval(evaluate(currentFactors))
     ];
     
     const opponent = opponents[Math.floor(Math.random() * opponents.length)];
@@ -160,45 +165,24 @@ function trainFactors(
     }
     
     const outcome = moveCount >= maxMoves ? -1 : (h.checkWinner(game) == c.WHITE ? 1 : -1);
-    recentOutcomes.push(outcome);
-    if (recentOutcomes.length > windowSize) recentOutcomes.shift();
     
     currentFactors = updateFactors(
       currentFactors, 
       gameHistory, 
       outcome, 
-      getLR(initialLearningRate, count)
+      getLR(initialLearningRate, gamesSinceImprovement)
     );
-    
-    // Rolling average of factors
-    rollingFactors.push({...currentFactors});
-    if (rollingFactors.length > rollingWindow) {
-      rollingFactors.shift();
-      // Average the recent factors
-      const avgFactors: Factors = {...currentFactors};
-      for (const key in currentFactors) {
-        avgFactors[key] = rollingFactors.reduce((sum, f) => sum + f[key], 0) / rollingFactors.length;
-      }
-      currentFactors = avgFactors;
-    }
-    
-    // Track best performing factors
-    if (recentOutcomes.length === windowSize) {
-      const winRate = recentOutcomes.filter(o => o === 1).length / windowSize;
-      if (winRate > bestWinRate) {
-        bestWinRate = winRate;
-        bestFactors = {...currentFactors};
-        console.log(`New best win rate: ${(winRate * 100).toFixed(1)}% at game ${count}`);
-      }
-    }
 
-    if (count % 500 === 0) {
-      const validationGames = 100;
-      let wins = 0;
+    if (count % validationInterval === 0) {
+      const validationGames = 200;
+      let winsVsBalanced = 0;
+      let winsVsPrevLearned = 0;
       const balanced = useEval(evaluate(f.balancedFactors));
+      const prevLearned = useEval(evaluate(f.prevLearned));
 
+      // Validate against both strategies
       for (let i = 0; i < validationGames; i++) {
-        // Play a validation game against balanced strategy
+        // Play against balanced strategy
         let vGame = h.newGame();
         vGame.turn = c.WHITE as Player;
         const strategy = useEval(evaluate(currentFactors));
@@ -217,38 +201,99 @@ function trainFactors(
           vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
         }
 
-        if (h.checkWinner(vGame) === c.WHITE) wins++;
+        if (h.checkWinner(vGame) === c.WHITE) winsVsBalanced++;
+
+        // Play against prevLearned strategy
+        vGame = h.newGame();
+        vGame.turn = c.WHITE as Player;
+
+        while (!h.checkWinner(vGame)) {
+          let roll = h.generateRoll();
+          let result = strategy(vGame, roll);
+          if (result) vGame = result[1];
+          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+
+          if (h.checkWinner(vGame)) break;
+
+          roll = h.generateRoll();
+          result = prevLearned(vGame, roll);
+          if (result) vGame = result[1];
+          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        }
+
+        if (h.checkWinner(vGame) === c.WHITE) winsVsPrevLearned++;
       }
 
-      const validationWinRate = wins / validationGames;
-      console.log(`Validation win rate vs balanced: ${(validationWinRate * 100).toFixed(1)}%`);
+      const validationWinRateBalanced = winsVsBalanced / validationGames;
+      const validationWinRatePrevLearned = winsVsPrevLearned / validationGames;
+      console.log(`Validation win rates - vs balanced: ${(validationWinRateBalanced * 100).toFixed(1)}%, vs PrevLearned: ${(validationWinRatePrevLearned * 100).toFixed(1)}%`);
 
-      // Only update best factors if we actually beat balanced strategy
-      if (validationWinRate > 0.5 && validationWinRate > bestWinRate) {
-        bestWinRate = validationWinRate;
+      // Take the average of both win rates for determining improvement
+      const combinedWinRate = (validationWinRateBalanced + validationWinRatePrevLearned) / 2;
+      if (combinedWinRate > bestWinRate) {
+        bestWinRate = combinedWinRate;
         bestFactors = {...currentFactors};
+        gamesSinceImprovement = 0;
+        console.log("New best factors: ", Object.fromEntries(
+          Object.entries(currentFactors)
+          .map(([k, v]) => [k, v.toFixed(3)])
+        ));
+      } else {
+        gamesSinceImprovement += validationInterval; // increment by validation interval
       }
-    }
-
-    // Log progress
-    if (count % 100 === 0) {
-      const winRate = recentOutcomes.length > 0 
-        ? recentOutcomes.filter(o => o === 1).length / recentOutcomes.length
-        : 0;
-        console.log(`Game ${count}, Win rate: ${(winRate * 100).toFixed(1)}%, Factors:`, 
-                    Object.fromEntries(
-                      Object.entries(currentFactors)
-                      .map(([k, v]) => [k, v.toFixed(3)])
-                    )
-                   );
+      
+      // If we're stuck, try escaping the local optimum
+      if (gamesSinceImprovement >= escapeThreshold) {
+        console.log(`No improvement for ${gamesSinceImprovement} games. Attempting to escape local optimum...`);
+        
+        // Create a new point in factor space by:
+        // 1. Taking best factors so far
+        // 2. Randomly perturbing some factors significantly
+        // 3. Keeping some factors from current position
+        const escapedFactors = {...bestFactors};
+        const numFactorsToPerturb = Math.floor(Object.keys(currentFactors).length * 0.7); // Perturb 70% of factors
+        
+        // Randomly select factors to perturb
+        const factorKeys = Object.keys(currentFactors);
+        const shuffled = factorKeys.sort(() => Math.random() - 0.5);
+        const toPerturb = shuffled.slice(0, numFactorsToPerturb);
+        
+        for (const key of toPerturb) {
+          // Random perturbation between 0.5x and 2x the current value
+          const multiplier = 0.5 + 1.5 * Math.random();
+          escapedFactors[key] = bestFactors[key] * multiplier;
+          
+          // Sometimes (10% chance) try taking value from the initial factors
+          if (Math.random() < 0.1) {
+            escapedFactors[key] = initialFactors[key];
+          }
+          // 5% of the time, set key to 1
+          if (Math.random() < 0.05) {
+            escapedFactors[key] = 1;
+          }
+        }
+        
+        currentFactors = escapedFactors;
+        gamesSinceImprovement = 0;
+        
+        console.log("Escaped to new factors:", 
+          Object.fromEntries(
+            Object.entries(currentFactors)
+            .map(([k, v]) => [k, v.toFixed(3)])
+          )
+        );
+      }
     }
   }
 
   return bestFactors;
 }
 
-const initialFactors: Factors = f.prevLearned; 
+const initialFactors: Factors = f.learned;
 
 // Train against opponents
-const finalFactors = trainFactors(initialFactors, 10000, 0.02)
-console.log("Training complete. Best factors found:", finalFactors)
+const finalFactors = trainFactors(initialFactors, 10000, 0.01)
+learnedFactors.push(finalFactors)
+await Bun.write('src/learnedFactors.json', JSON.stringify(learnedFactors, null, 2)) 
+
+console.log("Training complete. Best factors found:", finalFactors, "wrote to learnedFactors.json")

@@ -93,6 +93,8 @@ function roundRobinTournament(strategies, games: number) {
   console.log(`worst: ${String(names[worstStrategyIndex])} with ${((1 - averageLossRates[worstStrategyIndex]) * 100).toFixed(1)}% average win rate`);
   console.log(`Total time: ${totalDuration.toFixed(2)}s.`);
   console.log(`${(totalDuration / totalMatches).toFixed(2)}s per matchup of ${games} games`);
+
+  return { totalMatches, names, averageLossRates, totalDuration, totalMatches, results}
 }
 
 function colorWinPercent(winPercent: number): string {
@@ -111,4 +113,11 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
 }
 
-roundRobinTournament(Strategies, 50);
+if (import.meta.main) {
+  roundRobinTournament(Strategies, 200);
+} else {
+  // this file is being imported by another file
+  // don't run something
+}
+
+export { roundRobinTournament }

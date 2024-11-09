@@ -2,6 +2,7 @@ import type { Result, Player, Game } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { counts } from './strategies';
 export type EvaluationFunction = (game: Game, player: Player) => number;
+import { default as learnedFactors } from './learnedFactors.json';
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   counts.evaluate += 1;
@@ -186,34 +187,10 @@ const runnerFactors: Factors = {
 };
 
 // see learnFactors.ts
-const learnedFactors = {
-  barPenalty: 2.8307972219428397,
-  barReward: 0.3937126689098964,
-  homeReward: 3.390090505710313e-7,
-  homePenalty: 0.017824751927879794,
-  blotPenalty: 4.447852644467363,
-  primeReward: 0.033077280452456066,
-  racingPipReward: 1.4521233734125367,
-  contactPipReward: 6.203233892019551,
-  positionDecay: 0.8948280636480441,
-  homeBonus: 0.000009128115469825048,
-  anchorBonus: 0.47597039411035436,
-}
+const learned = learnedFactors[learnedFactors.length - 1]
+const prevLearned = learnedFactors[learnedFactors.length - 2]
+const prevPrevLearned = learnedFactors[learnedFactors.length - 3]
 
-const prevLearned = {
-  barPenalty: -1.2216017592192547,
-  barReward: 0.2657044747485048,
-  homeReward: -1.5836819434872464,
-  homePenalty: -2.749881081745257,
-  blotPenalty: -0.15073448364433956,
-  primeReward: 4.50468534720785,
-  racingPipReward: 3.2924719692569937,
-  contactPipReward: -0.08656665309208121,
-  positionDecay: 4.06123028723716,
-  homeBonus: 0.8515813895776875,
-  anchorBonus: 0.8912373355553285,
-}
-
-const factors = { balancedFactors, runnerFactors, learnedFactors, prevLearned };
+const factors = { balancedFactors, runnerFactors, learned, prevLearned, prevPrevLearned };
 
 export { evaluate, factors };
