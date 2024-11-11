@@ -65,15 +65,19 @@ async function objectFromUrl(url) {
   }
 }
 
-async function restoreGameHistoryFromUrl(hash) {
-  const data = await objectFromUrl(hash);
-  // todo: restore game state and gameHistory from this data 
-  return data
-}
-
 async function saveGameHistoryToUrl(gHistory) {
   const url = await objectToUrl(gHistory);
   window.location.hash = url;
 }
 
-export { saveGameHistoryToUrl, restoreGameHistoryFromUrl }
+async function restoreFromUrl(state) {
+  let urlHistory = await objectFromUrl(window.location.hash);
+  state.gameHistory = urlHistory;
+  let last = state.gameHistory[state.gameHistory.length - 1];
+  state.game = last.game;
+  state.turnNo = last.turnNo;
+  state.backCount = 0;
+  console.log("game restored at turn", last.turnNo)
+}
+
+export { saveGameHistoryToUrl, restoreFromUrl }

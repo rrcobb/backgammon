@@ -145,7 +145,7 @@ function hitLocations(turn, prev): number[] {
   return hits;
 }
 
-export function describeTurn(turn, prev): string {
+function describeTurn(turn, prev): string {
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
@@ -285,4 +285,34 @@ function addHistoryControls(historyEl, backCount) {
   historyEl.appendChild(controls);
 }
 
-export { renderHistory }
+function renderInfo(turn, turnHistory) {
+  let info = "";
+  if (!turn) {
+    info = "New game. Players roll to determine who goes first."
+  } else {
+    // viewing past turn / current turn
+    const turnCount = turnHistory.length;
+    const prev = turnHistory[turn.turnNo - 2];
+    if (turnCount == turn.turnNo) {
+      info += `Turn ${turn.turnNo}. `;
+    } else {
+      info += `(${turn.turnNo}/${turnCount}) `;
+    }
+
+    // last roll and move (turn description)
+    info += describeTurn(turn, prev); 
+    let winner = h.checkWinner(turn.game);
+    if (winner) {
+      info += (winner == c.WHITE ? " White" : " Black") + " wins!";
+    } else {
+      // note the inversion; turn.player is the previous turn
+      info += (turn.player == 'w' ? ' Black' : ' White') + ' to play.';
+      if (turn.game.wBar && turn.player == 'b') info += ` White has ${turn.game.wBar} on the bar.`;
+      if (turn.game.bBar && turn.player == 'w') info += ` Black has ${turn.game.bBar} on the bar.`;
+    }
+  }
+  const infoDiv = document.getElementById('turn-info');
+  infoDiv.textContent = info;
+}
+
+export { renderHistory, renderInfo }

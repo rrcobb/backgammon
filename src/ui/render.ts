@@ -1,12 +1,13 @@
 import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { AppliedStrategy } from "../strategy/strategies";
-import { renderHistory, describeTurn } from "./history";
+import { renderHistory, renderInfo } from "./history";
 import { showArrow, clearArrows } from './arrows'
-import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
+import { saveGameHistoryToUrl, restoreFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
 import { setStrategy, renderStrategyPickers } from './strategy';
-import { playerUI, highlightValidSources, clearHighlights, undoLastMove } from './player'
+import { playerUI, highlightValidSources } from './player'
+import { setButtons, setupControls } from './controls'
 
 type Turn = {turnNo: number, move: Move, player: string, roll: Roll, game: Game}
 export type UIState = {
@@ -28,37 +29,8 @@ export const state: UIState = {
   backCount: null,
 }
 
-// settings
-var delay = 0.3; // seconds?
-
-function renderInfo(turn, turnHistory) {
-  let info = "";
-  if (!turn) {
-    info = "New game. Players roll to determine who goes first."
-  } else {
-    // viewing past turn / current turn
-    const turnCount = turnHistory.length;
-    const prev = turnHistory[turn.turnNo - 2];
-    if (turnCount == turn.turnNo) {
-      info += `Turn ${turn.turnNo}. `;
-    } else {
-      info += `(${turn.turnNo}/${turnCount}) `;
-    }
-
-    // last roll and move (turn description)
-    info += describeTurn(turn, prev); 
-    let winner = h.checkWinner(turn.game);
-    if (winner) {
-      info += (winner == c.WHITE ? " White" : " Black") + " wins!";
-    } else {
-      // note the inversion; turn.player is the previous turn
-      info += (turn.player == 'w' ? ' Black' : ' White') + ' to play.';
-      if (turn.game.wBar && turn.player == 'b') info += ` White has ${turn.game.wBar} on the bar.`;
-      if (turn.game.bBar && turn.player == 'w') info += ` Black has ${turn.game.bBar} on the bar.`;
-    }
-  }
-  const infoDiv = document.getElementById('turn-info');
-  infoDiv.textContent = info;
+export const Settings = {
+  delay: 0.3, // seconds
 }
 
 function renderBoard(game: Game, move?: Move): void {
@@ -242,44 +214,6 @@ function renderTurn(turn, turnHistory) {
   renderInfo(turn, turnHistory);
 }
 
-function enable(elid) {
-  (document.getElementById(elid) as HTMLButtonElement).disabled = false;
-}
-function disable (elid) {
-  (document.getElementById(elid) as HTMLButtonElement).disabled = true;
-}
-
-// buttons are:
-// - current
-// - back
-// - play
-// - fast
-// - end
-function setButtons() {
-  const finished = h.checkWinner(state.game);
-  const current = state.backCount == 0;
-  const start = state.backCount >= state.gameHistory.length - 1; 
-
-  // play button is active unless we are at the end of the game
-  if (finished && current) { disable("play") }
-  else { enable("play") }
-
-  // can walk backwards unless we are at the start
-  if (start) { disable("back") }
-  else { enable("back") }
-  
-  // can jump if we are current and not finished
-  if (current && !finished) {
-    enable("fast"); enable("end");
-  } else {
-    disable("fast"); disable("end");
-  }
-
-  // can go to current if we are not current
-  if (current) { disable("current") } 
-  else { enable("current") } 
-}
-
 function initGame() {
   state.turnNo = 0;
   state.gameHistory = [];
@@ -287,14 +221,14 @@ function initGame() {
   state.backCount = 0;
 }
 
-function newGame() {
+export function newGame() {
   window.location.hash = "";
   initGame()
   renderCurrentTurn()
   setButtons();
 }
 
-function back() {
+export function back() {
   if (state.backCount < state.gameHistory.length - 1) {
     viewTurn(state.backCount+1);
   }
@@ -383,7 +317,7 @@ async function handleTurn(roll: Roll) {
   setButtons();
 }
 
-async function playTurn() {
+export async function playTurn() {
   const finished = h.checkWinner(state.game);
   if (finished) { return; }
 
@@ -397,7 +331,7 @@ async function playTurn() {
   }
 }
 
-async function play() {
+export async function play() {
   if (state.backCount == 0) {
     await playTurn();
   } else {
@@ -405,88 +339,18 @@ async function play() {
   }
 }
 
-async function sleep(s) {
-  await new Promise(resolve => setTimeout(resolve, s))
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers(state);
   setStrategy(c.WHITE, "learned", state);
-  setStrategy(c.BLACK, "human", state);
+  setStrategy(c.BLACK, "balanced", state);
 
   if (window.location.hash) {
-    let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);
-    state.gameHistory = urlHistory;
-    let last = state.gameHistory[state.gameHistory.length - 1];
-    state.game = last.game;
-    state.turnNo = last.turnNo;
-    state.backCount = 0;
-    console.log("game restored at turn", last.turnNo)
+    await restoreFromUrl(state)
   } else {
     initGame();
   }
 
   renderCurrentTurn();
+  setupControls();
   setButtons();
-
-  document.getElementById("fast")?.addEventListener("click", async () => {
-    for (let i = 0; i < 10; i++) {
-      playTurn();
-      if (delay) {
-        await sleep(delay)
-      }
-    }
-  });
-  document.getElementById('end')?.addEventListener('click', async () => {
-    while (!h.checkWinner(state.game)) {
-      playTurn();
-      if (delay) {
-        await sleep(delay / 5);
-      } 
-    }
-  })
-  document.getElementById("play")?.addEventListener("click", play);
-  document.getElementById("back")?.addEventListener('click', back);
-  document.getElementById("newgame")?.addEventListener("click", newGame);
-  document.getElementById("current")?.addEventListener("click", jumpToLatest);
-
-  // register keys for navigation
-  document.body.addEventListener('keydown', (e) => {
-    if (e.key == 'k' || e.key == 'ArrowUp' || e.key == 'ArrowRight') {
-      play();
-    }
-
-    if (e.key == ' ' || e.key == 'Enter') {
-      if (state.backCount == 0) {
-        playTurn();
-      }
-    }
-
-    if (e.key == 'j' || e.key == 'ArrowDown' || e.key == 'ArrowLeft') {
-      back();
-    }
-
-    if (e.key == 'n') {
-      newGame();
-    }
-
-    if (e.key === 'Escape') {
-      if (playerUI.selectedPiece !== null) {
-        // Just clear the current selection
-        clearHighlights();
-        playerUI.selectedPiece = null;
-      } else if (playerUI.selectedMoves.length > 0) {
-        // Clear all moves made this turn
-        clearHighlights();
-        clearArrows();
-        playerUI.selectedMoves = [];
-        highlightValidSources();
-      }
-    }
-
-    if (e.key == 'z' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      undoLastMove();
-    }
-  })
 });
