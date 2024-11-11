@@ -5,7 +5,7 @@ const xdescribe = test.skip;
 import { arbitraryGame, expectGamesEqual } from "./helpers";
 
 import { helpers as h, constants as c } from "../src/backgammon.ts";
-import { useSpeedExpectimax, useExpectimax, useAbPruning } from "../src/strategies.ts";
+import { useSpeedExpectimax, useExpectimax, useAbPruning } from "../src/strategy/strategies.ts";
 
 // Property-based test
 describe("Dice roll validity", () => {

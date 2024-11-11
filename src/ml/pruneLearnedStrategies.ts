@@ -1,5 +1,5 @@
-import { useEval } from './strategies';
-import { evaluate } from './evaluationFns';
+import { useEval } from '../strategy/strategies';
+import { evaluate } from '../strategy/evaluationFns';
 import { roundRobinTournament } from '../evals/tournament';
 
 // Read and process factors

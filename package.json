@@ -2,11 +2,11 @@
   "scripts": {
     "bench": "bun bench/strategies.ts",
     "bench-all": "bun bench/clone.ts && bun bench/helpers.ts && bun bench/game.ts && bun bench/keys.ts && bun bench/strategies.ts",
-    "build": "bun build.js",
-    "watch": "watchexec bun build.js",
+    "build": "bun src/ui/build.js",
+    "watch": "watchexec bun src/ui/build.js",
     "check": "tsc --noEmit",
     "test": "bun test",
-    "tournament": "bun evals/tournament.ts"
+    "tournament": "bun src/evals/tournament.ts"
   },
   "dependencies": {
     "esbuild": "0.24.0",
@@ -20,7 +20,7 @@
     "typescript": "^5.6.3"
   },
   "knip": {
-    "entry": ["test/*.test.ts", "src/render.ts", "src/learnFactors.ts"],
+    "entry": ["test/*.test.ts", "src/ui/render.ts", "src/ml/*.ts"],
     "project": ["**/*.{js,ts}"],
     "exclude": ["binaries"]
   }

@@ -1,8 +1,8 @@
-import type { Result, Player, Game } from "./backgammon";
-import { constants as c, helpers as h } from "./backgammon";
+import type { Result, Player, Game } from "../backgammon";
+import { constants as c, helpers as h } from "../backgammon";
 import { counts } from './strategies';
 export type EvaluationFunction = (game: Game, player: Player) => number;
-import { default as learnedFactors } from './learnedFactors.json';
+import { default as learnedFactors } from '../ml/learnedFactors.json';
 
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   counts.evaluate += 1;

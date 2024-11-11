@@ -1,6 +1,6 @@
-import type { Player, Game, Move, Roll, Die, Result, Movement } from "./backgammon";
-import { constants as c, helpers as h } from "./backgammon";
-import { Strategies as S } from "./strategies";
+import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
+import { constants as c, helpers as h } from "../backgammon";
+import { Strategies as S } from "../strategy/strategies";
 import { renderHistory, describeTurn } from "./history";
 import { showArrow } from './arrows'
 import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
@@ -302,7 +302,7 @@ function renderRoll(roll) {
   roll.forEach((die) => {
     const img = document.createElement("img");
     const ordinal = ["one", "two", "three", "four", "five", "six"][die - 1];
-    img.src = `src/dice/${ordinal}.svg`;
+    img.src = `src/ui/dice/${ordinal}.svg`;
     img.alt = ordinal;
     rollDiv.appendChild(img);
   });

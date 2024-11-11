@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import type { Game, Result } from "../src/backgammon";
 import { constants as c, helpers as h } from "../src/backgammon";
-import { useExpectimax, useAbPruning } from "../src/strategies";
+import { useExpectimax, useAbPruning } from "../src/strategy/strategies";
 
 test("Two-option expectimax", () => {
   const simpleEval = (game: Game) => game.wHome - game.bHome;

@@ -1,5 +1,5 @@
-import { Player } from "./backgammon";
-import { constants as c } from "./backgammon";
+import { Player } from "../backgammon";
+import { constants as c } from "../backgammon";
 
 interface StrategyScore {
   wins: number;
@@ -64,7 +64,7 @@ export function recordGameResult(result: GameResult): void {
   saveScores(scores);
 }
 
-export function resetScores(): void {
+function resetScores(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 

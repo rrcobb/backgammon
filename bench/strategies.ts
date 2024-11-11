@@ -1,7 +1,7 @@
 import { run, bench, boxplot, barplot, lineplot, compact, summary, group } from "mitata";
 import { constants as c, helpers as h } from "../src/backgammon.ts";
 import { genGame, genGames, genRoll } from "../test/helpers";
-import { Strategies, counts, resetCounts } from "../src/strategies";
+import { Strategies, counts, resetCounts } from "../src/strategy/strategies";
 
 const SCENARIOS = 10;
 const games = genGames(SCENARIOS);

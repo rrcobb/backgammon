@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { genGame } from "./helpers";
-import { random } from '../src/strategies';
-import { MCTSNode } from "../src/mcts";
+import { random } from '../src/strategy/strategies';
+import { MCTSNode } from "../src/strategy/mcts";
 
 describe("mcts", () => {
   test("Can get a result from evaluating a Node", () => {

@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { constants as c, helpers as h } from "../src/backgammon.ts";
-import { makeApplied } from '../src/strategies.ts';
+import { makeApplied } from '../src/strategy/strategies.ts';
 import { expectGamesEqual } from "./helpers.ts";
 
 function blackToEnter(): Game {

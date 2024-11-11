@@ -1,6 +1,6 @@
-import { Game, Player, Roll, constants as c, helpers as h } from './backgammon'
-import { Factors, factors as f, evaluate } from './evaluationFns';
-import { AppliedStrategy, useEval } from './strategies'
+import { Game, Player, Roll, constants as c, helpers as h } from '../backgammon'
+import { Factors, factors as f, evaluate } from '../strategy/evaluationFns';
+import { AppliedStrategy, useEval } from '../strategy/strategies'
 import { default as learnedFactors } from './learnedFactors.json';
 
 type Position = { game: Game, score: number, roll: Roll }

@@ -1,5 +1,5 @@
-import type { Player, Game, Move } from "./backgammon";
-import { constants as c, helpers as h } from "./backgammon";
+import type { Player, Game, Move } from "../backgammon";
+import { constants as c, helpers as h } from "../backgammon";
 import { playFromHere, jumpToLatest, viewTurn } from './render'
 
 function showDie(n: number): string {

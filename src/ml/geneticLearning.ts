@@ -1,7 +1,7 @@
-import { useEval } from './strategies';
-import { evaluate } from './evaluationFns';
+import { useEval } from '../strategy/strategies';
+import type { Factors } from '../strategy/evaluationFns';
+import { evaluate } from '../strategy/evaluationFns';
 import { roundRobinTournament } from '../evals/tournament';
-import type { Factors } from './evaluationFns';
 
 // Configuration
 const GENERATION_COUNT = 10;

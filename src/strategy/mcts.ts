@@ -1,7 +1,7 @@
-import type { Result, Player, Game, Roll, Move } from "./backgammon";
+import type { Result, Player, Game, Roll, Move } from "../backgammon";
 import type { AppliedStrategy } from "./strategies";
 import { random } from "./strategies";
-import { helpers as h, constants as c } from "./backgammon";
+import { helpers as h, constants as c } from "../backgammon";
 
 function maxBy<T>(list: T[], func: (a: T) => number) {
   let max = list[0];

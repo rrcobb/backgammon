@@ -84,7 +84,6 @@ function expectGamesEqual(actual, expected) {
   expect(actual).toEqual(
     expect.objectContaining({
       ...expected,
-      key: expect.any(String),
     }),
   );
 }

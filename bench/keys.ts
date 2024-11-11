@@ -15,6 +15,16 @@ export function movesStringCustom(moves: Movement[]) {
   return result;
 }
 
+export function movesCharCode(moves: Movement[]) {
+  let result = "";
+  for (let i = 0; i < moves.length; i++) {
+    for (let j = 0; j < moves[i].length; j++) {
+      result += String.fromCharCode(moves[i][j]);
+    }
+  }
+  return result;
+}
+
 export function movesBigInt(moves: Movement[]) {
   let result = 0n;
   let shift = 0n;
@@ -65,6 +75,11 @@ summary(() => {
   bench("movesStringCustom ($moves)", function* (s) {
     const moves = s.get("moves");
     yield () => movesStringCustom(moves);
+  }).args("moves", movesOptions);
+
+  bench("movesCharCode ($moves)", function* (s) {
+    const moves = s.get("moves");
+    yield () => movesCharCode(moves);
   }).args("moves", movesOptions);
 
   bench("movesBigInt ($moves)", function* (s) {

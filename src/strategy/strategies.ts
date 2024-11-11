@@ -1,5 +1,5 @@
-import type { Result, Player, Game, Roll } from "./backgammon";
-import { constants as c, helpers as h, generateGameKey } from "./backgammon";
+import type { Result, Player, Game, Roll } from "../backgammon";
+import { constants as c, helpers as h } from "../backgammon";
 import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
 import { useMCTS } from "./mcts"
 

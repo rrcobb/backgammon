@@ -1,4 +1,9 @@
-import { counts, Strategy, AppliedStrategy } from "./strategies";
+/*
+ * Core backgammon game logic
+ *
+ * Game representation
+ */
+import { counts, Strategy, AppliedStrategy } from "./strategy/strategies";
 
 // binary game representation
 const WHITE = 0b00010000;
@@ -8,24 +13,20 @@ const HOME = 0b10000000;
 
 type Player = typeof WHITE | typeof BLACK;
 
-// let gameIdCounter = 0;
 interface Game {
-  // _id: number; // for use as a key
-  // home and bars are really each a half a byte
-  // using numbers for now for ease
-  key: string;
   bBar: number;
   wBar: number;
   bHome: number;
   wHome: number;
   turn: Player | undefined;
   positions: Uint8Array;
-  // doubling cube: not fully implemented
+
+  // doubling cube: not implemented
   cube: number;
 }
 
 // 24 positions
-// each byte is 000[player][count]
+// each byte is 0..00[player][count]
 // player is one bit, count is the bottom bits
 // white is playing from index 0 towards the end of the array
 const INITIAL_POSITIONS: Game["positions"] = new Uint8Array([
@@ -62,31 +63,21 @@ const INITIAL_POSITIONS: Game["positions"] = new Uint8Array([
 
 function newGame(): Game {
   let temp = {
-    // _id: gameIdCounter++,
-    key: "",
     bBar: 0,
     wBar: 0,
     bHome: 0,
     wHome: 0,
-    turn: undefined,
+    turn: undefined, // players roll to determine who goes first
     positions: new Uint8Array(INITIAL_POSITIONS),
     cube: 1,
   };
-  temp.key = generateGameKey(temp);
   return temp;
-}
-
-const decoder = new TextDecoder();
-export function generateGameKey(game: Game): string {
-  return "" + game.bBar + game.wBar + game.bHome + game.wHome + game.turn + game.cube + decoder.decode(game.positions);
 }
 
 // everything is a primitive except the positions typedarray
 // copy for uint8array is relatively cheap
 function cloneGame(game: Game): Game {
   return {
-    // _id: gameIdCounter++,
-    key: game.key,
     bBar: game.bBar,
     wBar: game.wBar,
     bHome: game.bHome,
@@ -97,15 +88,13 @@ function cloneGame(game: Game): Game {
   };
 }
 
-// for use as a set key
-// see bench/keys
+// for use as a set key. see bench/keys
 function movesKey(moves: Movement[]) {
   let result = "";
   for (let i = 0; i < moves.length; i++) {
     for (let j = 0; j < moves[i].length; j++) {
-      result += moves[i][j];
+      result += String.fromCharCode(moves[i][j]);
     }
-    result += "|";
   }
   return result;
 }
@@ -124,9 +113,9 @@ function rollOff(): [Player, Roll] {
     whiteRoll = generateDie();
     blackRoll = generateDie();
   } while (whiteRoll === blackRoll);
-  
+
   return [
-    whiteRoll > blackRoll ? WHITE : BLACK, 
+    whiteRoll > blackRoll ? WHITE : BLACK,
     [whiteRoll, blackRoll] as Roll
   ];
 }
@@ -175,18 +164,18 @@ function apply(game: Game, movement: Movement): void {
     // move from the start
     let val = game.positions[start];
     if (val == (player | 1)) {
-      game.positions[start] = 0; // no one's if there are no pieces
+      game.positions[start] = 0; // if there are no pieces left, clear the player
     } else {
       game.positions[start] = val - 1;
     }
   }
 
-  // move to home?
+  // move to home
   if (dest == HOME) {
     player == BLACK ? game.bHome++ : game.wHome++;
   } else {
     let current = game.positions[dest];
-    // hit a blot? send opponent to bar
+    // hit a blot, send opponent to bar
     if (current == (opponent | 1)) {
       opponent == BLACK ? game.bBar++ : game.wBar++;
       game.positions[dest] = player | 1;
@@ -194,7 +183,6 @@ function apply(game: Game, movement: Movement): void {
       game.positions[dest] = player | (current + 1);
     }
   }
-  game.key = generateGameKey(game);
 }
 
 // is a spot valid to move to?
@@ -224,7 +212,6 @@ type Result = [Move, Game];
 type TempResult = [Movement[], Game, Die[]];
 type ResultArray = TempResult[] & { minRolls: number };
 
-// prettier-ignore
 function validMoves(game: Game, r: Roll): Result[] {
   if (!r) { throw new Error("no roll") }
   counts.validMoves++
@@ -240,6 +227,7 @@ function validMoves(game: Game, r: Roll): Result[] {
   const enter = player == BLACK ? 23 : 0;
   const homeboard = player == BLACK ? 5 : 18;
   const results: ResultArray = [] as ResultArray;
+  // have to use as many rolls as possible
   // track the max rolls we've used / min rolls available we've seen
   results.minRolls = rolls.length;
 
@@ -251,7 +239,7 @@ function validMoves(game: Game, r: Roll): Result[] {
 
     // is the bar cleared?
     if (results.length) {
-      // results can only have 0 or 1 length here
+      // results can only have length 1
       const [move, next] = results[0]; // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
       if (nextbar) {
@@ -362,13 +350,16 @@ function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) 
   if (isBearingOff(player, g)) {
     for (let i = 0; i < rolls.length; i++) {
       const roll = rolls[i];
-      const bearsOff: Start = (end + direction - roll * direction) as Start;
-      if (g.positions[bearsOff] & player) {
-        addMovement([bearsOff, HOME], m, g, rolls, seen, results, i);
+      const bearsOffPos: Start = (end + direction - roll * direction) as Start;
+      if (g.positions[bearsOffPos] & player) {
+        // if we have a piece right on the spot we bear off, we can move it off
+        addMovement([bearsOffPos, HOME], m, g, rolls, seen, results, i);
       } else {
         for (let h = homeboard as Start; h != end + direction; h += direction) {
           if (g.positions[h] & player) {
-            if (direction * bearsOff > direction * h) break;
+            // otherwise, we can bear off any homeboard points smaller than the roll
+            // so long as no piece is further out than that
+            if (direction * bearsOffPos > direction * h) break;
             addMovement([h, HOME], m, g, rolls, seen, results, i);
           }
         }
@@ -400,8 +391,7 @@ function isBearingOff(player: Player, game: Game) {
     if (game.wBar) return false;
     pieceCount = game.wHome;
     start = game.positions.length - 6;
-  } else {
-    // black
+  } else { // black
     if (game.bBar) return false;
     pieceCount = game.bHome;
     start = 0;
@@ -414,7 +404,7 @@ function isBearingOff(player: Player, game: Game) {
 }
 
 function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
-  let choice = strategy(game, roll); 
+  let choice = strategy(game, roll);
   let move = choice ? choice[0] : nullMove;
   let next = choice ? choice[1] : game;
   next.turn = game.turn == BLACK ? WHITE : BLACK;
