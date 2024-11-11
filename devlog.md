@@ -630,17 +630,29 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
 
 - strategy descriptions
 
-## UI / TODO
-
 - show info for both strategies, not just one
-
-- hide / show for different labeled sections
 
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
-- separate roll from move ? (for individual play, at least)
+  - separate roll from move ? (for individual play, at least)
+
 - show the valid moves, given a roll
    - play by choosing among the valid moves
+
+## UI / TODO
+
+- human mode:
+  - render arrows better
+  - show intermediate states
+  - show more turn indicators
+  - don't require clicking 'play' for the human turn or ai turn, just play the next move
+  - if there are no valid moves, still have to go to the next player's turn
+  - fix the highlights, they are kinda busted
+  - show hitting blots
+  - allow 'undo' of partial moves
+  - maybe animate the roll switching a little, so it's clear that it's your turn
+
+- hide / show for different labeled sections
 
 - improved turn info
 

@@ -105,8 +105,7 @@ function renderInfo(turn, turnHistory) {
   if (!turn) {
     info = "New game. Players roll to determine who goes first."
   } else {
-    // (viewing past turn / current turn)
-    // turn 30 (current) or (turn 15 /  30) 
+    // viewing past turn / current turn
     const turnCount = turnHistory.length;
     const prev = turnHistory[turn.turnNo - 2];
     if (turnCount == turn.turnNo) {
@@ -306,7 +305,6 @@ function renderRoll(roll) {
 
 function highlightValidSources() {
   const sources = getNextValidSources();
-  console.log({sources})
 
   sources.forEach(pos => {
     if (pos === c.BAR) {
@@ -327,17 +325,6 @@ function highlightValidSources() {
   });
 }
 
-function getInitialValidSources(validMoves: Result[]): Set<number> {
-  const sources = new Set<number>();
-  validMoves.forEach(([move]) => {
-    const firstMove = move[0];
-    if (firstMove) {
-      sources.add(firstMove[0]);
-    }
-  });
-  return sources;
-}
-
 function handleSourceClick(pos: number) {
   if (selectedPiece !== null) {
     clearHighlights();
@@ -347,19 +334,144 @@ function handleSourceClick(pos: number) {
   highlightValidDestinations(pos);
 }
 
-function highlightValidDestinations(from: number) {
-  const validContinuations = getValidMovesAfterSelection();
-  const moveIndex = selectedMoves.length;
+/**
+ * Checks if a sequence of moves is valid within a candidate sequence,
+ * regardless of order
+ */
+function isCompatibleSequence(selected: Movement[], candidate: Movement[]): boolean {
+  // Count moves in candidate sequence
+  const candidateCounts = new Map<string, number>();
+  candidate.filter(m => m !== null).forEach(m => {
+    const key = JSON.stringify(m);
+    candidateCounts.set(key, (candidateCounts.get(key) || 0) + 1);
+  });
   
-  // Find all valid destinations for this source at current move index
-  const dests = new Set<number>();
-  validContinuations.forEach(([move]) => {
-    const nextMove = move[moveIndex];
-    if (nextMove && nextMove[0] === from) {
-      dests.add(nextMove[1]);
+  // Try to match each selected move
+  for (const move of selected) {
+    const key = JSON.stringify(move);
+    const count = candidateCounts.get(key);
+    if (!count) return false;
+    
+    if (count === 1) {
+      candidateCounts.delete(key);
+    } else {
+      candidateCounts.set(key, count - 1);
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Returns whether two sequences contain exactly the same moves
+ * (ignoring order and nulls)
+ */
+function areSequencesEqual(seq1: Movement[], seq2: Movement[]): boolean {
+  const moves1 = seq1.filter(m => m !== null);
+  const moves2 = seq2.filter(m => m !== null);
+  
+  // Must have same number of non-null moves
+  if (moves1.length !== moves2.length) return false;
+  
+  return isCompatibleSequence(moves1, moves2) && isCompatibleSequence(moves2, moves1);
+}
+
+/**
+ * Get remaining moves available in a candidate sequence after 
+ * accounting for selected moves
+ */
+function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movement[] {
+  // Count moves in candidate
+  const candidateCounts = new Map<string, number>();
+  candidate.filter(m => m !== null).forEach(m => {
+    const key = JSON.stringify(m);
+    candidateCounts.set(key, (candidateCounts.get(key) || 0) + 1);
+  });
+  
+  // Subtract selected moves
+  selected.forEach(move => {
+    const key = JSON.stringify(move);
+    const count = candidateCounts.get(key);
+    if (count === 1) {
+      candidateCounts.delete(key);
+    } else if (count) {
+      candidateCounts.set(key, count - 1);
     }
   });
+  
+  // Convert remaining counts back to moves
+  const remaining: Movement[] = [];
+  candidateCounts.forEach((count, moveStr) => {
+    const move = JSON.parse(moveStr) as Movement;
+    for (let i = 0; i < count; i++) {
+      remaining.push(move);
+    }
+  });
+  
+  return remaining;
+}
 
+// Now we can revise the original functions to use these helpers
+
+function handleMoveSelection(from: number, to: number) {
+  selectedMoves.push([from, to] as Movement);
+
+  const matchingResult = currentValidMoves.find(([move]) => 
+    areSequencesEqual(move, selectedMoves)
+  );
+
+  if (matchingResult) {
+    // We've made a complete valid move!
+    clearHighlights();
+    selectedMoves = [];
+    humanMoveCallback(matchingResult);
+  } else {
+    clearHighlights();
+    highlightValidSources();
+  }
+}
+
+function getNextValidSources(): Set<number> {
+  const sources = new Set<number>();
+  
+  currentValidMoves.forEach(([sequence]) => {
+    if (isCompatibleSequence(selectedMoves, sequence)) {
+      // Add sources from remaining moves
+      const remaining = getRemainingMoves(selectedMoves, sequence);
+      remaining.forEach(move => {
+        const [start] = move;
+        // Special case for bar - check actual piece count
+        if (start === c.BAR) {
+          const barCount = game.turn === c.WHITE ? game.wBar : game.bBar;
+          if (barCount > 0) {
+            sources.add(start);
+          }
+        }
+        // Regular point - check if we have pieces there
+        else if ((game.positions[start] & game.turn) === game.turn) {
+          sources.add(start);
+        }
+      });
+    }
+  });
+  
+  return sources;
+}
+
+function highlightValidDestinations(from: number): void {
+  const dests = new Set<number>();
+  
+  currentValidMoves.forEach(([sequence]) => {
+    if (isCompatibleSequence(selectedMoves, sequence)) {
+      const remaining = getRemainingMoves(selectedMoves, sequence);
+      remaining.forEach(move => {
+        if (move && move[0] === from) {
+          dests.add(move[1]);
+        }
+      });
+    }
+  });
+  
   dests.forEach(pos => {
     if (pos === c.HOME) {
       const home = document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home');
@@ -375,54 +487,6 @@ function highlightValidDestinations(from: number) {
       }
     }
   });
-}
-
-function handleMoveSelection(from: number, to: number) {
-  selectedMoves.push([from, to] as Movement);
-
-  const matchingResult = currentValidMoves.find(([move]) => 
-    JSON.stringify(move) === JSON.stringify(selectedMoves)
-  );
-
-  if (matchingResult) {
-    // We've made a complete valid move!
-    clearHighlights();
-    selectedMoves = [];
-    humanMoveCallback(matchingResult);
-  } else {
-    clearHighlights();
-    highlightValidSources();
-  }
-}
-
-function getNextValidSources(): Set<number> {
-  const validContinuations = getValidMovesAfterSelection();
-  const moveIndex = selectedMoves.length;
-  
-  // Get all possible next source positions
-  const sources = new Set<number>();
-  validContinuations.forEach(([move]) => {
-    const nextMove = move[moveIndex];
-    if (nextMove) {
-      sources.add(nextMove[0]);
-    }
-  });
-  
-  return sources;
-}
-
-function getValidMovesAfterSelection(): Result[] {
-  if (!currentValidMoves) return [];
-  
-  // Find moves that start with our current selection
-  return currentValidMoves.filter(([move]) => 
-    selectedMoves.every((selected, i) => {
-      if (!selected) return true;
-      return move[i] && 
-        move[i]![0] === selected[0] && 
-        move[i]![1] === selected[1];
-    })
-  );
 }
 
 function clearHighlights() {

@@ -731,23 +731,22 @@ button#reset {
 
 
 /* Move highlighting for human play */
-
-.valid-source .piece, .valid-source .bar.piece {
+.valid-source .piece:last-child, .valid-source .bar.piece:last-child {
   cursor: pointer;
   box-shadow: 
     0 0 2px 2px rgba(255, 255, 0, 0.4),
     0 0 4px 4px rgba(255, 255, 0, 0.2);
 }
 
-.valid-source .piece:hover {
+.valid-source .piece:last-child:hover {
   box-shadow: 
     0 0 3px 3px rgba(255, 255, 0, 0.6),
     0 0 6px 6px rgba(255, 255, 0, 0.3);
 }
 
 .valid-destination {
-    cursor: pointer;
-    position: relative;
+  cursor: pointer;
+  position: relative;
 }
 
 /* Add a semi-transparent overlay to show valid landing spots */
@@ -758,25 +757,9 @@ button#reset {
     left: 0;
     right: 0;
     bottom: 0;
-    /* Green highlight that fades out towards edges */
-    background: radial-gradient(
-        circle at center,
-        rgba(0, 255, 0, 0.2) 0%,
-        rgba(0, 255, 0, 0.1) 50%,
-        transparent 70%
-    );
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 100 100 100'%3E%3Cpath d='M0,0 L50,300 L100,0' fill='none' stroke='rgba(120,250,30,1)' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E");
     pointer-events: none;  /* Allow clicks to pass through */
     z-index: 3;  /* Above pieces but below arrows */
-}
-
-/* Brighten on hover */
-.valid-destination:hover::after {
-    background: radial-gradient(
-        circle at center,
-        rgba(0, 255, 0, 0.3) 0%,
-        rgba(0, 255, 0, 0.2) 50%,
-        transparent 70%
-    );
 }
 
 /* When highlighting home */
