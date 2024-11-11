@@ -354,5 +354,5 @@ const Strategies = {
   mctsRandomRollouts,
   mctsLearnedRollouts,
 };
-const forCompare = { balanced, prev, learned, learnedFastExp }
+const forCompare = { balanced, prevPrev, prev, learned }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

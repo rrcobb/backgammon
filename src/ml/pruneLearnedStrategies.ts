@@ -2,8 +2,9 @@ import { useEval } from '../strategy/strategies';
 import { evaluate } from '../strategy/evaluationFns';
 import { roundRobinTournament } from '../evals/tournament';
 
+const path = 'src/ml/learnedFactors.json'
 // Read and process factors
-const learnedFactors = JSON.parse(await Bun.file('src/learnedFactors.json').text());
+const learnedFactors = JSON.parse(await Bun.file(path).text());
 
 // Create strategies from factors
 const createStrategies = (factors) => {
@@ -154,8 +155,7 @@ async function tournamentAndPrune(
   const sortedFactors = survivors.map(({index}) => factors[index]);
   
   // Write results
-  await Bun.write(
-    'src/learnedFactors.json',
+  await Bun.write(path,
     JSON.stringify(sortedFactors, null, 2)
   );
   

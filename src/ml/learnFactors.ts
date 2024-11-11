@@ -293,6 +293,8 @@ const initialFactors: Factors = f.balancedFactors;
 // Train against opponents
 const finalFactors = trainFactors(initialFactors, 8000, 0.008)
 learnedFactors.push(finalFactors)
-await Bun.write('src/learnedFactors.json', JSON.stringify(learnedFactors, null, 2)) 
 
-console.log("Training complete. Best factors found:", finalFactors, "wrote to learnedFactors.json")
+const path = 'src/ml/learnedFactors.json';
+await Bun.write(path, JSON.stringify(learnedFactors, null, 2)) 
+
+console.log("Training complete. Best factors found:", finalFactors, "wrote to ", path)

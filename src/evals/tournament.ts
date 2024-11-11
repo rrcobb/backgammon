@@ -114,7 +114,7 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
 }
 
 if (import.meta.main) {
-  roundRobinTournament(Strategies, 20);
+  roundRobinTournament(Strategies, 50);
 } else {
   // this file is being imported by another file
   // don't run something

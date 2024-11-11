@@ -1,18 +1,5 @@
 [
   {
-    "barPenalty": 0.055903747227374956,
-    "barReward": 0.2845619433292739,
-    "homeReward": 0.2810191937702687,
-    "homePenalty": 0.0009566325925788812,
-    "blotPenalty": 0.08300608124244645,
-    "primeReward": 4.62303516305228,
-    "racingPipReward": 0.036348518578598076,
-    "contactPipReward": 0.0033530996651298475,
-    "positionDecay": 3.1717638051438537,
-    "homeBonus": 0.4610399999999985,
-    "anchorBonus": 0.4638077976217728
-  },
-  {
     "barPenalty": 0.0031579162072700663,
     "barReward": 0.7424375371428987,
     "homeReward": 0.008380636463031629,
@@ -20,19 +7,6 @@
     "blotPenalty": 0.5723523994515157,
     "primeReward": 5.652101305463004,
     "racingPipReward": 0.053047061720740536,
-    "contactPipReward": 0.004515480415300856,
-    "positionDecay": 5.968006012482736,
-    "homeBonus": 0.7539447698773477,
-    "anchorBonus": 0.8054358528063844
-  },
-  {
-    "barPenalty": 0.0031579162072700663,
-    "barReward": 0.6266480796298854,
-    "homeReward": 0.007055693745405042,
-    "homePenalty": 0.000935806395543712,
-    "blotPenalty": 0.7793009554715545,
-    "primeReward": 5.7497777075200345,
-    "racingPipReward": 0.057861749479941785,
     "contactPipReward": 0.004515480415300856,
     "positionDecay": 5.968006012482736,
     "homeBonus": 0.7539447698773477,
@@ -53,19 +27,6 @@
   },
   {
     "barPenalty": 0.0031579162072700663,
-    "barReward": 0.7424375371428987,
-    "homeReward": 0.008380636463031629,
-    "homePenalty": 0.0008484130613103402,
-    "blotPenalty": 0.5723523994515157,
-    "primeReward": 5.652101305463004,
-    "racingPipReward": 0.053047061720740536,
-    "contactPipReward": 0.004515480415300856,
-    "positionDecay": 5.968006012482736,
-    "homeBonus": 1,
-    "anchorBonus": 0.7188400528413451
-  },
-  {
-    "barPenalty": 0.0031579162072700663,
     "barReward": 0.8837231299328604,
     "homeReward": 0.008380636463031629,
     "homePenalty": 0.0006019230048282978,
@@ -76,6 +37,32 @@
     "positionDecay": 5.968006012482736,
     "homeBonus": 0.7539447698773477,
     "anchorBonus": 0.8054358528063844
+  },
+  {
+    "barPenalty": 0.0031579162072700663,
+    "barReward": 1,
+    "homeReward": 0.007746392731897342,
+    "homePenalty": 0.0008414539940012657,
+    "blotPenalty": 0.7232446847179104,
+    "primeReward": 4.832844428178971,
+    "racingPipReward": 0.0771142368161051,
+    "contactPipReward": 0.004515480415300856,
+    "positionDecay": 9.295259063770928,
+    "homeBonus": 1,
+    "anchorBonus": 0.8790439355646437
+  },
+  {
+    "barPenalty": 0.30219624389159094,
+    "barReward": 0.19922858021111378,
+    "homeReward": 0.39736000000000005,
+    "homePenalty": 0.20264000000000001,
+    "blotPenalty": 0.20232978420644487,
+    "primeReward": 3.98944,
+    "racingPipReward": 0.03,
+    "contactPipReward": 0.005044,
+    "positionDecay": 2.496748021114212,
+    "homeBonus": 0.29736,
+    "anchorBonus": 0.29736
   },
   {
     "barPenalty": 0.0031579162072700663,
@@ -104,17 +91,30 @@
     "anchorBonus": 0.8790439355646437
   },
   {
+    "barPenalty": 0.055903747227374956,
+    "barReward": 0.2845619433292739,
+    "homeReward": 0.2810191937702687,
+    "homePenalty": 0.0009566325925788812,
+    "blotPenalty": 0.08300608124244645,
+    "primeReward": 4.62303516305228,
+    "racingPipReward": 0.036348518578598076,
+    "contactPipReward": 0.0033530996651298475,
+    "positionDecay": 3.1717638051438537,
+    "homeBonus": 0.4610399999999985,
+    "anchorBonus": 0.4638077976217728
+  },
+  {
     "barPenalty": 0.0031579162072700663,
-    "barReward": 1,
-    "homeReward": 0.007746392731897342,
-    "homePenalty": 0.0008414539940012657,
-    "blotPenalty": 0.7232446847179104,
-    "primeReward": 4.832844428178971,
-    "racingPipReward": 0.0771142368161051,
+    "barReward": 0.7424375371428987,
+    "homeReward": 0.008380636463031629,
+    "homePenalty": 0.0008484130613103402,
+    "blotPenalty": 0.5723523994515157,
+    "primeReward": 5.652101305463004,
+    "racingPipReward": 0.053047061720740536,
     "contactPipReward": 0.004515480415300856,
-    "positionDecay": 9.295259063770928,
+    "positionDecay": 5.968006012482736,
     "homeBonus": 1,
-    "anchorBonus": 0.8790439355646437
+    "anchorBonus": 0.7188400528413451
   },
   {
     "barPenalty": 0.5601950704167056,

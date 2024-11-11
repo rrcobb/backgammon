@@ -11,9 +11,10 @@ const MUTATION_RATE = 0.25;
 const CROSSOVER_RATE = 0.9;
 const MUTATION_RANGE = 0.3;
 
+const path = 'src/ml/learnedFactors.json'
 // Load initial population
 const initialFactors: Factors[] = JSON.parse(
-  await Bun.file('src/learnedFactors.json').text()
+  await Bun.file(path).text()
 );
 
 // Generate synthetic factors to reach target population size
@@ -214,10 +215,7 @@ async function evolvePopulation() {
   population = finalOrder.map(({factors}) => factors);
   
   // Save evolved population
-  await Bun.write(
-    'src/learnedFactors.json',
-    JSON.stringify(population, null, 2)
-  );
+  await Bun.write(path, JSON.stringify(population, null, 2));
   
   console.log('\nEvolution complete. Population sorted and saved to file.');
   console.log(`Final population size: ${population.length}`);
