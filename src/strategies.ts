@@ -4,7 +4,9 @@ import { evaluate, factors as f, EvaluationFunction } from "./evaluationFns";
 import { useMCTS } from "./mcts"
 
 export type Strategy = (options: Result[]) => Result;
-export type AppliedStrategy = (game: Game, roll: Roll) => Result;
+export type AppliedStrategy = ((game: Game, roll: Roll) => Result) & {
+    description?: string;
+};
 function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = h.validMoves(game, roll);
   let choice;
@@ -297,8 +299,8 @@ Uses balanced evaluation for position assessment.
 
 High branching factor limits search depth.`
 
-const samplingExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 3, 5, 5));
-samplingExpectimax.description = `Faster expectimax variant, using sampling.
+const balancedFastExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 3, 5, 5));
+balancedFastExpectimax.description = `Faster expectimax variant, using sampling.
 
 Instead of exploring all possible future states, this looks at 5 dice rolls and 5 moves.
 
@@ -345,7 +347,7 @@ const Strategies = {
   runner,
   learned,
   expectimax,
-  samplingExpectimax,
+  balancedFastExpectimax,
   learnedFastExp,
   fastOnePlyExpectimax,
   mcts,

@@ -73,21 +73,21 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
   if (strategy < 0.4) {
     // Weighted average crossover
     const weight = Math.random();
-    const child1: Factors = {};
-    const child2: Factors = {};
+    const child1: Partial<Factors> = {};
+    const child2: Partial<Factors> = {};
     
     for (const key in parent1) {
       child1[key] = weight * parent1[key] + (1 - weight) * parent2[key];
       child2[key] = (1 - weight) * parent1[key] + weight * parent2[key];
     }
     
-    return [child1, child2];
+    return [child1 as Factors, child2 as Factors];
   } else if (strategy < 0.8) {
     // Single point crossover
     const keys = Object.keys(parent1);
     const crossPoint = Math.floor(Math.random() * keys.length);
-    const child1: Factors = {};
-    const child2: Factors = {};
+    const child1: Partial<Factors> = {};
+    const child2: Partial<Factors> = {};
     
     keys.forEach((key, i) => {
       if (i < crossPoint) {
@@ -99,11 +99,11 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
       }
     });
     
-    return [child1, child2];
+    return [child1 as Factors, child2 as Factors];
   } else {
     // Per-factor random choice
-    const child1: Factors = {};
-    const child2: Factors = {};
+    const child1: Partial<Factors> = {};
+    const child2: Partial<Factors> = {};
     
     for (const key in parent1) {
       if (Math.random() < 0.5) {
@@ -115,7 +115,7 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
       }
     }
     
-    return [child1, child2];
+    return [child1 as Factors, child2 as Factors];
   }
 }
 

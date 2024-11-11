@@ -1,6 +1,6 @@
-import type { Player, Game, Move, Roll, Die } from "./backgammon";
+import type { Player, Game, Move, Roll, Die, Result } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
-import { Strategies } from "./strategies";
+import { Strategies as S } from "./strategies";
 import { renderHistory, describeTurn } from "./history";
 import { showArrow } from './arrows'
 import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
@@ -13,9 +13,21 @@ var whiteStrategy;
 var blackStrategy;
 var gameHistory;
 var backCount;
+var humanMoveCallback;
 
 // settings
-var delay = true;
+var delay = 0.3; // seconds?
+
+const human = {
+  sname: 'human',
+  description: `Human player. 
+
+When it's your turn:
+1. Click a valid piece to select it
+2. Click a destination to move`
+};
+
+const Strategies = { human, ...S }
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
@@ -282,6 +294,10 @@ function renderRoll(roll) {
   board.appendChild(rollDiv);
 }
 
+function highlightValidSources(validMoves) {
+  // do some work to highlight the validMoves
+}
+
 function renderTurn(turn, turnHistory, backCount) {
   renderScoreboard();
   renderBoard(turn?.game || game, turn?.move);
@@ -387,11 +403,28 @@ function renderCurrentTurn() {
   renderTurn(turn, gameHistory, backCount);
 }
 
-function handleTurn(roll: Roll) {
-  turnNo++;
+async function getNextMove(game: Game, roll: Roll): Promise<Result> {
   const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
+  
+  if (strat.sname === 'human') {
+    const validMoves = h.validMoves(game, roll);
+    return new Promise(resolve => {
+      renderRoll(roll);
+      highlightValidSources(validMoves);
+      humanMoveCallback = resolve;
+    });
+  }
+  
+  return h.takeTurn(game, roll, strat);
+}
+
+async function handleTurn(roll: Roll) {
+  turnNo++;
   const player = game.turn == c.WHITE ? "w" : "b";
-  const [move, next] = h.takeTurn(game, roll, strat);
+
+
+  const [move, next] = await getNextMove(game, roll);
+
   game = next;
 
   const turn = {turnNo, move, player, roll, game}
@@ -411,7 +444,7 @@ function handleTurn(roll: Roll) {
   setButtons();
 }
 
-function playTurn() {
+async function playTurn() {
   const finished = h.checkWinner(game);
   if (finished) { return; }
 
@@ -419,15 +452,15 @@ function playTurn() {
     // Handle roll-off to start the game
     const [winner, roll] = h.rollOff();
     game.turn = winner;
-    handleTurn(roll);
+    await handleTurn(roll);
   } else {
-    handleTurn(h.generateRoll());
+    await handleTurn(h.generateRoll());
   }
 }
 
-function play() {
+async function play() {
   if (backCount == 0) {
-    playTurn();
+    await playTurn();
   } else {
     forward();
   }
@@ -440,7 +473,7 @@ async function sleep(s) {
 document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers();
   setStrategy(c.WHITE, "learned");
-  setStrategy(c.BLACK, "balanced");
+  setStrategy(c.BLACK, "human");
 
   if (window.location.hash) {
     let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);
@@ -457,13 +490,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderCurrentTurn();
   setButtons();
 
-  
-
   document.getElementById("fast")?.addEventListener("click", async () => {
     for (let i = 0; i < 10; i++) {
       playTurn();
       if (delay) {
-        await sleep(0.3)
+        await sleep(delay)
       }
     }
   });
@@ -471,7 +502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     while (!h.checkWinner(game)) {
       playTurn();
       if (delay) {
-        await sleep(0.1);
+        await sleep(delay / 5);
       } 
     }
   })

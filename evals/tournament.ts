@@ -94,7 +94,7 @@ function roundRobinTournament(strategies, games: number) {
   console.log(`Total time: ${totalDuration.toFixed(2)}s.`);
   console.log(`${(totalDuration / totalMatches).toFixed(2)}s per matchup of ${games} games`);
 
-  return { totalMatches, names, averageLossRates, totalDuration, totalMatches, results}
+  return { totalMatches, names, averageLossRates, totalDuration, results}
 }
 
 function colorWinPercent(winPercent: number): string {
