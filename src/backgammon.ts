@@ -318,7 +318,7 @@ function boardMoves(m, g, rolls, start, player, opponent, direction, seen, resul
 }
 
 function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar, results): Result[] | undefined {
-  for (let i in rolls) {
+  for (let i = 0; i < rolls.length; i++) {
     const roll = rolls[i];
     const dest = (roll - 1) * direction + enter;
     if (!isDest(dest)) {
@@ -352,7 +352,7 @@ function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar
         apply(next, movement);
 
         // push this roll, with the other roll still available
-        results.push([[movement], next, [rolls[i ? 0 : 1]]]);
+        results.push([[movement], next, [rolls[1 - i]]]);
       }
     }
   }

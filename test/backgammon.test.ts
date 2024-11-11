@@ -438,3 +438,30 @@ describe("when white wins in one move", () => {
     expect(h.checkWinner(moves[0][1])).toEqual(c.WHITE);
   });
 });
+
+describe("coming off the bar with one piece", () => {
+  test("with [5,6] should use the remaining die correctly for the second move", () => {
+    let game = h.newGame();
+    // Clear the board first
+    game.positions = new Uint8Array(24);
+    
+    game.bBar = 1;  // one piece on the bar for black
+    game.turn = c.BLACK;
+    
+    // Put just one black piece on point 19
+    game.positions[19] = c.BLACK | 1;
+    
+    let roll = [5, 6];
+    let moves = h.validMoves(game, roll);
+    
+    // After entering with 5 (to point 19), should be able to move from 19 using 6
+    // After entering with 6 (to point 18), should be able to move from 19 using 5
+    const expectedMoveSets = setify([
+      [[c.BAR, 19], [19, 13]], // Enter with 5, move with 6
+      [[c.BAR, 18], [19, 14]],  // Enter with 6, move with 5
+      [[c.BAR, 18], [18, 13]]  // Enter with 6, move with 5
+    ]);
+    
+    expect(moveset(moves)).toEqual(expectedMoveSets);
+  });
+});
