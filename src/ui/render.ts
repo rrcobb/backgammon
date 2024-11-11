@@ -1,16 +1,24 @@
 import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
-import { Strategies as S } from "../strategy/strategies";
+import { AppliedStrategy } from "../strategy/strategies";
 import { renderHistory, describeTurn } from "./history";
 import { showArrow } from './arrows'
 import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
+import { setStrategy, renderStrategyPickers } from './strategy';
 
-// globals
+export type State = {
+  whiteStrategy: AppliedStrategy | null;
+  blackStrategy: AppliedStrategy | null;
+}
+
+// global state
 var game;
 var turnNo;
-var whiteStrategy;
-var blackStrategy;
+var state: State = {
+  whiteStrategy: null,
+  blackStrategy: null,
+}
 var gameHistory;
 var backCount;
 var humanMoveCallback;
@@ -19,86 +27,15 @@ var currentValidMoves: Result[] | null = null;
 var selectedMoves: Movement[] = [];
 var activeListeners: Array<[Element, string, EventListener]> = [];
 
+// settings
+var delay = 0.3; // seconds?
+
 // for listeners we need to be able to clear later
 function addListener(element: Element, event: string, handler: EventListener) {
   element.addEventListener(event, handler);
   activeListeners.push([element, event, handler]);
 }
 
-// settings
-var delay = 0.3; // seconds?
-
-const human = {
-  sname: 'human',
-  description: `Human player. 
-
-When it's your turn:
-1. Click a valid piece to select it
-2. Click a destination to move`
-};
-
-const Strategies = { human, ...S }
-
-function strategyPicker(player: "white" | "black") {
-  const div = document.createElement("div");
-  div.classList.add('picker')
-  div.classList.add(`${player}-picker`)
-
-  const select = document.createElement("select");
-  select.id = `${player}-strategy`;
-
-  Object.keys(Strategies).forEach((strategy) => {
-    const option = document.createElement("option");
-    option.value = strategy;
-    option.textContent = strategy;
-    select.appendChild(option);
-  });
-
-  let label = document.createElement('label')
-  label.innerText = player
-
-  let descriptionBox = document.createElement('div');
-  descriptionBox.classList.add('strategy-description'); 
-
-  div.appendChild(label);
-  div.appendChild(select);
-  div.appendChild(descriptionBox);
-
-  return div;
-}
-
-function setStrategy(player, stratName) {
-  if (player == c.WHITE) {
-    whiteStrategy = Strategies[stratName];
-    whiteStrategy.sname = stratName;
-    const select = (document.getElementById("white-strategy") as HTMLSelectElement)
-    select.value = stratName;
-    showStrategyInfo(stratName, select.parentElement);
-  } else {
-    blackStrategy = Strategies[stratName];
-    blackStrategy.sname = stratName;
-    const select = (document.getElementById("black-strategy") as HTMLSelectElement)
-    select.value = stratName;
-    showStrategyInfo(stratName, select.parentElement);
-  }
-}
-
-function renderStrategyPickers() {
-  let strategySection = document.getElementById("strategy-selectors");
-  let whitePicker = strategyPicker("white");
-  whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value));
-  let blackPicker = strategyPicker("black");
-  blackPicker.addEventListener("change", (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value));
-
-  strategySection.insertAdjacentElement("afterbegin", whitePicker);
-  strategySection.insertAdjacentElement("afterbegin", blackPicker);
-}
-
-function showStrategyInfo(stratName, parent) {
-  const description = Strategies[stratName].description || `The ${stratName} strategy. [TODO: add description]`;
-  const descriptionBox = parent.querySelector('.strategy-description');
-  descriptionBox.innerText = description;
-}
 
 function renderInfo(turn, turnHistory) {
   let info = "";
@@ -699,7 +636,7 @@ function renderCurrentTurn() {
 }
 
 async function getNextMove(game: Game, roll: Roll): Promise<Result> {
-  const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
+  const strat = game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
   
   if (strat.sname === 'human') {
     currentValidMoves = h.validMoves(game, roll);
@@ -732,8 +669,8 @@ async function handleTurn(roll: Roll) {
   const finished = h.checkWinner(game);
   if (finished) {
     const result = {
-      winningStrategy: finished === c.WHITE ? whiteStrategy.sname : blackStrategy.sname,
-      losingStrategy: finished === c.WHITE ? blackStrategy.sname : whiteStrategy.sname
+      winningStrategy: finished === c.WHITE ? state.whiteStrategy.sname : state.blackStrategy.sname,
+      losingStrategy: finished === c.WHITE ? state.blackStrategy.sname : state.whiteStrategy.sname
     };
     recordGameResult(result);
   }
@@ -769,9 +706,9 @@ async function sleep(s) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  renderStrategyPickers();
-  setStrategy(c.WHITE, "learned");
-  setStrategy(c.BLACK, "human");
+  renderStrategyPickers(state);
+  setStrategy(c.WHITE, "learned", state);
+  setStrategy(c.BLACK, "human", state);
 
   if (window.location.hash) {
     let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);

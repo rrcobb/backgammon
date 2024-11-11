@@ -6,7 +6,9 @@ import { useMCTS } from "./mcts"
 export type Strategy = (options: Result[]) => Result;
 export type AppliedStrategy = ((game: Game, roll: Roll) => Result) & {
     description?: string;
+    sname?: string;
 };
+
 function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
   const options = h.validMoves(game, roll);
   let choice;
