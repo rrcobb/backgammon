@@ -1,4 +1,4 @@
-import type { Player, Game, Move, Roll, Die, Result } from "./backgammon";
+import type { Player, Game, Move, Roll, Die, Result, Movement } from "./backgammon";
 import { constants as c, helpers as h } from "./backgammon";
 import { Strategies as S } from "./strategies";
 import { renderHistory, describeTurn } from "./history";
@@ -14,6 +14,16 @@ var blackStrategy;
 var gameHistory;
 var backCount;
 var humanMoveCallback;
+var selectedPiece: number | null = null;
+var currentValidMoves: Result[] | null = null;
+var selectedMoves: Movement[] = [];
+var activeListeners: Array<[Element, string, EventListener]> = [];
+
+// for listeners we need to be able to clear later
+function addListener(element: Element, event: string, handler: EventListener) {
+  element.addEventListener(event, handler);
+  activeListeners.push([element, event, handler]);
+}
 
 // settings
 var delay = 0.3; // seconds?
@@ -294,8 +304,138 @@ function renderRoll(roll) {
   board.appendChild(rollDiv);
 }
 
-function highlightValidSources(validMoves) {
-  // do some work to highlight the validMoves
+function highlightValidSources() {
+  const sources = getNextValidSources();
+  console.log({sources})
+
+  sources.forEach(pos => {
+    if (pos === c.BAR) {
+      const barPieces = document.querySelectorAll(
+        game.turn === c.WHITE ? '.bottom .bar' : '.top .bar'
+      );
+      barPieces.forEach(piece => {
+        piece.classList.add('valid-source');
+        addListener(piece, 'click', () => handleSourceClick(pos));
+      });
+    } else {
+      const point = document.querySelector(`.position-${pos} .pieces`);
+      if (point) {
+        point.classList.add('valid-source');
+        addListener(point, 'click', () => handleSourceClick(pos));
+      }
+    }
+  });
+}
+
+function getInitialValidSources(validMoves: Result[]): Set<number> {
+  const sources = new Set<number>();
+  validMoves.forEach(([move]) => {
+    const firstMove = move[0];
+    if (firstMove) {
+      sources.add(firstMove[0]);
+    }
+  });
+  return sources;
+}
+
+function handleSourceClick(pos: number) {
+  if (selectedPiece !== null) {
+    clearHighlights();
+  }
+  
+  selectedPiece = pos;
+  highlightValidDestinations(pos);
+}
+
+function highlightValidDestinations(from: number) {
+  const validContinuations = getValidMovesAfterSelection();
+  const moveIndex = selectedMoves.length;
+  
+  // Find all valid destinations for this source at current move index
+  const dests = new Set<number>();
+  validContinuations.forEach(([move]) => {
+    const nextMove = move[moveIndex];
+    if (nextMove && nextMove[0] === from) {
+      dests.add(nextMove[1]);
+    }
+  });
+
+  dests.forEach(pos => {
+    if (pos === c.HOME) {
+      const home = document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home');
+      if (home) {
+        home.classList.add('valid-destination');
+        addListener(home, 'click', () => handleMoveSelection(from, pos));
+      }
+    } else {
+      const point = document.querySelector(`.angle.position-${pos}`);
+      if (point) {
+        point.classList.add('valid-destination');
+        addListener(point, 'click', () => handleMoveSelection(from, pos));
+      }
+    }
+  });
+}
+
+function handleMoveSelection(from: number, to: number) {
+  selectedMoves.push([from, to] as Movement);
+
+  const matchingResult = currentValidMoves.find(([move]) => 
+    JSON.stringify(move) === JSON.stringify(selectedMoves)
+  );
+
+  if (matchingResult) {
+    // We've made a complete valid move!
+    clearHighlights();
+    selectedMoves = [];
+    humanMoveCallback(matchingResult);
+  } else {
+    clearHighlights();
+    highlightValidSources();
+  }
+}
+
+function getNextValidSources(): Set<number> {
+  const validContinuations = getValidMovesAfterSelection();
+  const moveIndex = selectedMoves.length;
+  
+  // Get all possible next source positions
+  const sources = new Set<number>();
+  validContinuations.forEach(([move]) => {
+    const nextMove = move[moveIndex];
+    if (nextMove) {
+      sources.add(nextMove[0]);
+    }
+  });
+  
+  return sources;
+}
+
+function getValidMovesAfterSelection(): Result[] {
+  if (!currentValidMoves) return [];
+  
+  // Find moves that start with our current selection
+  return currentValidMoves.filter(([move]) => 
+    selectedMoves.every((selected, i) => {
+      if (!selected) return true;
+      return move[i] && 
+        move[i]![0] === selected[0] && 
+        move[i]![1] === selected[1];
+    })
+  );
+}
+
+function clearHighlights() {
+  document.querySelectorAll('.valid-source, .valid-destination').forEach(el => {
+    el.classList.remove('valid-source', 'valid-destination');
+  });
+
+  activeListeners.forEach(([element, event, handler]) => {
+    element.removeEventListener(event, handler);
+  });
+  activeListeners = [];
+
+  selectedPiece = null;
 }
 
 function renderTurn(turn, turnHistory, backCount) {
@@ -407,11 +547,15 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
   const strat = game.turn == c.WHITE ? whiteStrategy : blackStrategy;
   
   if (strat.sname === 'human') {
-    const validMoves = h.validMoves(game, roll);
+    currentValidMoves = h.validMoves(game, roll);
     return new Promise(resolve => {
       renderRoll(roll);
-      highlightValidSources(validMoves);
-      humanMoveCallback = resolve;
+      highlightValidSources();
+      humanMoveCallback = (result: Result) => {
+        const [move, next] = result;
+        next.turn = (game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        resolve([move, next]);
+      };
     });
   }
   
@@ -421,7 +565,6 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
 async function handleTurn(roll: Roll) {
   turnNo++;
   const player = game.turn == c.WHITE ? "w" : "b";
-
 
   const [move, next] = await getNextMove(game, roll);
 

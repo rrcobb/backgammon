@@ -436,6 +436,6 @@ const helpers = {
 };
 
 // types
-export { Player, Game, Result, Die, Roll, Move };
+export { Player, Game, Result, Die, Roll, Move, Movement };
 
 export { helpers, constants };

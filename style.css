@@ -728,3 +728,62 @@ button#reset {
   color: #666;
   padding: 20px;
 }
+
+
+/* Move highlighting for human play */
+
+.valid-source .piece, .valid-source .bar.piece {
+  cursor: pointer;
+  box-shadow: 
+    0 0 2px 2px rgba(255, 255, 0, 0.4),
+    0 0 4px 4px rgba(255, 255, 0, 0.2);
+}
+
+.valid-source .piece:hover {
+  box-shadow: 
+    0 0 3px 3px rgba(255, 255, 0, 0.6),
+    0 0 6px 6px rgba(255, 255, 0, 0.3);
+}
+
+.valid-destination {
+    cursor: pointer;
+    position: relative;
+}
+
+/* Add a semi-transparent overlay to show valid landing spots */
+.valid-destination::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Green highlight that fades out towards edges */
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 255, 0, 0.2) 0%,
+        rgba(0, 255, 0, 0.1) 50%,
+        transparent 70%
+    );
+    pointer-events: none;  /* Allow clicks to pass through */
+    z-index: 3;  /* Above pieces but below arrows */
+}
+
+/* Brighten on hover */
+.valid-destination:hover::after {
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 255, 0, 0.3) 0%,
+        rgba(0, 255, 0, 0.2) 50%,
+        transparent 70%
+    );
+}
+
+/* When highlighting home */
+.home-count.valid-destination {
+    box-shadow: 0 0 4px 2px rgba(0, 255, 0, 0.3);
+}
+
+.home-count.valid-destination:hover {
+    box-shadow: 0 0 6px 3px rgba(0, 255, 0, 0.4);
+}
