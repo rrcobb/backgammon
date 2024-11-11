@@ -34,8 +34,14 @@ function strategyPicker(player: "white" | "black") {
 
   let label = document.createElement('label')
   label.innerText = player
+
+  let descriptionBox = document.createElement('div');
+  descriptionBox.classList.add('strategy-description'); 
+
   div.appendChild(label);
   div.appendChild(select);
+  div.appendChild(descriptionBox);
+
   return div;
 }
 
@@ -43,11 +49,15 @@ function setStrategy(player, stratName) {
   if (player == c.WHITE) {
     whiteStrategy = Strategies[stratName];
     whiteStrategy.sname = stratName;
-    (document.getElementById("white-strategy") as HTMLSelectElement).value = stratName;
+    const select = (document.getElementById("white-strategy") as HTMLSelectElement)
+    select.value = stratName;
+    showStrategyInfo(stratName, select.parentElement);
   } else {
     blackStrategy = Strategies[stratName];
     blackStrategy.sname = stratName;
-    (document.getElementById("black-strategy") as HTMLSelectElement).value = stratName;
+    const select = (document.getElementById("black-strategy") as HTMLSelectElement)
+    select.value = stratName;
+    showStrategyInfo(stratName, select.parentElement);
   }
 }
 
@@ -57,32 +67,15 @@ function renderStrategyPickers() {
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value));
   let blackPicker = strategyPicker("black");
   blackPicker.addEventListener("change", (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value));
+
   strategySection.insertAdjacentElement("afterbegin", whitePicker);
   strategySection.insertAdjacentElement("afterbegin", blackPicker);
 }
 
-function renderStrategyInfo() {
-  const infoSection = document.getElementById("strategy-info");
-  const select = document.createElement('select');
-  const description = document.createElement('div');
-  description.classList.add('strategy-description'); 
-  const descriptions = {};
-
-  Object.keys(Strategies).forEach((stratName) => {
-    const option = document.createElement("option");
-    option.value = stratName;
-    option.textContent = stratName;
-    select.appendChild(option);
-    descriptions[stratName] = Strategies[stratName].description || `The ${stratName} strategy. [TODO: add description]`;
-  });
-
-  const setDescription = (strat) => description.innerText = descriptions[strat];
-  select.addEventListener('change', (e) => { setDescription(e.target.value)})
-
-  setDescription(select.value);
-
-  infoSection.appendChild(select);
-  infoSection.appendChild(description);
+function showStrategyInfo(stratName, parent) {
+  const description = Strategies[stratName].description || `The ${stratName} strategy. [TODO: add description]`;
+  const descriptionBox = parent.querySelector('.strategy-description');
+  descriptionBox.innerText = description;
 }
 
 function renderInfo(turn, turnHistory) {
@@ -448,7 +441,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers();
   setStrategy(c.WHITE, "learned");
   setStrategy(c.BLACK, "balanced");
-  renderStrategyInfo();
 
   if (window.location.hash) {
     let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);

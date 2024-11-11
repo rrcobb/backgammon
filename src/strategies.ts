@@ -255,7 +255,7 @@ balanced.description = `A well-rounded evaluation strategy.
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
 
-'balanced' mixes defensive positioning (blot protection, anchors), race progress, board control (primes, home board), and risk management.
+Mixes defensive positioning (blot protection, anchors), race progress, board control (primes, home board), and risk management.
 
 Weights:
 ${JSON.stringify(f.balancedFactors, null, 2)}
@@ -273,7 +273,7 @@ Features:
 ${JSON.stringify(f.runnerFactors, null, 2)}`
 
 const learned = useEval(evaluate(f.learned));
-learned.description = `An evaluation using machine-learned weights.
+learned.description = `An evaluation function using machine-learned weights.
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
 

@@ -649,11 +649,12 @@ button#reset {
 
 #strategy .picker { 
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-around;
   align-items: center;
   margin: 4px auto;
+  padding: 8px 0;
   max-width: 400px;
-  text-transform: capitalize;
 }
 
 .black-picker {
@@ -680,18 +681,18 @@ button#reset {
   background-color: white;
 }
 
-#strategy-info {
-  padding: 4px;
-  margin: 6px;
+#strategy label {
+  font-weight: 600;
+  text-transform: capitalize;
 }
 
-#strategy-info .strategy-description {
-  border: 1px solid rgba(120, 120, 120, 0.7);
-  padding: 8px;
+.strategy-description {
+  padding: 10px 4px 6px 32px;
+  line-height: 1.22;
   white-space: pre-wrap;
-  min-height: 240px;
-  max-height: 320px;
-  overflow: auto;
+  max-height: 200px;
+  overflow: scroll;
+  font-size: 12px;
 }
 
 #scoreboard {

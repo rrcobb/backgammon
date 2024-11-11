@@ -1,4 +1,6 @@
-## devlog - JS missing an enum type is bad, missing a tuple is also frustrating...
+## devlog 
+
+- JS missing an enum type is bad, missing a tuple is also frustrating...
 
 - E.g. I end up with a string for the player turn, which is so wack
 - Type signatures would also be helpful... maybe just doing it in typescript would be nicer...
@@ -525,6 +527,39 @@ Likely we need to rewrite the evaluation function so that it predicts within som
 
 Also: we are currently hill-climbing, which means we could get trapped in local maxima. Should we have something that injects some randomness / starts in a different configuration / learns and mixes (genetically or similar?)
 
+## neural net thoughts
+
+- what is the shape of the input?
+- what is the shape of the output?
+- what is the structure of the net?
+- what is the backprop implementation like?
+
+Let's just get to it, huh?
+
+
+## sampling expectimax??
+
+all of a sudden, the fast 3-ply expectimax is actually good? who knew
+
+```sh
+$ bun evals/tournament.ts
+50 games per round. Strategies: balanced, learned, samplingExpectimax
+[6/6] samplingExpectimax vs samplingExpectimax
+
+        	            balanced	 learned	samplingExpectimax
+balanced	              50.0%	    36.0%	    56.0%
+learned	                64.0%	    50.0%	    82.0%
+samplingExpectimax	    44.0%	    18.0%	    50.0%
+
+3 strategies. 6 matchups. 300 games played.
+best: samplingExpectimax with 62.7% average win rate
+worst: learned with 34.7% average win rate
+Total time: 172.86s.
+28.81s per matchup of 50 games
+```
+
+Got really sucked into doing more evaluation function stuff, with genetic algorithms and a pruning thingy. Still really hard to beat the hand-rolled balanced strat tho.
+
 ## UI / done...
 
 - fonts
@@ -597,6 +632,10 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
 
 ## UI / TODO
 
+- show info for both strategies, not just one
+
+- hide / show for different labeled sections
+
 - interactive mode / "human player" strategy -- play against the AI
   - strategy for user to play against the computer
 - separate roll from move ? (for individual play, at least)
@@ -632,35 +671,4 @@ Also: we are currently hill-climbing, which means we could get trapped in local 
   - parallelize, maybe (bun/web) workers
   - see if we can find hotspots and optimize them down
 
-## neural net thoughts
 
-- what is the shape of the input?
-- what is the shape of the output?
-- what is the structure of the net?
-- what is the backprop implementation like?
-
-Let's just get to it, huh?
-
-
-## sampling expectimax??
-
-all of a sudden, the fast 3-ply expectimax is actually good? who knew
-
-```sh
-$ bun evals/tournament.ts
-50 games per round. Strategies: balanced, learned, samplingExpectimax
-[6/6] samplingExpectimax vs samplingExpectimax
-
-        	            balanced	 learned	samplingExpectimax
-balanced	              50.0%	    36.0%	    56.0%
-learned	                64.0%	    50.0%	    82.0%
-samplingExpectimax	    44.0%	    18.0%	    50.0%
-
-3 strategies. 6 matchups. 300 games played.
-best: samplingExpectimax with 62.7% average win rate
-worst: learned with 34.7% average win rate
-Total time: 172.86s.
-28.81s per matchup of 50 games
-```
-
-Got really sucked into doing more evaluation function stuff, with genetic algorithms and a pruning thingy. Still really hard to beat the hand-rolled balanced strat tho.
