@@ -51,3 +51,11 @@ In some sense, predicting the winner is _pretty_ similar to a strategy. Sort of 
   - and also this?
 
 Doing just a raw array of floats is also okay for baby stuff.
+
+## genetics
+
+I did genetic learning, and it seemed to do good?
+
+Or maybe we got a curriculum learning effect from running against some bad opponents in the 'normal' learn-factors process... or something.
+
+Now, the learned weights are kicking the crap out of 'balanced', which is neat to see. Expectimax also seems like it is a plus, though it's a litttttle bit unclear. learned is realllly well trained against balanced - I wonder if it's overfit to beating that strategy in particular?
