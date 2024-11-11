@@ -14,7 +14,7 @@ var blackStrategy;
 var gameHistory;
 var backCount;
 var humanMoveCallback;
-var selectedPiece: number | null = null;
+var selectedPiece;
 var currentValidMoves: Result[] | null = null;
 var selectedMoves: Movement[] = [];
 var activeListeners: Array<[Element, string, EventListener]> = [];
@@ -287,6 +287,14 @@ function renderBoard(game: Game, move?: Move): void {
   board.insertAdjacentElement("beforeend", frameBottom);
 }
 
+function clearArrows() {
+  const container = document.querySelector('.arrow-container');
+  if (container) {
+    container.innerHTML = '';
+  }
+  document.querySelectorAll('.ghost').forEach(ghost => ghost.remove());
+}
+
 function renderRoll(roll) {
   const rollDiv = document.createElement("div");
   rollDiv.classList.add("roll");
@@ -308,13 +316,11 @@ function highlightValidSources() {
 
   sources.forEach(pos => {
     if (pos === c.BAR) {
-      const barPieces = document.querySelectorAll(
+      const bar = document.querySelector(
         game.turn === c.WHITE ? '.bottom .bar' : '.top .bar'
       );
-      barPieces.forEach(piece => {
-        piece.classList.add('valid-source');
-        addListener(piece, 'click', () => handleSourceClick(pos));
-      });
+      bar.classList.add('valid-source');
+      addListener(bar, 'click', () => handleSourceClick(pos));
     } else {
       const point = document.querySelector(`.position-${pos} .pieces`);
       if (point) {
@@ -326,10 +332,8 @@ function highlightValidSources() {
 }
 
 function handleSourceClick(pos: number) {
-  if (selectedPiece !== null) {
-    clearHighlights();
-  }
-  
+  clearArrows();
+  clearHighlights();
   selectedPiece = pos;
   highlightValidDestinations(pos);
 }
@@ -411,9 +415,58 @@ function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movemen
   return remaining;
 }
 
-// Now we can revise the original functions to use these helpers
+/**
+ * Moves a piece in the DOM and shows an arrow for the movement
+ * Returns the moved piece and ghost elements for potential reversal
+ */
+function showMove(from: number, to: number): { piece: HTMLElement, ghost: HTMLElement } | null {
+  // Get source element
+  const fromPoint = from === c.BAR 
+    ? document.querySelector(game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
+    : document.querySelector(`.position-${from} .pieces`);
+  
+  const piece = fromPoint?.querySelector(`.piece.${game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
+  if (!piece || !(piece instanceof HTMLElement)) return null;
+
+  // Create and position ghost for arrow
+  const ghost = document.createElement('span');
+  ghost.classList.add('piece', 'ghost');
+  fromPoint?.appendChild(ghost);
+
+  // Handle the destination
+  if (to === c.HOME) {
+    const home = document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home');
+    home?.appendChild(piece);
+  } else {
+    const destPoint = document.querySelector(`.position-${to} .pieces`);
+    if (!destPoint) return null;
+
+    // Handle hitting a blot
+    const blot = destPoint.querySelector(`.piece.${game.turn === c.WHITE ? 'b' : 'w'}`);
+    if (blot && destPoint.querySelectorAll(`.piece.${game.turn === c.WHITE ? 'b' : 'w'}`).length === 1) {
+      blot.remove();
+      const bar = document.querySelector(game.turn === c.WHITE ? '.top .bar' : '.bottom .bar');
+      bar?.appendChild(blot);
+    }
+    
+    destPoint.appendChild(piece);
+  }
+
+  // Draw the arrow
+  const arrowContainer = document.querySelector('.arrow-container') || (() => {
+    const container = document.createElement('div');
+    container.classList.add('arrow-container');
+    document.getElementById('board')?.appendChild(container);
+    return container;
+  })();
+  
+  showArrow(ghost, piece, arrowContainer);
+
+  return { piece, ghost };
+}
 
 function handleMoveSelection(from: number, to: number) {
+  // Record the move
   selectedMoves.push([from, to] as Movement);
 
   const matchingResult = currentValidMoves.find(([move]) => 
@@ -421,14 +474,54 @@ function handleMoveSelection(from: number, to: number) {
   );
 
   if (matchingResult) {
-    // We've made a complete valid move!
+    // Complete move - let the game state update handle final rendering
     clearHighlights();
     selectedMoves = [];
     humanMoveCallback(matchingResult);
   } else {
     clearHighlights();
+    showMove(from, to);
     highlightValidSources();
   }
+}
+
+/**
+ * Undoes the last move in selectedMoves
+ * Returns true if a move was undone, false if there was nothing to undo
+ */
+function undoLastMove(): boolean {
+  const lastMove = selectedMoves.pop();
+  if (!lastMove) return false;
+
+  const [from, to] = lastMove;
+  
+  // Find the piece to move back
+  const fromPoint = from === c.BAR 
+    ? document.querySelector(game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
+    : document.querySelector(`.position-${from} .pieces`);
+    
+  const targetElement = to === c.HOME
+    ? document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home')
+    : document.querySelector(`.position-${to} .pieces`);
+
+  const piece = targetElement?.querySelector(`.piece.${game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
+  if (!piece || !fromPoint) return false;
+
+  // Move the piece back
+  fromPoint.appendChild(piece);
+
+  // Clear the arrows for this move
+  clearArrows();
+  if (selectedMoves.length > 0) {
+    // Redraw arrows for remaining moves
+    selectedMoves.forEach(([f, t]) => showMove(f, t));
+  }
+
+  // Update the UI state
+  clearHighlights();
+  highlightValidSources();
+
+  return true;
 }
 
 function getNextValidSources(): Set<number> {
@@ -446,9 +539,8 @@ function getNextValidSources(): Set<number> {
           if (barCount > 0) {
             sources.add(start);
           }
-        }
-        // Regular point - check if we have pieces there
-        else if ((game.positions[start] & game.turn) === game.turn) {
+        } else {
+          // Regular point - check if we have pieces there
           sources.add(start);
         }
       });
@@ -490,6 +582,7 @@ function highlightValidDestinations(from: number): void {
 }
 
 function clearHighlights() {
+  selectedPiece = null;
   document.querySelectorAll('.valid-source, .valid-destination').forEach(el => {
     el.classList.remove('valid-source', 'valid-destination');
   });
@@ -498,8 +591,6 @@ function clearHighlights() {
     element.removeEventListener(event, handler);
   });
   activeListeners = [];
-
-  selectedPiece = null;
 }
 
 function renderTurn(turn, turnHistory, backCount) {
@@ -735,7 +826,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (e.key == 'n') {
-      newGame()
+      newGame();
+    }
+
+    if (e.key === 'Escape') {
+      if (selectedPiece !== null) {
+        // Just clear the current selection
+        clearHighlights();
+        selectedPiece = null;
+      } else if (selectedMoves.length > 0) {
+        // Clear all moves made this turn
+        clearHighlights();
+        clearArrows();
+        selectedMoves = [];
+        highlightValidSources();
+      }
+    }
+
+    if (e.key == 'z' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      undoLastMove();
     }
   })
 });
