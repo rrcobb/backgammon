@@ -92,4 +92,13 @@ function showArrow(fromPiece, toPiece, container) {
   container.innerHTML += arrow;
 }
 
-export { showArrow }
+function clearArrows() {
+  const container = document.querySelector('.arrow-container');
+  if (container) {
+    container.innerHTML = '';
+  }
+  document.querySelectorAll('.ghost').forEach(ghost => ghost.remove());
+}
+
+
+export { showArrow, clearArrows }
