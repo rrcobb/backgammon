@@ -3,12 +3,14 @@ import { showArrow, clearArrows } from './arrows'
 import { state, play, playTurn, jumpToLatest, back, newGame, Settings } from './render'
 import { playerUI, highlightValidSources, clearHighlights, undoLastMove } from './player'
 
-async function sleep(s) {
+export async function sleep(s) {
   await new Promise(resolve => setTimeout(resolve, s))
 }
+
 function enable(elid) {
   (document.getElementById(elid) as HTMLButtonElement).disabled = false;
 }
+
 function disable (elid) {
   (document.getElementById(elid) as HTMLButtonElement).disabled = true;
 }

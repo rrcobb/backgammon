@@ -7,7 +7,7 @@ type Listener = [element: Element, event: string, fn: EventListener]
 type PlayerUI = {
   humanMoveCallback: Function | null,
   currentValidMoves: Result[] | null;
-  selectedMoves: Movement[] | null; 
+  selectedMoves: Movement[]; 
   activeListeners: Listener[];
   selectedPiece: number | null;
 }
@@ -15,7 +15,7 @@ type PlayerUI = {
 export const playerUI: PlayerUI = {
   humanMoveCallback: null,
   selectedPiece: null,
-  selectedMoves: null,
+  selectedMoves: [],
   currentValidMoves: null,
   activeListeners: []
 }

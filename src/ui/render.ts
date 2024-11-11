@@ -7,7 +7,7 @@ import { saveGameHistoryToUrl, restoreFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
 import { setStrategy, renderStrategyPickers } from './strategy';
 import { playerUI, highlightValidSources } from './player'
-import { setButtons, setupControls } from './controls'
+import { sleep, setButtons, setupControls } from './controls'
 
 type Turn = {turnNo: number, move: Move, player: string, roll: Roll, game: Game}
 export type UIState = {
@@ -265,10 +265,14 @@ function renderCurrentTurn() {
   renderTurn(turn, state.gameHistory);
 }
 
+function isHuman(strategy) {
+  return strategy.sname === 'human'
+}
+
 async function getNextMove(game: Game, roll: Roll): Promise<Result> {
   const strat = state.game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
   
-  if (strat.sname === 'human') {
+  if (isHuman(strat)) {
     playerUI.currentValidMoves = h.validMoves(game, roll);
     return new Promise(resolve => {
       renderRoll(roll);
@@ -303,7 +307,7 @@ async function handleTurn(roll: Roll) {
       losingStrategy: finished === c.WHITE ? state.blackStrategy.sname : state.whiteStrategy.sname
     };
     recordGameResult(result);
-  }
+  } 
 
   renderCurrentTurn();
   setButtons();
@@ -321,6 +325,12 @@ export async function playTurn() {
   } else {
     await handleTurn(h.generateRoll());
   }
+  if (isHuman(state.whiteStrategy) || isHuman(state.blackStrategy)) {
+    if (Settings.delay) {
+      await sleep(Settings.delay * 5);
+    } 
+    playTurn();
+  }
 }
 
 export async function play() {
@@ -334,7 +344,7 @@ export async function play() {
 document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers(state);
   setStrategy(c.WHITE, "learned", state);
-  setStrategy(c.BLACK, "balanced", state);
+  setStrategy(c.BLACK, "human", state);
 
   if (window.location.hash) {
     await restoreFromUrl(state)

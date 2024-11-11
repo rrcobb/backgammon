@@ -731,7 +731,7 @@ button#reset {
 
 
 /* Move highlighting for human play */
-.valid-source .piece:not(.ghost):last-of-type, .valid-source .bar.piece:not(.ghost):last-of-type {
+.valid-source .piece:not(.ghost):not(:has(~ :not(.ghost))) {
   cursor: pointer;
   box-shadow: 
     0 0 2px 2px rgba(255, 255, 0, 0.4),
