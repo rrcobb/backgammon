@@ -19,7 +19,6 @@ export type UIState = {
   backCount: number | null;
 }
 
-// global state
 export const state: UIState = {
   whiteStrategy: null,
   blackStrategy: null,
@@ -33,159 +32,152 @@ export const Settings = {
   delay: 0.3, // seconds
 }
 
-function renderBoard(game: Game, move?: Move): void {
-  let board = document.getElementById("board");
-  board.innerHTML = "";
+function renderHome(game: Game) {
+  const home = document.createElement("div");
+  home.classList.add("home");
 
-  let home = document.createElement("div");
-  home?.classList.add("home");
-
-  // show count for pieces in home
-  let blackHome = document.createElement("div");
-  blackHome.classList.add("home-count");
-  blackHome.classList.add("black-home");
+  const blackHome = document.createElement("div");
+  blackHome.classList.add("home-count", "black-home");
   blackHome.textContent = `Black ${game.bHome}`;
 
-  let whiteHome = document.createElement("div");
-  whiteHome.classList.add("home-count");
-  whiteHome.classList.add("white-home");
+  const whiteHome = document.createElement("div");
+  whiteHome.classList.add("home-count", "white-home");
   whiteHome.textContent = `White ${game.wHome}`;
 
   home.appendChild(blackHome);
   home.appendChild(whiteHome);
+  return home;
+}
 
-  let frame = document.createElement("div")
-  frame.classList.add("frame")
+function renderBar(count: number, color: 'w' | 'b') {
+  const bar = document.createElement("div");
+  bar.classList.add("bar");
+  
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("span");
+    piece.classList.add("piece", color);
+    bar.appendChild(piece);
+  }
+  return bar;
+}
 
-  let top = document.createElement("div");
-  top.classList.add("top");
-  let bottom = document.createElement("div");
-  bottom.classList.add("bottom");
-  let right = document.createElement("div")
-  right.classList.add("right")
+function renderPosition(value: number, index: number) {
+  const triangle = document.createElement("div");
+  triangle.classList.add("angle", `position-${index}`, index % 2 == 0 ? "red" : "gray");
 
-  board?.appendChild(home);
-  board?.appendChild(frame)
-  board?.appendChild(top);
-  board?.appendChild(bottom);
-  board?.appendChild(right);
+  const label = document.createElement("div");
+  label.innerText = `${index + 1}`;
+  label.classList.add("label");
+  triangle.appendChild(label);
 
-  game.positions.forEach((v: number, i: number) => {
-    let triangle = document.createElement("div");
-    triangle.classList.add("angle");
-    triangle.classList.add(`position-${i}`);
-    if (i % 2 == 0) {
-      triangle.classList.add("red");
-    } else {
-      triangle.classList.add("gray");
+  const piecesContainer = document.createElement("div");
+  piecesContainer.classList.add("pieces");
+  
+  const count = value & 0b00001111;
+  const color = value & c.WHITE ? "w" : "b";
+  
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("span");
+    piece.classList.add("piece", color);
+    piecesContainer.appendChild(piece);
+  }
+
+  triangle.appendChild(piecesContainer);
+  return triangle;
+}
+
+function renderMovement(game: Game, move: Move, board: HTMLElement) {
+  const arrows = move.map(_ => []);
+  const moveCountByPosition = {};
+  
+  // note: we're showing the previous move, the turn has updated
+  const getBarElement = () => document.querySelector(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
+  const getHomeElement = () => document.querySelector(game.turn == c.BLACK ? '.white-home' : '.black-home');
+
+  // First pass: Create ghosts and count moves
+  for (let n in move) {
+    const m = move[n];
+    if (!m) continue;
+    const [from, to] = m;
+    moveCountByPosition[to] = (moveCountByPosition[to] || 0) + 1;
+    
+    const ghost = document.createElement("span");
+    ghost.classList.add("piece", "ghost");
+    
+    let fromPieces = document.querySelector(`.position-${from} .pieces`);
+    if (from == c.BAR) {
+      fromPieces = getBarElement();
     }
-    if (i <= 11) {
-      top.appendChild(triangle);
-    } else {
-      bottom.appendChild(triangle);
-    }
+    fromPieces.appendChild(ghost);
+    arrows[n].push(ghost);
+  }
 
-    // The Bar
-    if (i == 6 || i === 18) {
-      let bar = document.createElement("div");
-      bar.classList.add("bar");
-      if (i === 6) {
-        for (let i = 0; i < game.bBar; i++) {
-          let piece = document.createElement("span");
-          piece.classList.add("piece");
-          piece.classList.add("b");
-          bar.appendChild(piece);
-        }
-      } else {
-        for (let i = 0; i < game.wBar; i++) {
-          let piece = document.createElement("span");
-          piece.classList.add("piece");
-          piece.classList.add("w");
-          bar.appendChild(piece);
-        }
+  // Second pass: Connect arrows
+  for (let n in move) {
+    const m = move[n];
+    if (!m) continue;
+    const [from, to] = m;
+    
+    if (to == c.HOME) {
+      const dest = getHomeElement();
+      dest.classList.add('just-moved');
+      arrows[n].push(dest);
+    } else {
+      const toPieces = document.querySelectorAll(`.position-${to} .pieces .piece`);
+      const moveCount = moveCountByPosition[to];
+      
+      // Get the appropriate piece from the back, counting backward from total pieces
+      const destIndex = toPieces.length - moveCount;
+      const dest = toPieces[destIndex];
+      moveCountByPosition[to]--;
+      
+      if (dest) {
+        dest.classList.add('just-moved');
+        arrows[n].push(dest);
       }
-
-      triangle.parentElement.insertBefore(bar, triangle);
     }
-    let label = document.createElement("div");
-    label.innerText += `${i + 1}`;
-    label.classList.add("label");
-    triangle.appendChild(label);
+  }
 
-    let piecesContainer = document.createElement("div");
-    piecesContainer.classList.add("pieces");
-    triangle.appendChild(piecesContainer);
+  const arrowContainer = document.createElement('div');
+  arrowContainer.classList.add('arrow-container');
+  board.insertAdjacentElement("beforeend", arrowContainer);
+  arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer));
+}
 
-    const count = v & 0b00001111;
-    const color = v & c.WHITE ? "w" : "b";
-    const pieces = [];
+function renderBoard(game: Game, move?: Move): void {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
 
-    for (let i = 0; i < count; i++) {
-      let piece = document.createElement("span");
-      piece.classList.add("piece");
-      piece.classList.add(color);
-      pieces.push(piece)
+  const home = renderHome(game);
+  const frame = document.createElement("div");
+  frame.classList.add("frame");
+  
+  const top = document.createElement("div");
+  top.classList.add("top");
+  const bottom = document.createElement("div");
+  bottom.classList.add("bottom");
+  const right = document.createElement("div");
+  right.classList.add("right");
+
+  [home, frame, top, bottom, right].forEach(e => board.appendChild(e))
+
+  game.positions.forEach((v, i) => {
+    const triangle = renderPosition(v, i);
+    const parent = i <= 11 ? top : bottom;
+    parent.appendChild(triangle);
+    
+    if (i == 6 || i === 18) {
+      const bar = renderBar(i === 6 ? game.bBar : game.wBar, i === 6 ? 'b' : 'w');
+      parent.insertBefore(bar, triangle);
     }
-
-    for (let piece of pieces) {
-      piecesContainer.appendChild(piece);
-    }
+    
   });
 
   if (move) {
-    let arrows = move.map(_ => [])
-    let moveCountByPosition = {}
-    // note: we're showing the previous move, the turn has updated, so this is reversed
-    const getBarElement = () => document.querySelector(state.game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
-    const getHomeElement = () => document.querySelector(state.game.turn == c.BLACK ? '.white-home' : '.black-home');
+    renderMovement(game, move, board);
+  }
 
-    for (let n in move) { 
-        let m = move[n]
-        if (!m) continue;
-        let [from, to] = m;
-        moveCountByPosition[to] = (moveCountByPosition[to] || 0) + 1
-        let ghost = document.createElement("span");
-        ghost.classList.add("piece", "ghost");
-        let fromPieces = document.querySelector(`.position-${from} .pieces`);
-        if (from == c.BAR) {
-          fromPieces = getBarElement()
-        }
-        fromPieces.appendChild(ghost)
-        arrows[n].push(ghost) 
-    }
-    
-    for (let n in move) { 
-        let m = move[n]
-        if (!m) continue;
-        let [from, to] = m;
-        
-        if (to == c.HOME) {
-            let dest = getHomeElement();
-            dest.classList.add('just-moved');
-            arrows[n].push(dest)
-        } else {
-            let toPieces = document.querySelectorAll(`.position-${to} .pieces .piece`);
-            let moveCount = moveCountByPosition[to]
-            
-            // Get the appropriate piece from the back, counting backward from total pieces
-            let destIndex = toPieces.length - moveCount
-            let dest = toPieces[destIndex]
-            moveCountByPosition[to]--
-            
-            if (dest) {
-                dest.classList.add('just-moved');
-                arrows[n].push(dest)
-            }
-        }
-    }
-    
-    const arrowContainer = document.createElement('div');
-    arrowContainer.classList.add('arrow-container');
-    board.insertAdjacentElement("beforeend", arrowContainer);
-    arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer))
-}
-
-  let frameBottom = document.createElement("div");
+  const frameBottom = document.createElement("div");
   frameBottom.classList.add("frame-bottom");
   board.insertAdjacentElement("beforeend", frameBottom);
 }
