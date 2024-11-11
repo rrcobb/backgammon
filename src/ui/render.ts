@@ -7,25 +7,42 @@ import { saveGameHistoryToUrl, restoreGameHistoryFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
 import { setStrategy, renderStrategyPickers } from './strategy';
 
-export type State = {
+type Turn = {turnNo: number, move: Move, player: string, roll: Roll, game: Game}
+export type UIState = {
   whiteStrategy: AppliedStrategy | null;
   blackStrategy: AppliedStrategy | null;
+  game: Game | null;
+  turnNo: number | null;
+  gameHistory: Turn[] | null;
+  backCount: number | null;
 }
 
 // global state
-var game;
-var turnNo;
-var state: State = {
+var state: UIState = {
   whiteStrategy: null,
   blackStrategy: null,
+  game: null,
+  turnNo: null,
+  gameHistory: null,
+  backCount: null,
 }
-var gameHistory;
-var backCount;
-var humanMoveCallback;
-var selectedPiece;
-var currentValidMoves: Result[] | null = null;
-var selectedMoves: Movement[] = [];
-var activeListeners: Array<[Element, string, EventListener]> = [];
+
+type Listener = [element: Element, event: string, fn: EventListener]
+type PlayerUI = {
+  humanMoveCallback: Function | null,
+  currentValidMoves: Result[] | null;
+  selectedMoves: Movement[] | null; 
+  activeListeners: Listener[];
+  selectedPiece: number | null;
+}
+
+var playerUI: PlayerUI = {
+  humanMoveCallback: null,
+  selectedPiece: null,
+  selectedMoves: null,
+  currentValidMoves: null,
+  activeListeners: []
+}
 
 // settings
 var delay = 0.3; // seconds?
@@ -33,9 +50,8 @@ var delay = 0.3; // seconds?
 // for listeners we need to be able to clear later
 function addListener(element: Element, event: string, handler: EventListener) {
   element.addEventListener(event, handler);
-  activeListeners.push([element, event, handler]);
+  playerUI.activeListeners.push([element, event, handler]);
 }
-
 
 function renderInfo(turn, turnHistory) {
   let info = "";
@@ -170,8 +186,8 @@ function renderBoard(game: Game, move?: Move): void {
     let arrows = move.map(_ => [])
     let moveCountByPosition = {}
     // note: we're showing the previous move, the turn has updated, so this is reversed
-    const getBarElement = () => document.querySelector(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
-    const getHomeElement = () => document.querySelector(game.turn == c.BLACK ? '.white-home' : '.black-home');
+    const getBarElement = () => document.querySelector(state.game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
+    const getHomeElement = () => document.querySelector(state.game.turn == c.BLACK ? '.white-home' : '.black-home');
 
     for (let n in move) { 
         let m = move[n]
@@ -254,7 +270,7 @@ function highlightValidSources() {
   sources.forEach(pos => {
     if (pos === c.BAR) {
       const bar = document.querySelector(
-        game.turn === c.WHITE ? '.bottom .bar' : '.top .bar'
+        state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar'
       );
       bar.classList.add('valid-source');
       addListener(bar, 'click', () => handleSourceClick(pos));
@@ -271,7 +287,7 @@ function highlightValidSources() {
 function handleSourceClick(pos: number) {
   clearArrows();
   clearHighlights();
-  selectedPiece = pos;
+  playerUI.selectedPiece = pos;
   highlightValidDestinations(pos);
 }
 
@@ -359,10 +375,10 @@ function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movemen
 function showMove(from: number, to: number): { piece: HTMLElement, ghost: HTMLElement } | null {
   // Get source element
   const fromPoint = from === c.BAR 
-    ? document.querySelector(game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
+    ? document.querySelector(state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
     : document.querySelector(`.position-${from} .pieces`);
   
-  const piece = fromPoint?.querySelector(`.piece.${game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
+  const piece = fromPoint?.querySelector(`.piece.${state.game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
   if (!piece || !(piece instanceof HTMLElement)) return null;
 
   // Create and position ghost for arrow
@@ -372,17 +388,17 @@ function showMove(from: number, to: number): { piece: HTMLElement, ghost: HTMLEl
 
   // Handle the destination
   if (to === c.HOME) {
-    const home = document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home');
+    const home = document.querySelector(state.game.turn === c.WHITE ? '.white-home' : '.black-home');
     home?.appendChild(piece);
   } else {
     const destPoint = document.querySelector(`.position-${to} .pieces`);
     if (!destPoint) return null;
 
     // Handle hitting a blot
-    const blot = destPoint.querySelector(`.piece.${game.turn === c.WHITE ? 'b' : 'w'}`);
-    if (blot && destPoint.querySelectorAll(`.piece.${game.turn === c.WHITE ? 'b' : 'w'}`).length === 1) {
+    const blot = destPoint.querySelector(`.piece.${state.game.turn === c.WHITE ? 'b' : 'w'}`);
+    if (blot && destPoint.querySelectorAll(`.piece.${state.game.turn === c.WHITE ? 'b' : 'w'}`).length === 1) {
       blot.remove();
-      const bar = document.querySelector(game.turn === c.WHITE ? '.top .bar' : '.bottom .bar');
+      const bar = document.querySelector(state.game.turn === c.WHITE ? '.top .bar' : '.bottom .bar');
       bar?.appendChild(blot);
     }
     
@@ -404,17 +420,17 @@ function showMove(from: number, to: number): { piece: HTMLElement, ghost: HTMLEl
 
 function handleMoveSelection(from: number, to: number) {
   // Record the move
-  selectedMoves.push([from, to] as Movement);
+  playerUI.selectedMoves.push([from, to] as Movement);
 
-  const matchingResult = currentValidMoves.find(([move]) => 
-    areSequencesEqual(move, selectedMoves)
+  const matchingResult = playerUI.currentValidMoves.find(([move]) => 
+    areSequencesEqual(move, playerUI.selectedMoves)
   );
 
   if (matchingResult) {
     // Complete move - let the game state update handle final rendering
     clearHighlights();
-    selectedMoves = [];
-    humanMoveCallback(matchingResult);
+    playerUI.selectedMoves = [];
+    playerUI.humanMoveCallback(matchingResult);
   } else {
     clearHighlights();
     showMove(from, to);
@@ -427,21 +443,21 @@ function handleMoveSelection(from: number, to: number) {
  * Returns true if a move was undone, false if there was nothing to undo
  */
 function undoLastMove(): boolean {
-  const lastMove = selectedMoves.pop();
+  const lastMove = playerUI.selectedMoves.pop();
   if (!lastMove) return false;
 
   const [from, to] = lastMove;
   
   // Find the piece to move back
   const fromPoint = from === c.BAR 
-    ? document.querySelector(game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
+    ? document.querySelector(state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
     : document.querySelector(`.position-${from} .pieces`);
     
   const targetElement = to === c.HOME
-    ? document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home')
+    ? document.querySelector(state.game.turn === c.WHITE ? '.white-home' : '.black-home')
     : document.querySelector(`.position-${to} .pieces`);
 
-  const piece = targetElement?.querySelector(`.piece.${game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
+  const piece = targetElement?.querySelector(`.piece.${state.game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
   if (!piece || !fromPoint) return false;
 
   // Move the piece back
@@ -449,9 +465,9 @@ function undoLastMove(): boolean {
 
   // Clear the arrows for this move
   clearArrows();
-  if (selectedMoves.length > 0) {
+  if (playerUI.selectedMoves.length > 0) {
     // Redraw arrows for remaining moves
-    selectedMoves.forEach(([f, t]) => showMove(f, t));
+    playerUI.selectedMoves.forEach(([f, t]) => showMove(f, t));
   }
 
   // Update the UI state
@@ -464,15 +480,15 @@ function undoLastMove(): boolean {
 function getNextValidSources(): Set<number> {
   const sources = new Set<number>();
   
-  currentValidMoves.forEach(([sequence]) => {
-    if (isCompatibleSequence(selectedMoves, sequence)) {
+  playerUI.currentValidMoves.forEach(([sequence]) => {
+    if (isCompatibleSequence(playerUI.selectedMoves, sequence)) {
       // Add sources from remaining moves
-      const remaining = getRemainingMoves(selectedMoves, sequence);
+      const remaining = getRemainingMoves(playerUI.selectedMoves, sequence);
       remaining.forEach(move => {
         const [start] = move;
         // Special case for bar - check actual piece count
         if (start === c.BAR) {
-          const barCount = game.turn === c.WHITE ? game.wBar : game.bBar;
+          const barCount = state.game.turn === c.WHITE ? state.game.wBar : state.game.bBar;
           if (barCount > 0) {
             sources.add(start);
           }
@@ -490,9 +506,9 @@ function getNextValidSources(): Set<number> {
 function highlightValidDestinations(from: number): void {
   const dests = new Set<number>();
   
-  currentValidMoves.forEach(([sequence]) => {
-    if (isCompatibleSequence(selectedMoves, sequence)) {
-      const remaining = getRemainingMoves(selectedMoves, sequence);
+  playerUI.currentValidMoves.forEach(([sequence]) => {
+    if (isCompatibleSequence(playerUI.selectedMoves, sequence)) {
+      const remaining = getRemainingMoves(playerUI.selectedMoves, sequence);
       remaining.forEach(move => {
         if (move && move[0] === from) {
           dests.add(move[1]);
@@ -503,7 +519,7 @@ function highlightValidDestinations(from: number): void {
   
   dests.forEach(pos => {
     if (pos === c.HOME) {
-      const home = document.querySelector(game.turn === c.WHITE ? '.white-home' : '.black-home');
+      const home = document.querySelector(state.game.turn === c.WHITE ? '.white-home' : '.black-home');
       if (home) {
         home.classList.add('valid-destination');
         addListener(home, 'click', () => handleMoveSelection(from, pos));
@@ -519,22 +535,22 @@ function highlightValidDestinations(from: number): void {
 }
 
 function clearHighlights() {
-  selectedPiece = null;
+  playerUI.selectedPiece = null;
   document.querySelectorAll('.valid-source, .valid-destination').forEach(el => {
     el.classList.remove('valid-source', 'valid-destination');
   });
 
-  activeListeners.forEach(([element, event, handler]) => {
+  playerUI.activeListeners.forEach(([element, event, handler]) => {
     element.removeEventListener(event, handler);
   });
-  activeListeners = [];
+  playerUI.activeListeners = [];
 }
 
-function renderTurn(turn, turnHistory, backCount) {
+function renderTurn(turn, turnHistory) {
   renderScoreboard();
-  renderBoard(turn?.game || game, turn?.move);
+  renderBoard(turn?.game || state.game, turn?.move);
   if (turn?.roll) { renderRoll(turn.roll); }
-  renderHistory(turnHistory, backCount);
+  renderHistory(turnHistory, state.backCount);
   renderInfo(turn, turnHistory);
 }
 
@@ -552,9 +568,9 @@ function disable (elid) {
 // - fast
 // - end
 function setButtons() {
-  const finished = h.checkWinner(game);
-  const current = backCount == 0;
-  const start = backCount >= gameHistory.length - 1; 
+  const finished = h.checkWinner(state.game);
+  const current = state.backCount == 0;
+  const start = state.backCount >= state.gameHistory.length - 1; 
 
   // play button is active unless we are at the end of the game
   if (finished && current) { disable("play") }
@@ -577,10 +593,10 @@ function setButtons() {
 }
 
 function initGame() {
-  turnNo = 0;
-  gameHistory = [];
-  game = h.newGame();
-  backCount = 0;
+  state.turnNo = 0;
+  state.gameHistory = [];
+  state.game = h.newGame();
+  state.backCount = 0;
 }
 
 function newGame() {
@@ -591,61 +607,61 @@ function newGame() {
 }
 
 function back() {
-  if (backCount < gameHistory.length - 1) {
-    viewTurn(backCount+1);
+  if (state.backCount < state.gameHistory.length - 1) {
+    viewTurn(state.backCount+1);
   }
 }
 
 function forward() {
-  viewTurn(backCount-1);
+  viewTurn(state.backCount-1);
 }
 
 export function viewTurn(count) {
-  backCount = count;
-  let nextTurn = gameHistory[gameHistory.length - 1 - backCount];
+  state.backCount = count;
+  let nextTurn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
   if (!nextTurn) throw new Error("no turn available");
   
-  renderTurn(nextTurn, gameHistory, backCount);
+  renderTurn(nextTurn, state.gameHistory);
   setButtons();
 }
 
 export function playFromHere() {
   // actually go back to the game shown
-  gameHistory = gameHistory.slice(0, gameHistory.length - backCount);
-  let target = gameHistory[gameHistory.length - 1];
-  game = target.game
-  turnNo = turnNo - backCount;
-  backCount = 0;
+  state.gameHistory = state.gameHistory.slice(0, state.gameHistory.length - state.backCount);
+  let target = state.gameHistory[state.gameHistory.length - 1];
+  state.game = target.game
+  state.turnNo = state.turnNo - state.backCount;
+  state.backCount = 0;
 
   setButtons();
   renderCurrentTurn();
 }
 
 export function jumpToLatest() {
-  backCount = 0;
-  let currentTurn = gameHistory[gameHistory.length - 1];
+  state.backCount = 0;
+  let currentTurn = state.gameHistory[state.gameHistory.length - 1];
 
   setButtons();
   renderCurrentTurn();
 }
 
 function renderCurrentTurn() {
-  if (!gameHistory) {console.log('no history'); return; }
-  const turn = gameHistory[gameHistory.length - 1 - backCount];
-  renderTurn(turn, gameHistory, backCount);
+  if (!state.gameHistory) {console.log('no history'); return; }
+  const turn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
+  renderTurn(turn, state.gameHistory);
 }
 
 async function getNextMove(game: Game, roll: Roll): Promise<Result> {
-  const strat = game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
+  const strat = state.game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
   
   if (strat.sname === 'human') {
-    currentValidMoves = h.validMoves(game, roll);
+    playerUI.currentValidMoves = h.validMoves(game, roll);
     return new Promise(resolve => {
       renderRoll(roll);
       highlightValidSources();
-      humanMoveCallback = (result: Result) => {
+      playerUI.humanMoveCallback = (result: Result) => {
         const [move, next] = result;
-        next.turn = (game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        next.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
         resolve([move, next]);
       };
     });
@@ -655,18 +671,18 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
 }
 
 async function handleTurn(roll: Roll) {
-  turnNo++;
-  const player = game.turn == c.WHITE ? "w" : "b";
+  state.turnNo++;
+  const player = state.game.turn == c.WHITE ? "w" : "b";
 
-  const [move, next] = await getNextMove(game, roll);
+  const [move, next] = await getNextMove(state.game, roll);
 
-  game = next;
+  state.game = next;
 
-  const turn = {turnNo, move, player, roll, game}
-  gameHistory.push(turn) 
-  saveGameHistoryToUrl(gameHistory);
+  const turn: Turn = {turnNo: state.turnNo, move, player, roll, game: state.game}
+  state.gameHistory.push(turn) 
+  saveGameHistoryToUrl(state.gameHistory);
 
-  const finished = h.checkWinner(game);
+  const finished = h.checkWinner(state.game);
   if (finished) {
     const result = {
       winningStrategy: finished === c.WHITE ? state.whiteStrategy.sname : state.blackStrategy.sname,
@@ -680,13 +696,13 @@ async function handleTurn(roll: Roll) {
 }
 
 async function playTurn() {
-  const finished = h.checkWinner(game);
+  const finished = h.checkWinner(state.game);
   if (finished) { return; }
 
-  if (!game.turn) {
+  if (!state.game.turn) {
     // Handle roll-off to start the game
     const [winner, roll] = h.rollOff();
-    game.turn = winner;
+    state.game.turn = winner;
     await handleTurn(roll);
   } else {
     await handleTurn(h.generateRoll());
@@ -694,7 +710,7 @@ async function playTurn() {
 }
 
 async function play() {
-  if (backCount == 0) {
+  if (state.backCount == 0) {
     await playTurn();
   } else {
     forward();
@@ -712,11 +728,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (window.location.hash) {
     let urlHistory = await restoreGameHistoryFromUrl(window.location.hash);
-    gameHistory = urlHistory;
-    let last = gameHistory[gameHistory.length - 1];
-    game = last.game;
-    turnNo = last.turnNo;
-    backCount = 0;
+    state.gameHistory = urlHistory;
+    let last = state.gameHistory[state.gameHistory.length - 1];
+    state.game = last.game;
+    state.turnNo = last.turnNo;
+    state.backCount = 0;
     console.log("game restored at turn", last.turnNo)
   } else {
     initGame();
@@ -734,7 +750,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
   document.getElementById('end')?.addEventListener('click', async () => {
-    while (!h.checkWinner(game)) {
+    while (!h.checkWinner(state.game)) {
       playTurn();
       if (delay) {
         await sleep(delay / 5);
@@ -753,7 +769,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (e.key == ' ' || e.key == 'Enter') {
-      if (backCount == 0) {
+      if (state.backCount == 0) {
         playTurn();
       }
     }
@@ -767,15 +783,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (e.key === 'Escape') {
-      if (selectedPiece !== null) {
+      if (playerUI.selectedPiece !== null) {
         // Just clear the current selection
         clearHighlights();
-        selectedPiece = null;
-      } else if (selectedMoves.length > 0) {
+        playerUI.selectedPiece = null;
+      } else if (playerUI.selectedMoves.length > 0) {
         // Clear all moves made this turn
         clearHighlights();
         clearArrows();
-        selectedMoves = [];
+        playerUI.selectedMoves = [];
         highlightValidSources();
       }
     }

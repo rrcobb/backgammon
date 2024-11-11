@@ -1,6 +1,6 @@
 import { constants as c, helpers as h } from "../backgammon";
 import { Strategies as S, AppliedStrategy } from "../strategy/strategies";
-import type { State } from './render'
+import type { UIState } from './render'
 
 const human: AppliedStrategy = {
   sname: 'human',
@@ -41,7 +41,7 @@ function strategyPicker(player: "white" | "black") {
   return div;
 }
 
-export function setStrategy(player, stratName, s: State) {
+export function setStrategy(player, stratName, s: UIState) {
   if (player == c.WHITE) {
     s.whiteStrategy = Strategies[stratName];
     s.whiteStrategy.sname = stratName;
@@ -57,7 +57,7 @@ export function setStrategy(player, stratName, s: State) {
   }
 }
 
-export function renderStrategyPickers(state: State) {
+export function renderStrategyPickers(state: UIState) {
   let strategySection = document.getElementById("strategy-selectors");
   let whitePicker = strategyPicker("white");
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value, state));
