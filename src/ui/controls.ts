@@ -1,7 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import { showArrow, clearArrows } from './arrows'
-import { state, play, playTurn, jumpToLatest, back, newGame, Settings } from './render'
-import { playerUI, highlightValidSources, clearHighlights, undoLastMove } from './player'
+import { state, play, playTurn, jumpToLatest, back, newGame, Settings, isHuman } from './render'
+import { playerUI, highlightValidSources, clearHighlights, undoCurrentMoves } from './player'
 
 export async function sleep(s) {
   await new Promise(resolve => setTimeout(resolve, s))
@@ -25,25 +25,49 @@ function setButtons() {
   const finished = h.checkWinner(state.game);
   const current = state.backCount == 0;
   const start = state.backCount >= state.gameHistory.length - 1; 
+  const hasHumanPlayer = isHuman(state.whiteStrategy) || isHuman(state.blackStrategy);
+  const isHumanTurn = current && isHuman(state.game.turn === c.WHITE ? state.whiteStrategy : state.blackStrategy);
 
-  // play button is active unless we are at the end of the game
-  if (finished && current) { disable("play") }
-  else { enable("play") }
-
-  // can walk backwards unless we are at the start
-  if (start) { disable("back") }
-  else { enable("back") }
-  
-  // can jump if we are current and not finished
-  if (current && !finished) {
-    enable("fast"); enable("end");
+  if (hasHumanPlayer) {
+    disable("end");
+    const fastButton = document.getElementById("fast");
+    fastButton.textContent = "↺";
+    if (!isHumanTurn || !playerUI.selectedMoves?.length) {
+      disable("fast");
+    } else {
+      enable("fast");
+    }
   } else {
-    disable("fast"); disable("end");
+    document.getElementById("fast").textContent = "▶▶";
+    if (current && !finished) {
+      enable("fast"); 
+      enable("end");
+    } else {
+      disable("fast"); 
+      disable("end");
+    }
   }
 
+  // play button is active unless we are at the end of the game
+  if (finished && current) { 
+    disable("play"); 
+  } else { 
+    enable("play"); 
+  }
+
+  // can step backwards unless we are at the start
+  if (start) { 
+    disable("back"); 
+  } else { 
+    enable("back"); 
+  }
+  
   // can go to current if we are not current
-  if (current) { disable("current") } 
-  else { enable("current") } 
+  if (current) { 
+    disable("current"); 
+  } else { 
+    enable("current"); 
+  }
 }
 
 function setupControls() {
@@ -90,25 +114,11 @@ function setupControls() {
       newGame();
     }
 
-    if (e.key === 'Escape') {
-      if (playerUI.selectedPiece !== null) {
-        // Just clear the current selection
-        clearHighlights();
-        playerUI.selectedPiece = null;
-      } else if (playerUI.selectedMoves.length > 0) {
-        // Clear all moves made this turn
-        clearHighlights();
-        clearArrows();
-        playerUI.selectedMoves = [];
-        highlightValidSources();
-      }
-    }
-
-    if (e.key == 'z' && (e.metaKey || e.ctrlKey)) {
+    if (e.key === 'Escape' || e.key == 'z' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      undoLastMove();
+      undoCurrentMoves();
     }
   })
 }
 
-export { setButtons, setupControls }
+export { setButtons, setupControls, disable }

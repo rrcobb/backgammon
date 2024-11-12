@@ -315,4 +315,12 @@ function renderInfo(turn, turnHistory) {
   infoDiv.textContent = info;
 }
 
-export { renderHistory, renderInfo }
+function renderPlayerTurn(roll) {
+  const infoDiv = document.getElementById('turn-info');
+  const playerTurn = document.createElement('div');
+  playerTurn.style.marginTop = '8px';
+  playerTurn.textContent = `Your turn! You rolled ${describeRoll(roll)}.`;
+  infoDiv.appendChild(playerTurn);
+}
+
+export { renderHistory, renderInfo, renderPlayerTurn }

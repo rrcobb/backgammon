@@ -1,7 +1,7 @@
 import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { AppliedStrategy } from "../strategy/strategies";
-import { renderHistory, renderInfo } from "./history";
+import { renderHistory, renderInfo, renderPlayerTurn } from "./history";
 import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
 import { renderScoreboard, recordGameResult } from './scores';
@@ -144,7 +144,7 @@ function renderMovement(game: Game, move: Move, board: HTMLElement) {
   arrows.forEach(([start, dest]) => start && dest && showArrow(start, dest, arrowContainer));
 }
 
-function renderBoard(game: Game, move?: Move): void {
+export function renderBoard(game: Game, move?: Move): void {
   const board = document.getElementById("board");
   board.innerHTML = "";
 
@@ -265,7 +265,7 @@ function renderCurrentTurn() {
   renderTurn(turn, state.gameHistory);
 }
 
-function isHuman(strategy) {
+export function isHuman(strategy) {
   return strategy.sname === 'human'
 }
 
@@ -274,8 +274,17 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
   
   if (isHuman(strat)) {
     playerUI.currentValidMoves = h.validMoves(game, roll);
+    
     return new Promise(resolve => {
+      let nextTurn = playerUI.currentValidMoves[0]
+      if (!nextTurn || nextTurn[0] == null) {
+        let next = nextTurn ? nextTurn[1] : h.cloneGame(state.game);
+        next.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        resolve([c.nullMove, next]); 
+        return;
+      }
       renderRoll(roll);
+      renderPlayerTurn(roll);
       highlightValidSources();
       playerUI.humanMoveCallback = (result: Result) => {
         const [move, next] = result;

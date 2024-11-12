@@ -1,7 +1,8 @@
 import { constants as c, helpers as h } from "../backgammon";
 import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
-import { state } from './render'
+import { state, renderBoard } from './render'
 import { showArrow, clearArrows } from './arrows'
+import { disable } from './controls';
 
 type Listener = [element: Element, event: string, fn: EventListener]
 type PlayerUI = {
@@ -30,6 +31,9 @@ function handleSourceClick(pos: number) {
   clearArrows();
   clearHighlights();
   playerUI.selectedPiece = pos;
+  const parent = getParentElement(pos);
+  const piece = parent.querySelector('.piece:last-child');
+  piece.classList.add('selected')
   highlightValidDestinations(pos);
 }
 
@@ -75,17 +79,20 @@ function areSequencesEqual(seq1: Movement[], seq2: Movement[]): boolean {
   return isCompatibleSequence(moves1, moves2) && isCompatibleSequence(moves2, moves1);
 }
 
-/**
- * Get remaining moves available in a candidate sequence after 
- * accounting for selected moves
- */
-function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movement[] {
-  // Count moves in candidate
+function getRemainingMoves(selected: Movement[], candidate: Movement[]): { moves: Movement[], intermediateGame: Game } {
   const candidateCounts = new Map<string, number>();
   candidate.filter(m => m !== null).forEach(m => {
     const key = JSON.stringify(m);
     candidateCounts.set(key, (candidateCounts.get(key) || 0) + 1);
   });
+
+  let intermediateGame
+  if (selected.length > 0) {
+    intermediateGame = h.cloneGame(state.game);
+    selected.forEach(move => h.apply(intermediateGame, move));
+  } else {
+    intermediateGame = state.game
+  }
   
   // Subtract selected moves
   selected.forEach(move => {
@@ -107,7 +114,13 @@ function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movemen
     }
   });
   
-  return remaining;
+  return {moves: remaining, intermediateGame};
+}
+
+function getParentElement(pos) {
+  return pos === c.BAR 
+    ? document.querySelector(state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
+    : document.querySelector(`.position-${pos} .pieces`);
 }
 
 /**
@@ -115,10 +128,7 @@ function getRemainingMoves(selected: Movement[], candidate: Movement[]): Movemen
  * Returns the moved piece and ghost elements for potential reversal
  */
 function showMove(from: number, to: number): { piece: HTMLElement, ghost: HTMLElement } | null {
-  // Get source element
-  const fromPoint = from === c.BAR 
-    ? document.querySelector(state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
-    : document.querySelector(`.position-${from} .pieces`);
+  const fromPoint = getParentElement(from);
   
   const piece = fromPoint?.querySelector(`.piece.${state.game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
   if (!piece || !(piece instanceof HTMLElement)) return null;
@@ -180,53 +190,20 @@ function handleMoveSelection(from: number, to: number) {
   }
 }
 
-/**
- * Undoes the last move in selectedMoves
- * Returns true if a move was undone, false if there was nothing to undo
- */
-export function undoLastMove(): boolean {
-  const lastMove = playerUI.selectedMoves.pop();
-  if (!lastMove) return false;
-
-  const [from, to] = lastMove;
-  
-  // Find the piece to move back
-  const fromPoint = from === c.BAR 
-    ? document.querySelector(state.game.turn === c.WHITE ? '.bottom .bar' : '.top .bar')
-    : document.querySelector(`.position-${from} .pieces`);
-    
-  const targetElement = to === c.HOME
-    ? document.querySelector(state.game.turn === c.WHITE ? '.white-home' : '.black-home')
-    : document.querySelector(`.position-${to} .pieces`);
-
-  const piece = targetElement?.querySelector(`.piece.${state.game.turn === c.WHITE ? 'w' : 'b'}:last-child`);
-  if (!piece || !fromPoint) return false;
-
-  // Move the piece back
-  fromPoint.appendChild(piece);
-
-  // Clear the arrows for this move
-  clearArrows();
-  if (playerUI.selectedMoves.length > 0) {
-    // Redraw arrows for remaining moves
-    playerUI.selectedMoves.forEach(([f, t]) => showMove(f, t));
-  }
-
-  // Update the UI state
-  clearHighlights();
-  highlightValidSources();
-
-  return true;
-}
-
 function getNextValidSources(): Set<number> {
   const sources = new Set<number>();
-  
+
   playerUI.currentValidMoves.forEach(([sequence]) => {
     if (isCompatibleSequence(playerUI.selectedMoves, sequence)) {
-      // Add sources from remaining moves
-      const remaining = getRemainingMoves(playerUI.selectedMoves, sequence);
-      remaining.forEach(move => {
+      const { moves, intermediateGame } = getRemainingMoves(playerUI.selectedMoves, sequence);
+
+      const barCount = state.game.turn === c.WHITE ? intermediateGame.wBar : intermediateGame.bBar;
+      if (barCount > 0) {
+        sources.add(c.BAR);
+        return;
+      }
+
+      moves.forEach(move => {
         const [start] = move;
         // Special case for bar - check actual piece count
         if (start === c.BAR) {
@@ -250,8 +227,8 @@ function highlightValidDestinations(from: number): void {
   
   playerUI.currentValidMoves.forEach(([sequence]) => {
     if (isCompatibleSequence(playerUI.selectedMoves, sequence)) {
-      const remaining = getRemainingMoves(playerUI.selectedMoves, sequence);
-      remaining.forEach(move => {
+      const { moves, intermediateGame } = getRemainingMoves(playerUI.selectedMoves, sequence);
+      moves.forEach(move => {
         if (move && move[0] === from) {
           dests.add(move[1]);
         }
@@ -278,8 +255,8 @@ function highlightValidDestinations(from: number): void {
 
 export function clearHighlights() {
   playerUI.selectedPiece = null;
-  document.querySelectorAll('.valid-source, .valid-destination').forEach(el => {
-    el.classList.remove('valid-source', 'valid-destination');
+  document.querySelectorAll('.valid-source, .valid-destination, .selected').forEach(el => {
+    el.classList.remove('valid-source', 'valid-destination', 'selected');
   });
 
   playerUI.activeListeners.forEach(([element, event, handler]) => {
@@ -289,6 +266,8 @@ export function clearHighlights() {
 }
 
 export function highlightValidSources() {
+  disable("play");
+
   const sources = getNextValidSources();
 
   sources.forEach(pos => {
@@ -306,4 +285,15 @@ export function highlightValidSources() {
       }
     }
   });
+}
+
+export function undoCurrentMoves() {
+  if (playerUI.selectedPiece !== null) {
+    clearHighlights();
+    highlightValidSources();
+  } else if (playerUI.selectedMoves.length > 0) {
+    playerUI.selectedMoves = [];
+    renderBoard(state.game);
+    highlightValidSources();
+  }
 }

@@ -411,7 +411,7 @@ function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
   return [move, next];
 }
 
-const constants = { ALL_ROLLS, UNIQUE_ROLLS, WHITE, BLACK, HOME, BAR, dice };
+const constants = { ALL_ROLLS, UNIQUE_ROLLS, WHITE, BLACK, HOME, BAR, dice, nullMove };
 
 const helpers = {
   isBearingOff,
