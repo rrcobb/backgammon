@@ -642,17 +642,16 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
 - show intermediate states
 - render arrows better
   - allow 'undo' of partial moves
+- don't require clicking 'play' for the human turn or ai turn, just play the next move
+- if there are no valid moves, still have to go to the next player's turn
+- fix the highlights, they are kinda busted
+- show hitting blots
 
 ## UI / TODO
 
 - human mode:
   - show more turn indicators
-  - don't require clicking 'play' for the human turn or ai turn, just play the next move
-  - if there are no valid moves, still have to go to the next player's turn
-  - fix the highlights, they are kinda busted
-  - show hitting blots
   - maybe animate the roll switching a little, so it's clear that it's your turn
-  - fix bugs?
   - button for undo
 
 - hide / show for different labeled sections

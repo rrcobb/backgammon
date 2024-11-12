@@ -26,19 +26,12 @@ function setButtons() {
   const current = state.backCount == 0;
   const start = state.backCount >= state.gameHistory.length - 1; 
   const hasHumanPlayer = isHuman(state.whiteStrategy) || isHuman(state.blackStrategy);
-  const isHumanTurn = current && isHuman(state.game.turn === c.WHITE ? state.whiteStrategy : state.blackStrategy);
+  const playButton = document.getElementById("play");
 
   if (hasHumanPlayer) {
     disable("end");
-    const fastButton = document.getElementById("fast");
-    fastButton.textContent = "↺";
-    if (!isHumanTurn || !playerUI.selectedMoves?.length) {
-      disable("fast");
-    } else {
-      enable("fast");
-    }
+    disable("fast");
   } else {
-    document.getElementById("fast").textContent = "▶▶";
     if (current && !finished) {
       enable("fast"); 
       enable("end");

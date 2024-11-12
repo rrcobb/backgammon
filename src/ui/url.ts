@@ -1,3 +1,6 @@
+import { constants as c } from '../backgammon'
+import { setStrategy } from './strategy';
+
 async function compressString(str) {
   // Convert string to stream
   const stream = new Blob([str]).stream();
@@ -65,9 +68,18 @@ async function objectFromUrl(url) {
   }
 }
 
-async function saveGameHistoryToUrl(gHistory) {
+export function saveStrategyToUrl(state) {
+  const params = new URLSearchParams();
+  params.set('w', state.whiteStrategy.sname);
+  params.set('b', state.blackStrategy.sname);
+
+  history.replaceState(null, '', '?' + params.toString() + window.location.hash);
+}
+
+async function saveGameHistoryToUrl(gHistory, state) {
+  saveStrategyToUrl(state);
   const url = await objectToUrl(gHistory);
-  window.location.hash = url;
+  window.location.hash = url 
 }
 
 async function restoreFromUrl(state) {
@@ -77,7 +89,9 @@ async function restoreFromUrl(state) {
   state.game = last.game;
   state.turnNo = last.turnNo;
   state.backCount = 0;
-  console.log("game restored at turn", last.turnNo)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('w')) setStrategy(c.WHITE, params.get('w'), state);
+  if (params.has('b')) setStrategy(c.BLACK, params.get('b'), state);
 }
 
 export { saveGameHistoryToUrl, restoreFromUrl }

@@ -1,6 +1,9 @@
 import { constants as c, helpers as h } from "../backgammon";
 import { Strategies as S, AppliedStrategy } from "../strategy/strategies";
-import type { UIState } from './render'
+import { UIState, renderCurrentTurn, state, playTurn } from './render'
+import { setButtons } from './controls'
+import { playerUI, highlightValidSources, clearHighlights } from './player'
+import { saveStrategyToUrl } from './url'
 
 const human: AppliedStrategy = {
   sname: 'human',
@@ -54,6 +57,19 @@ export function setStrategy(player, stratName, s: UIState) {
     const select = (document.getElementById("black-strategy") as HTMLSelectElement)
     select.value = stratName;
     showStrategyInfo(stratName, select.parentElement);
+  }
+
+  if (s.whiteStrategy && s.blackStrategy) {
+    clearHighlights();
+    playerUI.selectedMoves = [];
+    renderCurrentTurn();
+    // If switching to human and it's their turn, show valid moves
+    if (stratName === 'human' && state.game.turn === player) {
+      playTurn();
+    }
+  
+    setButtons();
+    saveStrategyToUrl(state);
   }
 }
 

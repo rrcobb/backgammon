@@ -213,7 +213,9 @@ function getNextValidSources(): Set<number> {
           }
         } else {
           // Regular point - check if we have pieces there
-          sources.add(start);
+          if (intermediateGame.positions[move[0]] & state.game.turn) {
+            sources.add(start);
+          }
         }
       });
     }

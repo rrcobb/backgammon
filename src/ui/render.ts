@@ -259,7 +259,7 @@ export function jumpToLatest() {
   renderCurrentTurn();
 }
 
-function renderCurrentTurn() {
+export function renderCurrentTurn() {
   if (!state.gameHistory) {console.log('no history'); return; }
   const turn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
   renderTurn(turn, state.gameHistory);
@@ -307,7 +307,7 @@ async function handleTurn(roll: Roll) {
 
   const turn: Turn = {turnNo: state.turnNo, move, player, roll, game: state.game}
   state.gameHistory.push(turn) 
-  saveGameHistoryToUrl(state.gameHistory);
+  saveGameHistoryToUrl(state.gameHistory, state);
 
   const finished = h.checkWinner(state.game);
   if (finished) {
@@ -335,9 +335,6 @@ export async function playTurn() {
     await handleTurn(h.generateRoll());
   }
   if (isHuman(state.whiteStrategy) || isHuman(state.blackStrategy)) {
-    if (Settings.delay) {
-      await sleep(Settings.delay * 5);
-    } 
     playTurn();
   }
 }
@@ -352,16 +349,13 @@ export async function play() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   renderStrategyPickers(state);
-  setStrategy(c.WHITE, "learned", state);
-  setStrategy(c.BLACK, "human", state);
+  setupControls();
 
   if (window.location.hash) {
     await restoreFromUrl(state)
   } else {
     initGame();
+    setStrategy(c.WHITE, "learned", state);
+    setStrategy(c.BLACK, "human", state);
   }
-
-  renderCurrentTurn();
-  setupControls();
-  setButtons();
 });
