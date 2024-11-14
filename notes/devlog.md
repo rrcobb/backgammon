@@ -649,12 +649,11 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
 
 Tested, seems like this isn't happening -- Seems like there are bugs in validmoves generation... it looks like I can bear off any pieces?
 
-## UI / TODO
-
 - show who beat who in scoreboard (not just wins and losses)
 
-- improved turn info
-- highlight that it's your turn?
+## UI / TODO
+
+- hide / show for different labeled sections
 
 - display about the strategy
   - show probabilities of hits / other events
@@ -663,6 +662,12 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
   - highlight blots
   - highlight primes
 
+- improved turn info
+
+- highlight that it's your turn?
+  - checkbox for autoroll
+  - checkbox for autoplay for the opponent
+  - button to roll out your own position to the end
 
 - tunable strategy
 - custom weights for evaluation function / strategy
@@ -695,7 +700,6 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 - ai modes, like, feed the board state to claude / o1 / ollama and see what they spit out
   - requires an input/output text format
 
-- hide / show for different labeled sections
 - what other sections?
   - settings
   - chat
@@ -716,3 +720,6 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 - eventually, if the game really needs faster play, we can try optimizing again:
   - parallelize, maybe (bun/web) workers
   - see if we can find hotspots and optimize them down
+
+
+- ask claude for nice style refactors

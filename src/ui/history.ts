@@ -192,12 +192,54 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
+function createHistoryHeader() {
+  const header = document.createElement('div');
+  header.classList.add('section-header');
+  
+  const toggleBtn = document.createElement('button');
+  toggleBtn.classList.add('toggle-button');
+  toggleBtn.textContent = '-';
+  header.addEventListener('click', () => {
+    const historyEl = document.getElementById("historyEl");
+    const content = historyEl.querySelector('.section-content');
+    const isCollapsed = content.classList.contains('collapsed');
+    content.classList.toggle('collapsed');
+    toggleBtn.textContent = isCollapsed ? '-' : '+';
+    const container = document.getElementById("history-container");
+    container.classList.toggle('collapsed');
+  });
+  
+  const title = document.createElement('span');
+  title.textContent = 'History';
+  
+  header.appendChild(title);
+  header.appendChild(toggleBtn);
+  return header;
+}
+
 function renderHistory(gameHistory, backCount=0) {
+  // Create or get content wrapper
   const historyEl = document.getElementById("historyEl");
-  historyEl.innerHTML = ""; // clear first
+  let content = historyEl.querySelector('.section-content');
+  if (!content) {
+    historyEl.innerHTML = '';
+    
+    // Add header outside content area
+    const header = createHistoryHeader();
+    historyEl.appendChild(header);
+    
+    // Create content wrapper
+    content = document.createElement('div');
+    content.classList.add('section-content');
+    historyEl.appendChild(content);
+  }
+
+  // Clear just the content
+  content.innerHTML = '';
+
   const reverseChronology = gameHistory.slice().reverse();
   reverseChronology.forEach((turn, index) => {
-    const prev = reverseChronology[index + 1] // index + 1 because we are reversed
+    const prev = reverseChronology[index + 1]
     const hitOpponent = checkHit(turn, prev);
     
     const turnDiv = document.createElement('div');
@@ -211,10 +253,9 @@ function renderHistory(gameHistory, backCount=0) {
         const winnerBanner = document.createElement('div');
         winnerBanner.classList.add('winner-banner');
         winnerBanner.innerText = `${turn.player === 'w' ? 'White' : 'Black'} wins!`;
-        historyEl.appendChild(winnerBanner);
+        content.appendChild(winnerBanner);
       }
     }
-    
 
     if (turn.roll == null) {
       return
@@ -257,9 +298,9 @@ function renderHistory(gameHistory, backCount=0) {
     turnDiv.appendChild(indicator);
     turnDiv.addEventListener('click', () => viewTurn(index));
 
-    historyEl.appendChild(turnDiv);
+    content.appendChild(turnDiv);
   });
-  addHistoryControls(historyEl, backCount);
+  addHistoryControls(content, backCount);
 }
 
 function addHistoryControls(historyEl, backCount) {
