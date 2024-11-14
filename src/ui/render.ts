@@ -5,7 +5,7 @@ import { renderHistory, renderInfo, renderPlayerTurn } from "./history";
 import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
 import { renderScoreboard, recordGame } from './scores';
-import { setStrategy, renderStrategyPickers } from './strategy';
+import { setStrategy, renderStrategyConfig } from './strategy';
 import { playerUI, highlightValidSources } from './player'
 import { sleep, setButtons, setupControls } from './controls'
 
@@ -349,7 +349,7 @@ export async function play() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  renderStrategyPickers(state);
+  renderStrategyConfig(state);
   setupControls();
 
   if (window.location.hash) {

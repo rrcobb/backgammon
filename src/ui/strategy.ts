@@ -73,7 +73,7 @@ export function setStrategy(player, stratName, s: UIState) {
   }
 }
 
-export function renderStrategyPickers(state: UIState) {
+export function renderStrategyConfig(state: UIState) {
   let strategySection = document.getElementById("strategy-selectors");
   let whitePicker = strategyPicker("white");
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value, state));

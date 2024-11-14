@@ -333,7 +333,7 @@ body {
   width: 100vw;
 }
 
-.container, #strategy, #game {
+.container, #game {
   border: 1px solid black;
   margin: 4px;
   max-height: calc(var(--board-height) * 1.8);
@@ -585,8 +585,6 @@ button#reset {
 }
 
 /* secondary buttons */
-
-
 .reset-scores, .history-control, .show-turn {
   font-size: 0.7rem;
   padding: 3px 8px;
@@ -643,10 +641,6 @@ button#reset {
   height: 100%;
 }
 
-#strategy {
-  font-size: 13px;
-}
-
 #strategy .picker { 
   display: flex;
   flex-wrap: wrap;
@@ -655,6 +649,7 @@ button#reset {
   margin: 4px auto;
   padding: 8px 0;
   max-width: 400px;
+  font-size: 13px;
 }
 
 .black-picker {
@@ -666,22 +661,14 @@ button#reset {
   border-left: 6px solid var(--white-piece);
 }
 
-#strategy > span {
-  display: block;
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-#strategy select {
+#strategy .picker select {
   padding: 2px 4px;
   width: 150px;
   border: 1px solid #ccc;
   background-color: white;
 }
 
-#strategy label {
+#strategy .picker label {
   font-weight: 600;
   text-transform: capitalize;
 }
@@ -698,6 +685,7 @@ button#reset {
 #scoreboard {
   display: flex;
   flex-direction: column;
+  font-size: 13px;
 }
 
 .stats-table {
