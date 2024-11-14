@@ -4,7 +4,7 @@ import { AppliedStrategy } from "../strategy/strategies";
 import { renderHistory, renderInfo, renderPlayerTurn } from "./history";
 import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
-import { renderScoreboard, recordGameResult } from './scores';
+import { renderScoreboard, recordGame } from './scores';
 import { setStrategy, renderStrategyPickers } from './strategy';
 import { playerUI, highlightValidSources } from './player'
 import { sleep, setButtons, setupControls } from './controls'
@@ -313,9 +313,10 @@ async function handleTurn(roll: Roll) {
   if (finished) {
     const result = {
       winningStrategy: finished === c.WHITE ? state.whiteStrategy.sname : state.blackStrategy.sname,
-      losingStrategy: finished === c.WHITE ? state.blackStrategy.sname : state.whiteStrategy.sname
+      losingStrategy: finished === c.WHITE ? state.blackStrategy.sname : state.whiteStrategy.sname,
+      numTurns: state.turnNo
     };
-    recordGameResult(result);
+    recordGame(result);
   } 
 
   renderCurrentTurn();

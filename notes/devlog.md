@@ -651,6 +651,25 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 
 ## UI / TODO
 
+- show who beat who in scoreboard (not just wins and losses)
+
+- improved turn info
+- highlight that it's your turn?
+
+- display about the strategy
+  - show probabilities of hits / other events
+  - show current pip count for each player
+  - what the strategy thinks about the different factors / what's the current evaluation
+  - highlight blots
+  - highlight primes
+
+
+- tunable strategy
+- custom weights for evaluation function / strategy
+  - custom parameters for mcts / expectimax
+  - turn up the compute / let it search further
+  - show how the different moves change in value
+
 - welcome to the site
 - intro to backgammon rules
 - intro to backgammon strategy 
@@ -685,22 +704,6 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
   - strategy tuning
   - user-controllable settings
 
-- improved turn info
-- highlight that it's your turn?
-
-- display about the strategy
-  - show probabilities of hits / other events
-  - show current pip count for each player
-  - what the strategy thinks about the different factors / what's the current evaluation
-  - highlight blots
-  - highlight primes
-
-- tunable strategy
-- custom weights for evaluation function / strategy
-  - custom parameters for mcts / expectimax
-  - turn up the compute / let it search further
-  - show how the different moves change in value
-
 - web strategy simulator (e.g. dump in some js?)
 
 - doubling cube
@@ -709,7 +712,6 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
   - we have the tournament, but we could add a difference-of-rollouts method
   - find differences, then rollout from the differences to compare (e.g. how they do 'real' evals between top-of-the-line models)
 
-- show who beat who in scoreboard (not just wins and losses)
 
 - eventually, if the game really needs faster play, we can try optimizing again:
   - parallelize, maybe (bun/web) workers

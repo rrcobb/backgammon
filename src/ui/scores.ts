@@ -1,144 +1,170 @@
-import { Player } from "../backgammon";
-import { constants as c } from "../backgammon";
+interface GameResult {
+  timestamp: number;
+  winningStrategy: string;
+  losingStrategy: string;
+  numTurns: number;
+}
 
-interface StrategyScore {
+const STORAGE_KEY = 'backgammon_games';
+const K_FACTOR = 32;
+const DEFAULT_ELO = 1500;
+
+interface ELORating {
+  rating: number;
   wins: number;
   losses: number;
 }
 
-export interface GameResult {
-  winningStrategy: string;
-  losingStrategy: string;
+type ELORatings = Record<string, ELORating>;
+
+function calculateExpectedScore(playerRating: number, opponentRating: number): number {
+  return 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400));
 }
 
-const STORAGE_KEY = 'backgammon_scores';
+function updateELO(ratings: ELORatings, game: GameResult): ELORatings {
+  const newRatings = {...ratings};
 
-function initStrategyScore(): StrategyScore {
-  return {
-    wins: 0,
-    losses: 0
-  };
-}
-
-function loadScores(): Record<string, StrategyScore> {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    return {};
+  if (!newRatings[game.winningStrategy]) {
+    newRatings[game.winningStrategy] = { rating: DEFAULT_ELO, wins: 0, losses: 0 };
   }
+  if (!newRatings[game.losingStrategy]) {
+    newRatings[game.losingStrategy] = { rating: DEFAULT_ELO, wins: 0, losses: 0 };
+  }
+
+  const winner = newRatings[game.winningStrategy];
+  const loser = newRatings[game.losingStrategy];
+
+  const winnerExpected = calculateExpectedScore(winner.rating, loser.rating);
+  const loserExpected = calculateExpectedScore(loser.rating, winner.rating);
+
+  winner.rating += K_FACTOR * (1 - winnerExpected);
+  loser.rating += K_FACTOR * (0 - loserExpected);
+  
+  winner.wins++;
+  loser.losses++;
+
+  return newRatings;
+}
+
+function calculateELOs(games: GameResult[]): ELORatings {
+  let ratings: ELORatings = {};
+  for (const game of games) {
+    ratings = updateELO(ratings, game);
+  }
+  return ratings;
+}
+
+function loadGames(): GameResult[] {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) return [];
   try {
     return JSON.parse(stored);
   } catch (e) {
-    console.error('Failed to parse stored scores:', e);
-    return {};
+    console.error('Failed to parse stored games:', e);
+    return [];
   }
 }
 
-function saveScores(scores: Record<string, StrategyScore>): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+function saveGames(games: GameResult[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
 }
 
-function getAllStrategyStats(): Array<{strategy: string, stats: StrategyScore, winRate: number}> {
-  const scores = loadScores();
-  return Object.entries(scores)
-    .map(([strategy, stats]) => ({
-      strategy,
-      stats,
-      winRate: 100 * stats.wins / (stats.wins + stats.losses)
-    }))
-    .sort((a, b) => b.winRate - a.winRate);
+export function recordGame(result: Omit<GameResult, 'timestamp'>): void {
+  const games = loadGames();
+  games.push({
+    ...result,
+    timestamp: Date.now()
+  });
+  saveGames(games);
 }
 
-export function recordGameResult(result: GameResult): void {
-  const scores = loadScores();
-
-  if (!scores[result.winningStrategy]) {
-    scores[result.winningStrategy] = initStrategyScore();
-  }
-  if (!scores[result.losingStrategy]) {
-    scores[result.losingStrategy] = initStrategyScore();
-  }
-
-  scores[result.winningStrategy].wins++;
-  scores[result.losingStrategy].losses++;
-
-  saveScores(scores);
-}
-
-function resetScores(): void {
+function resetGames(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
 export function renderScoreboard() {
-  let scoreboard = document.getElementById("scoreboard");
-  if (!scoreboard) { return; }
+  const scoreboard = document.getElementById("scoreboard");
+  if (!scoreboard) return;
   
   scoreboard.innerHTML = "";
+  const games = loadGames();
   
+  if (games.length === 0) {
+    renderEmptyState(scoreboard);
+    return;
+  }
   
-  // Create table
-  let table = document.createElement("table");
+  const ratings = calculateELOs(games);
+  
+  const table = document.createElement("table");
   table.classList.add("stats-table");
   
-  // Add headers
-  let thead = document.createElement("thead");
-  let headerRow = document.createElement("tr");
-  ["Strategy", "Wins", "Losses", "Win Rate"].forEach(text => {
-    let th = document.createElement("th");
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
+  ["Strategy", "ELO", "W-L", "Win %"].forEach(text => {
+    const th = document.createElement("th");
     th.textContent = text;
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
   table.appendChild(thead);
   
-  // Add data rows
-  let tbody = document.createElement("tbody");
-  const stats = getAllStrategyStats();
-  
-  if (stats.length === 0) {
-    let emptyRow = document.createElement("tr");
-    let td = document.createElement("td");
-    td.colSpan = 4;
-    td.textContent = "No games finished yet";
-    td.classList.add("empty-state");
-    emptyRow.appendChild(td);
-    tbody.appendChild(emptyRow);
-  } else {
-    stats.forEach(({ strategy, stats, winRate }) => {
-      let row = document.createElement("tr");
+  const tbody = document.createElement("tbody");
+  Object.entries(ratings)
+    .sort(([,a], [,b]) => b.rating - a.rating)
+    .forEach(([strategy, stats]) => {
+      const row = document.createElement("tr");
       
-      let strategyCell = document.createElement("td");
-      strategyCell.textContent = strategy;
+      // Strategy name
+      const nameCell = document.createElement("td");
+      nameCell.textContent = strategy;
       
-      let winsCell = document.createElement("td");
-      winsCell.textContent = stats.wins.toString();
-      winsCell.classList.add("wins");
+      // ELO
+      const eloCell = document.createElement("td");
+      eloCell.textContent = Math.round(stats.rating).toString();
       
-      let lossesCell = document.createElement("td");
-      lossesCell.textContent = stats.losses.toString();
-      lossesCell.classList.add("losses");
+      // W-L
+      const recordCell = document.createElement("td");
+      recordCell.textContent = `${stats.wins}-${stats.losses}`;
       
-      let winRateCell = document.createElement("td");
+      // Win %
+      const winRateCell = document.createElement("td");
+      const winRate = (stats.wins / (stats.wins + stats.losses)) * 100;
       winRateCell.textContent = winRate.toFixed(1) + "%";
       
-      row.appendChild(strategyCell);
-      row.appendChild(winsCell);
-      row.appendChild(lossesCell);
+      row.appendChild(nameCell);
+      row.appendChild(eloCell);
+      row.appendChild(recordCell);
       row.appendChild(winRateCell);
       
       tbody.appendChild(row);
     });
-  }
   
   table.appendChild(tbody);
-
-  let resetButton = document.createElement("button");
-  resetButton.textContent = "Reset Scores";
+  
+  const resetButton = document.createElement("button");
+  resetButton.textContent = "Reset Records";
   resetButton.classList.add("reset-scores");
   resetButton.addEventListener("click", () => {
-    resetScores();
+    resetGames();
     renderScoreboard();
   });
+  
   scoreboard.appendChild(table);
   scoreboard.appendChild(resetButton);
 }
 
+function renderEmptyState(scoreboard: HTMLElement) {
+  const table = document.createElement("table");
+  table.classList.add("stats-table");
+  
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+  cell.colSpan = 4;
+  cell.textContent = "No games finished yet";
+  cell.classList.add("empty-state");
+  
+  row.appendChild(cell);
+  table.appendChild(row);
+  scoreboard.appendChild(table);
+}
