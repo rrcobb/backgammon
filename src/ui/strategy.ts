@@ -4,6 +4,7 @@ import { UIState, renderCurrentTurn, state, playTurn } from './render'
 import { setButtons } from './controls'
 import { playerUI, highlightValidSources, clearHighlights } from './player'
 import { saveStrategyToUrl } from './url'
+import { containerHeader } from './_components'
 
 const human: AppliedStrategy = {
   sname: 'human',
@@ -74,14 +75,22 @@ export function setStrategy(player, stratName, s: UIState) {
 }
 
 export function renderStrategyConfig(state: UIState) {
-  let strategySection = document.getElementById("strategy-selectors");
+  let container = document.getElementById("strategy");
+
+  let strategySection = document.createElement('div');
+  strategySection.id = "strategy-selectors";
+  strategySection.classList.add('section-content');
+
   let whitePicker = strategyPicker("white");
   whitePicker.addEventListener("change", (e) => setStrategy(c.WHITE, (e.target as HTMLSelectElement).value, state));
   let blackPicker = strategyPicker("black");
   blackPicker.addEventListener("change", (e) => setStrategy(c.BLACK, (e.target as HTMLSelectElement).value, state));
 
-  strategySection.insertAdjacentElement("afterbegin", whitePicker);
-  strategySection.insertAdjacentElement("afterbegin", blackPicker);
+  strategySection.appendChild(blackPicker);
+  strategySection.appendChild(whitePicker);
+
+  container.appendChild(containerHeader("Strategy Config", container));
+  container.appendChild(strategySection);
 }
 
 function showStrategyInfo(stratName, parent) {

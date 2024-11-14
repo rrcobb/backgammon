@@ -1,3 +1,5 @@
+import { containerHeader } from './_components';
+
 interface GameResult {
   timestamp: number;
   winningStrategy: string;
@@ -153,34 +155,12 @@ export function renderScoreboard() {
 
   const content = document.createElement('div');
   content.classList.add('section-content');
+  content.classList.add('scores');
 
   scoreboard.appendChild(containerHeader("Scoreboard", scoreboard));
   content.appendChild(table);
   content.appendChild(resetButton);
   scoreboard.appendChild(content);
-}
-
-function containerHeader(title, parent) {
-  const div = document.createElement('div');
-  div.classList.add('section-header');
-  const span = document.createElement('span');
-  span.innerText = title;
-  div.appendChild(span);
-
-  const toggleBtn = document.createElement('button');
-  toggleBtn.classList.add('toggle-button');
-  toggleBtn.textContent = '-';
-  div.addEventListener('click', () => {
-    const content = parent.querySelector('.section-content');
-    const isCollapsed = content.classList.contains('collapsed');
-    content.classList.toggle('collapsed');
-    toggleBtn.textContent = isCollapsed ? '-' : '+';
-    const container = parent;
-    container.classList.toggle('collapsed');
-  });
-
-  div.appendChild(toggleBtn);
-  return div
 }
 
 function renderEmptyState(scoreboard: HTMLElement) {

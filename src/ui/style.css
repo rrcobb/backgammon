@@ -357,7 +357,7 @@ body {
   flex-direction: column;
 }
 
-#historyEl {
+#turn-history {
   overflow: auto;
   width: 100%;
   margin-bottom: 2rem;
@@ -682,7 +682,7 @@ button#reset {
   font-size: 12px;
 }
 
-#scoreboard {
+.scores {
   display: flex;
   flex-direction: column;
   font-size: 13px;
@@ -810,6 +810,6 @@ button#reset {
   min-height: unset;
 }
 
-.container.collapsed #historyEl {
+.container.collapsed #turn-history {
   margin-bottom: 0;
 }

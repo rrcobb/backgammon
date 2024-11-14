@@ -1,6 +1,7 @@
 import type { Player, Game, Move } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { playFromHere, jumpToLatest, viewTurn } from './render'
+import { containerHeader } from './_components';
 
 function showDie(n: number): string {
   return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
@@ -192,40 +193,15 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
-function createHistoryHeader() {
-  const header = document.createElement('div');
-  header.classList.add('section-header');
-  
-  const toggleBtn = document.createElement('button');
-  toggleBtn.classList.add('toggle-button');
-  toggleBtn.textContent = '-';
-  header.addEventListener('click', () => {
-    const historyEl = document.getElementById("historyEl");
-    const content = historyEl.querySelector('.section-content');
-    const isCollapsed = content.classList.contains('collapsed');
-    content.classList.toggle('collapsed');
-    toggleBtn.textContent = isCollapsed ? '-' : '+';
-    const container = document.getElementById("history-container");
-    container.classList.toggle('collapsed');
-  });
-  
-  const title = document.createElement('span');
-  title.textContent = 'History';
-  
-  header.appendChild(title);
-  header.appendChild(toggleBtn);
-  return header;
-}
-
 function renderHistory(gameHistory, backCount=0) {
   // Create or get content wrapper
-  const historyEl = document.getElementById("historyEl");
+  const historyEl = document.getElementById("turn-history");
   let content = historyEl.querySelector('.section-content');
   if (!content) {
     historyEl.innerHTML = '';
     
     // Add header outside content area
-    const header = createHistoryHeader();
+    const header = containerHeader("History", historyEl);
     historyEl.appendChild(header);
     
     // Create content wrapper
