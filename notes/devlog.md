@@ -647,16 +647,46 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
 - fix the highlights, they are kinda busted
 - show hitting blots
 
+Tested, seems like this isn't happening -- Seems like there are bugs in validmoves generation... it looks like I can bear off any pieces?
+
 ## UI / TODO
 
+- welcome to the site
+- intro to backgammon rules
+- intro to backgammon strategy 
+
+- web play / pvp
+- chat
+
 - human mode:
-  - show more turn indicators
-  - maybe animate the roll switching a little, so it's clear that it's your turn
-  - button for undo
+  - click to deselect
+  - show dice used
+  - button for undo -- click that die to undo?
+  - options to slow down opponent turn
+
+  - whole different set of controls for human play
+  - really want a page of options -- game setup page
+    - simulate computer vs. computer games
+    - play against the computer
+    - play against another person
+      - locally
+      - online
+      - use pvp 'mode' to make it feel like AI players are just other people?
+
+- ai modes, like, feed the board state to claude / o1 / ollama and see what they spit out
+  - requires an input/output text format
 
 - hide / show for different labeled sections
+- what other sections?
+  - settings
+  - chat
+  - other live games
+  - strategy display
+  - strategy tuning
+  - user-controllable settings
 
 - improved turn info
+- highlight that it's your turn?
 
 - display about the strategy
   - show probabilities of hits / other events
@@ -665,12 +695,12 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
   - highlight blots
   - highlight primes
 
+- tunable strategy
 - custom weights for evaluation function / strategy
   - custom parameters for mcts / expectimax
+  - turn up the compute / let it search further
+  - show how the different moves change in value
 
-- user-controllable settings
-
-- web play / pvp
 - web strategy simulator (e.g. dump in some js?)
 
 - doubling cube
@@ -684,6 +714,3 @@ Got really sucked into doing more evaluation function stuff, with genetic algori
 - eventually, if the game really needs faster play, we can try optimizing again:
   - parallelize, maybe (bun/web) workers
   - see if we can find hotspots and optimize them down
-
-## Bugs...
-Seems like there are bugs in validmoves generation... it looks like I can bear off any pieces?

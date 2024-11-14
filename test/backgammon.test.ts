@@ -465,3 +465,23 @@ describe("coming off the bar with one piece", () => {
     expect(moveset(moves)).toEqual(expectedMoveSets);
   });
 });
+
+test("bearing off with higher roll than needed", () => {
+ let game = h.newGame();
+ game.positions.fill(0);
+ // White pieces on 2,3,6 points
+ game.positions[22] = c.WHITE | 1; // 2 point
+ game.positions[21] = c.WHITE | 1; // 3 point  
+ game.positions[18] = c.WHITE | 2; // 6 point
+ game.turn = c.WHITE;
+ game.wHome = 16;
+
+ const roll = [4,5];
+ const moves = h.validMoves(game, roll);
+
+ // Should only allow moving 6->2/1, not bearing off from 2/3
+ expect(moveset(moves)).toEqual(setify([
+   [[18, 22], [18, 23]], // 6->2, 6->3
+   [[18, 23], [18, 22]]  // 6->3, 6->2
+ ]));
+});
