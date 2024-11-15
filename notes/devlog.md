@@ -757,7 +757,9 @@ Mother....fucker. I had bugs in the evaluation function all this time. Things we
 And... the tournament data too? Like, if one player was consistently getting one color vs the other, it might have gotten a big boost. FUCK.
 
 bugs:
-- hitchance is wrong
-- is accumulation of error via floating point math doing me in? I think it is resulting in small differences...
+- FIXED: hit chance is wrong
+- IGNORED: is accumulation of error via floating point math doing me in? I think it is resulting in small differences...
   - definitely seems to be in boardStrength
-- the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up
+- FIXED: the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up
+
+now, probably need to learn new factors... geez, what a time.
