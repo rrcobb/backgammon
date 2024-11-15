@@ -738,3 +738,14 @@ evaluate 1000 positions   1.43 ms/iter   1.46 ms      ▃█▄
                    (1.27 ms … 1.83 ms)   1.67 ms ▁▁▂▁▂████▆▅▄▄▃▂▂▂▁▁▁▁
 ```
 
+after the refactor...
+
+```
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+evaluate 1000 positions   1.87 ms/iter   1.89 ms    █▄
+                   (1.62 ms … 2.68 ms)   2.60 ms ▃▃▂██▅▃▃▃▃▃▂▁▁▁▁▁▁▁▁▁
+```
+
+:sad:
+
