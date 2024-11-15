@@ -54,7 +54,10 @@ function findAllSimilarGroups(factors, similarityThreshold = 0.95) {
   return groups.sort((a, b) => b.length - a.length);
 }
 
-async function tournamentAndPrune(factors, targetSize = 10, gamesPerMatchup = 100) {
+const TARGET_SIZE = 15;
+const GAME_COUNT = 200;
+
+async function tournamentAndPrune(factors, targetSize = TARGET_SIZE, gamesPerMatchup = GAME_COUNT) {
   console.log(`Starting tournament with ${factors.length} strategies...`);
 
   // Run tournament

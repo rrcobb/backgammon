@@ -356,7 +356,7 @@ const Strategies = {
   mctsRandomRollouts,
   mctsLearnedRollouts,
 };
-const forCompare = { balanced, prevPrev, prev, learned };
+const forCompare = { learned, prev, prevPrev, random };
 // export these to check how expectimax helps (or..doesn't)
 // const forCompare = { prev, prevPrev, learned, learnedFastExp  }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

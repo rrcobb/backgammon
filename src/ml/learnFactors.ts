@@ -1,7 +1,7 @@
 import { Game, Player, Roll, constants as c, helpers as h } from "../backgammon";
 import { evaluate } from "../strategy/evaluate";
 import { Factors, factors as f } from "../strategy/factors";
-import { AppliedStrategy, useEval } from "../strategy/strategies";
+import { AppliedStrategy, useEval, Strategies } from "../strategy/strategies";
 import { default as learnedFactors } from "./learnedFactors.json";
 
 type Position = { game: Game; score: number; roll: Roll };
@@ -100,13 +100,17 @@ function updateFactors(factors: Factors, gameHistory: Position[], outcome: GameO
   return scaleFactors(newFactors);
 }
 
-function trainFactors(initialFactors: Factors, numGames: number, initialLearningRate: number): Factors {
+function trainFactors(): Factors {
+  const initialFactors = f.learned;
+  const initialLearningRate = 0.008;
+  const numGames = 8000;
+  const validationInterval = 500;
+  const escapeThreshold = 2000;
+
   let currentFactors = { ...initialFactors };
   let bestFactors = { ...currentFactors };
   let bestWinRate = -Infinity;
   let gamesSinceImprovement = 0;
-  const validationInterval = 500;
-  const escapeThreshold = 2000; // Try escaping after this many games without improvement
 
   for (let count = 0; count < numGames; count++) {
     const gameHistory: Position[] = [];
@@ -114,7 +118,10 @@ function trainFactors(initialFactors: Factors, numGames: number, initialLearning
     const currentStrategy = useEval(currentEval);
 
     const opponents = [
-      useEval(evaluate(f.balancedFactors)),
+      Strategies.random,
+      Strategies.random,
+      Strategies.runner,
+      Strategies.balanced,
       useEval(evaluate(f.learned)),
       useEval(evaluate(f.prevLearned)),
       useEval(evaluate(f.prevPrevLearned)),
@@ -158,18 +165,19 @@ function trainFactors(initialFactors: Factors, numGames: number, initialLearning
     currentFactors = updateFactors(currentFactors, gameHistory, outcome, getLR(initialLearningRate, gamesSinceImprovement));
 
     if (count % validationInterval === 0) {
-      const validationGames = 80;
-      let winsVsBalanced = 0;
-      let winsVsPrevLearned = 0;
-      const balanced = useEval(evaluate(f.balancedFactors));
-      const prevLearned = useEval(evaluate(f.prevLearned));
+      const validationGames = 500;
+      let wins = 0;
 
-      // Validate against both strategies
+      const validationOpps = 5;
+      const validationFactors = learnedFactors.slice(learnedFactors.length - validationOpps, learnedFactors.length); // last 5
+
+      // Validate against strategies from the past
       for (let i = 0; i < validationGames; i++) {
         // Play against balanced strategy
         let vGame = h.newGame();
         vGame.turn = c.WHITE as Player;
         const strategy = useEval(evaluate(currentFactors));
+        const validationOpp = useEval(evaluate(validationFactors[i % validationOpps]));
 
         while (!h.checkWinner(vGame)) {
           let roll = h.generateRoll();
@@ -180,44 +188,22 @@ function trainFactors(initialFactors: Factors, numGames: number, initialLearning
           if (h.checkWinner(vGame)) break;
 
           roll = h.generateRoll();
-          result = balanced(vGame, roll);
+          result = validationOpp(vGame, roll);
           if (result) vGame = result[1];
           vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
         }
 
-        if (h.checkWinner(vGame) === c.WHITE) winsVsBalanced++;
-
-        // Play against prevLearned strategy
-        vGame = h.newGame();
-        vGame.turn = c.WHITE as Player;
-
-        while (!h.checkWinner(vGame)) {
-          let roll = h.generateRoll();
-          let result = strategy(vGame, roll);
-          if (result) vGame = result[1];
-          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-
-          if (h.checkWinner(vGame)) break;
-
-          roll = h.generateRoll();
-          result = prevLearned(vGame, roll);
-          if (result) vGame = result[1];
-          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-        }
-
-        if (h.checkWinner(vGame) === c.WHITE) winsVsPrevLearned++;
+        if (h.checkWinner(vGame) === c.WHITE) wins++;
       }
 
-      const validationWinRateBalanced = winsVsBalanced / validationGames;
-      const validationWinRatePrevLearned = winsVsPrevLearned / validationGames;
+      const validationWinRate = wins / validationGames;
       console.log(
-        `Validation win rates - vs balanced: ${(validationWinRateBalanced * 100).toFixed(1)}%, vs PrevLearned: ${(validationWinRatePrevLearned * 100).toFixed(1)}%`,
+        `Validation win rates: ${(validationWinRate * 100).toFixed(1)}%` 
       );
 
       // Take the average of both win rates for determining improvement
-      const combinedWinRate = (validationWinRateBalanced + validationWinRatePrevLearned) / 2;
-      if (combinedWinRate > bestWinRate) {
-        bestWinRate = combinedWinRate;
+      if (validationWinRate > bestWinRate) {
+        bestWinRate = validationWinRate;
         bestFactors = { ...currentFactors };
         gamesSinceImprovement = 0;
         console.log("New best factors: ", Object.fromEntries(Object.entries(currentFactors).map(([k, v]) => [k, v.toFixed(3)])));
@@ -226,7 +212,7 @@ function trainFactors(initialFactors: Factors, numGames: number, initialLearning
       }
 
       // If we're stuck, try escaping the local optimum
-      if (gamesSinceImprovement >= escapeThreshold) {
+      if (gamesSinceImprovement >= escapeThreshold || validationWinRate < .4) {
         console.log(`No improvement for ${gamesSinceImprovement} games. Attempting to escape local optimum...`);
 
         // Create a new point in factor space by:
@@ -266,10 +252,8 @@ function trainFactors(initialFactors: Factors, numGames: number, initialLearning
   return bestFactors;
 }
 
-const initialFactors: Factors = f.balancedFactors;
-
 // Train against opponents
-const finalFactors = trainFactors(initialFactors, 8000, 0.008);
+const finalFactors = trainFactors();
 learnedFactors.push(finalFactors);
 
 const path = "src/ml/learnedFactors.json";
