@@ -1,4 +1,4 @@
-## devlog 
+## devlog
 
 - JS missing an enum type is bad, missing a tuple is also frustrating...
 
@@ -469,7 +469,7 @@ Required redoing the way a strategy works -- feels a bit hacky. Made an "applied
 Lots of parameters to explore tuning for making mcts good instead of bad.
 
 
-WOWOOOOWW adding a halfway decent evaluation function to the rollouts makes a huuuge difference to mcts. Like, it was bad before and now it's good. 
+WOWOOOOWW adding a halfway decent evaluation function to the rollouts makes a huuuge difference to mcts. Like, it was bad before and now it's good.
 
 NOPE! I was reversing good and bad and also it was just nooping because I forgot to pass the parameters. :o
 
@@ -678,7 +678,7 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 
 - welcome to the site
 - intro to backgammon rules
-- intro to backgammon strategy 
+- intro to backgammon strategy
 
 - web play / pvp
 - chat
@@ -749,3 +749,15 @@ evaluate 1000 positions   1.87 ms/iter   1.89 ms    █▄
 
 :sad:
 
+
+## bugs
+
+Mother....fucker. I had bugs in the evaluation function all this time. Things were not symmetric between white and black! Fixing the bugs will help, but all the past training is likely kinda garbage.
+
+And... the tournament data too? Like, if one player was consistently getting one color vs the other, it might have gotten a big boost. FUCK.
+
+bugs:
+- hitchance is wrong
+- is accumulation of error via floating point math doing me in? I think it is resulting in small differences...
+  - definitely seems to be in boardStrength
+- the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up

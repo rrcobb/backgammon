@@ -1,3 +1,4 @@
+import assert from "assert";
 import type { Result, Player, Game } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import type { Factors } from "./factors";
@@ -10,11 +11,27 @@ type PipCounts = {
   isRacing: boolean;
 };
 
-function getPipCounts(game: Game): PipCounts {
+// old helper functions
+function getPositionValue(pos: number, player: Player, f: Factors): number {
+  const { isHome, isAnchor, distanceValue } = getPositionInfo(pos, player, f);
+  // Convert position to white's perspective for consistent calculations
+  let value = 1.0;
+  value += distanceValue;
+
+  if (isHome) {
+    value += f.homeBonus;
+  }
+  if (isAnchor) {
+    value += f.anchorBonus;
+  }
+  return value;
+}
+
+function getPipCounts(game: Game, player: Player): PipCounts {
   let lastWhite = -1;
   let firstBlack = 24;
-  let whitePips = game.wBar * 25;
-  let blackPips = game.bBar * 25;
+  let whitePips = 0;
+  let blackPips = 0;
 
   for (let i = 0; i < 24; i++) {
     const pos = game.positions[i];
@@ -24,86 +41,97 @@ function getPipCounts(game: Game): PipCounts {
       lastWhite = i;
       whitePips += count * (i + 1);
     }
+    // TODO: this is wrong; we're not counting the black pips correctly
     if ((pos & c.BLACK) === c.BLACK && firstBlack == 24) {
       firstBlack = i;
       blackPips += count * (24 - i);
     }
   }
 
+  let diff = whitePips - blackPips;
+  diff = player === c.WHITE ? diff : -diff;
   return {
     white: whitePips,
     black: blackPips,
-    diff: whitePips - blackPips,
+    diff,
     isRacing: lastWhite < firstBlack,
   };
 }
 
-export type Blot = {
-  position: number;
-  hitChance: number;
-};
-
+export type HitChance = number;
 export type BlotAnalysis = {
-  blots: Blot[];
+  blots: HitChance[];
   totalPenalty: number;
 };
 
 export function getBlots(game: Game, player: Player): BlotAnalysis {
-  const blots: Blot[] = [];
+  const blots: HitChance[] = [];
   let totalPenalty = 0;
 
   for (let i = 0; i < 24; i++) {
     if ((game.positions[i] & player) === player && (game.positions[i] & 0b1111) === 1) {
       const hitChance = blotHitChance(game, i, player);
-      blots.push({ position: i, hitChance });
+      blots.push(hitChance);
       totalPenalty += hitChance;
+    } else {
+      blots.push(0);
     }
   }
 
   return { blots, totalPenalty };
 }
 
-export type PositionStrength = {
-  homeBonus: number;
-  anchorBonus: number;
+type PositionInfo = {
+  isHome: boolean;
+  isAnchor: boolean;
   distanceValue: number;
 };
 
-export function getPositionStrength(pos: number, player: Player, f: Factors): PositionStrength {
+function getPositionInfo(pos: number, player: Player, f: Factors): PositionInfo {
   const whitePos = player === c.WHITE ? pos : 23 - pos;
   const HOME_FIVE_POINT = 4;
   const dist = Math.abs(whitePos - HOME_FIVE_POINT);
 
   return {
-    homeBonus: whitePos <= 5 ? f.homeBonus : 0,
-    anchorBonus: whitePos >= 18 && whitePos <= 23 ? f.anchorBonus : 0,
+    isHome: whitePos <= 5,
+    isAnchor: whitePos >= 18 && whitePos <= 23,
     distanceValue: 2.0 * Math.exp(-dist / f.positionDecay),
   };
 }
 
-export type BoardStrength = {
-  positions: PositionStrength[]; // strength of each point
-  homePoints: number; // count of points in home
-  anchorPoints: number; // count of anchor points
-  fivePointControl: number; // sum of position values
+type BoardStrength = {
+  positions: PositionInfo[];
+  homeCount: number;
+  anchorCount: number;
+  fivePointControl: number;
 };
 
-export function getBoardStrength(game: Game, player: Player, f: Factors): BoardStrength {
+function getBoardStrength(game: Game, player: Player, blots: BlotAnalysis, f: Factors): BoardStrength {
   const positions = new Array(24);
-  let homePoints = 0;
-  let anchorPoints = 0;
+  let homeCount = 0;
+  let anchorCount = 0;
   let fivePointControl = 0;
 
   for (let i = 0; i < 24; i++) {
-    if ((game.positions[i] & player) === player) {
-      positions[i] = getPositionStrength(i, player, f);
-      fivePointControl += positions[i].distanceValue;
-      if (positions[i].homeBonus) homePoints++;
-      if (positions[i].anchorBonus) anchorPoints++;
+    const count = game.positions[i] & 0b1111;
+    const pos = game.positions[i];
+    if ((pos & player) === player) {
+      positions[i] = getPositionInfo(i, player, f);
+      if (count >= 2) {
+        fivePointControl += 1 + positions[i].distanceValue;
+        if (positions[i].isHome) homeCount++;
+        if (positions[i].isAnchor) anchorCount++;
+      } else {
+        const hitChance = blots.blots[i];
+        const scaleFactor = 1 - hitChance;
+        fivePointControl += (1 + positions[i].distanceValue) * scaleFactor;
+        if (positions[i].isHome) homeCount += scaleFactor;
+        if (positions[i].isAnchor) anchorCount += scaleFactor;
+      }
     }
   }
 
-  return { positions, homePoints, anchorPoints, fivePointControl };
+  return { positions, homeCount, anchorCount, fivePointControl };
 }
 
 type Prime = {
@@ -196,26 +224,67 @@ function blotHitChance(game, blotPosition, player) {
   return Math.min(1, totalProb); // Cap at 100% chance
 }
 
+const times = (n) => (func) => {
+  for (let i = 0; i < n; i++) func();
+};
+
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   let score = 0;
-
   score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
   score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
-
   score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
   score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
 
-  const pips = getPipCounts(game);
-  score += pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward;
+  const blots = getBlots(game, player);
+  score -= blots.totalPenalty * f.blotPenalty;
 
-  const strength = getBoardStrength(game, player, f);
-  score += strength.fivePointControl + strength.homePoints * f.homeBonus + strength.anchorPoints * f.anchorBonus;
+  for (let i = 0; i < 24; i++) {
+    const pos = game.positions[i];
+    if ((pos & player) === player) {
+      const count = pos & 0b1111;
+      if (count === 1) {
+        const hitChance = blotHitChance(game, i, player);
+        score += getPositionValue(i, player, f) * (1 - hitChance);
+      } else if (count >= 2) {
+        score += getPositionValue(pos, player, f);
+      }
+    }
+  }
+  // const strength = getBoardStrength(game, player, blots, f);
+  // score += strength.fivePointControl;
+  // score += strength.homeCount * f.homeBonus;
+  // score += strength.anchorCount * f.anchorBonus;
 
   const primes = analyzePrimes(game, player);
   score += primes.count * f.primeReward;
 
+  const pips = getPipCounts(game, player);
+  score += pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward;
+
+  return score;
+};
+
+const newevaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
+  let score = 0;
+
+  score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
+  score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
+  score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
+  score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
+
   const blots = getBlots(game, player);
   score -= blots.totalPenalty * f.blotPenalty;
+
+  const strength = getBoardStrength(game, player, blots, f);
+  score += strength.fivePointControl;
+  score += strength.homeCount * f.homeBonus;
+  score += strength.anchorCount * f.anchorBonus;
+
+  const primes = analyzePrimes(game, player);
+  score += primes.count * f.primeReward;
+
+  const pips = getPipCounts(game, player);
+  score += pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward;
 
   return score;
 };
