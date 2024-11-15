@@ -88,6 +88,7 @@ div#board {
     0 4px 8px rgba(0,0,0,0.3),
     0 2px 4px rgba(0,0,0,0.2);
   z-index: 0;
+  max-width: fit-content;
 }
 
 .home-count {
@@ -154,6 +155,7 @@ div#board {
   border-top: none;
   border-bottom: none;
   height: calc(var(--board-height) / 2);
+  width: calc(var(--angle-width) * 12 + var(--frame-width));
 }
 
 .bottom {
