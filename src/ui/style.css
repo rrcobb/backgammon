@@ -849,3 +849,17 @@ button#reset {
 .container.collapsed #turn-history {
   margin-bottom: 0;
 }
+
+.raw-stats, .factor-analysis, .move-rankings {
+  font-size: 12px;
+}
+
+.factor-analysis {
+  font-family: monospace;
+  white-space: pre;
+}
+
+.move-rankings {
+  font-family: monospace;
+  white-space: pre;
+}

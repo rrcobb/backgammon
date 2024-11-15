@@ -1,9 +1,9 @@
 import { run, bench, boxplot, barplot, lineplot, compact, summary, group } from "mitata";
 import { constants as c, helpers as h } from "../src/backgammon.ts";
 import { genGame, genGames, genRoll } from "../test/helpers";
-import { Strategies, counts, resetCounts } from "../src/strategy/strategies";
+import { forCompare as Strategies, counts, resetCounts } from "../src/strategy/strategies";
 
-const SCENARIOS = 10;
+const SCENARIOS = 100;
 const games = genGames(SCENARIOS);
 const scenarios = games.map((g) => {
   let roll = genRoll();
@@ -25,11 +25,11 @@ summary(() => {
 await run();
 
 // enable counters for how many calls we make to different functions
-Object.keys(Strategies).forEach((name) => {
-  resetCounts();
-  let strategy = Strategies[name];
-  scenarios.forEach(([game, roll]) => {
-    strategy(game, roll);
-  });
-  console.log(`${name} (total, ${SCENARIOS} scenarios):` + JSON.stringify(counts));
-});
+// Object.keys(Strategies).forEach((name) => {
+//   resetCounts();
+//   let strategy = Strategies[name];
+//   scenarios.forEach(([game, roll]) => {
+//     strategy(game, roll);
+//   });
+//   console.log(`${name} (total, ${SCENARIOS} scenarios):` + JSON.stringify(counts));
+// });

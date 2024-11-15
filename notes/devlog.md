@@ -722,5 +722,19 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
   - parallelize, maybe (bun/web) workers
   - see if we can find hotspots and optimize them down
 
+- ask claude for nice style refactors (and other refactors!)
 
-- ask claude for nice style refactors
+Speed of applying strategies, before we refactor `evaluate`
+
+```
+bun run bench/evaluate.ts
+clk: ~3.38 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun 1.1.33 (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+evaluate 1000 positions   1.43 ms/iter   1.46 ms      ▃█▄
+                   (1.27 ms … 1.83 ms)   1.67 ms ▁▁▂▁▂████▆▅▄▄▃▂▂▂▁▁▁▁
+```
+
