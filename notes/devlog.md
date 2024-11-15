@@ -651,13 +651,14 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 
 - show who beat who in scoreboard (not just wins and losses)
 
+- hide / show for different labeled sections
+  - also, making the panels nice
+
 ## UI / TODO
 
-- hide / show for different labeled sections
-
 - display about the strategy
-  - show probabilities of hits / other events
   - show current pip count for each player
+  - show probabilities of hits / other events
   - what the strategy thinks about the different factors / what's the current evaluation
   - highlight blots
   - highlight primes

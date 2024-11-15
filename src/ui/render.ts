@@ -6,6 +6,7 @@ import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
 import { renderScoreboard, recordGame } from './scores';
 import { setStrategy, renderStrategyConfig } from './strategy';
+import { renderStrategicInfo } from './analysis';
 import { playerUI, highlightValidSources } from './player'
 import { sleep, setButtons, setupControls } from './controls'
 
@@ -204,6 +205,7 @@ function renderTurn(turn, turnHistory) {
   if (turn?.roll) { renderRoll(turn.roll); }
   renderHistory(turnHistory, state.backCount);
   renderInfo(turn, turnHistory);
+  renderStrategicInfo(turn?.game, turnHistory, state.whiteStrategy, state.blackStrategy);
 }
 
 function initGame() {

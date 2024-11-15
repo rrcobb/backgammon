@@ -308,7 +308,7 @@ function renderInfo(turn, turnHistory) {
     info = "New game. Players roll to determine who goes first."
   } else {
     // viewing past turn / current turn
-    const turnCount = turnHistory.length;
+    const turnCount = turnHistory.length + 1;
     const prev = turnHistory[turn.turnNo - 2];
     if (turnCount == turn.turnNo) {
       info += `Turn ${turn.turnNo}. `;
