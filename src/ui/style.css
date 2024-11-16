@@ -852,14 +852,13 @@ button#reset {
 
 .raw-stats, .factor-analysis, .move-rankings {
   font-size: 12px;
+  margin-bottom: 8px;
 }
 
 .factor-analysis {
   font-family: monospace;
-  white-space: pre;
 }
 
 .move-rankings {
   font-family: monospace;
-  white-space: pre;
 }

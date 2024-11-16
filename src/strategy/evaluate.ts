@@ -45,21 +45,20 @@ function getPipCounts(game: Game, player: Player): PipCounts {
 
 export type HitChance = number;
 export type BlotAnalysis = {
-  blots: HitChance[];
+  blots: Map<number, HitChance>;
   totalPenalty: number;
 };
 
-export function getBlots(game: Game, player: Player): BlotAnalysis {
-  const blots: HitChance[] = [];
+function getBlots(game: Game, player: Player): BlotAnalysis {
+  const blots: Map<number, HitChance> = {};
   let totalPenalty = 0;
 
   for (let i = 0; i < 24; i++) {
     if ((game.positions[i] & player) === player && (game.positions[i] & 0b1111) === 1) {
       const hitChance = blotHitChance(game, i, player);
-      blots.push(hitChance);
+      blots[i] = (hitChance);
       totalPenalty += hitChance;
     } else {
-      blots.push(0);
     }
   }
 
@@ -142,7 +141,7 @@ function analyzePrimes(game: Game, player: Player): PrimeAnalysis {
         currentPrime.length++;
       }
     } else if (currentPrime) {
-      if (currentPrime.length >= 3) {
+      if (currentPrime.length >= 2) {
         primes.push(currentPrime);
         count += currentPrime.length - 2;
       }
@@ -238,4 +237,4 @@ const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, play
   return score;
 };
 
-export { evaluate };
+export { evaluate, getPipCounts, getBlots, analyzePrimes, getBoardStrength };
