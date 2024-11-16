@@ -87,13 +87,9 @@ function isSignificantlyBetter(result1: MatchResult, result2: MatchResult, signi
   
   // confidence interval is far enough from 50/50
   const center = 0.5; // is one better than the other == have we excluded 50% from the CI
-  const buffer = .0002 / significanceLevel;  // center at +/-2pp from 50 at .01 significance
+  const buffer = .0001 / significanceLevel;  // center at +/-2pp from 50 at .01 significance
   const excludesCenter = (low > (center + buffer)) || (high < (center - buffer));
-
-  const ciWidth = (high - low)
-  const narrowEnough =  ciWidth < 10 * significanceLevel
-
-  return excludesCenter && narrowEnough;
+  return excludesCenter;
 }
 
 function createMatchResult(wins: number, games: number, significanceLevel: number): MatchResult {
@@ -113,7 +109,6 @@ function shouldContinuePlaying(wins: number, games: number, config: EarlyStopCon
   if (games >= config.maxGames) return false;
 
   const result = createMatchResult(wins, games, config.significanceLevel);
-
   return !isSignificantlyBetter(result, null, config.significanceLevel);
 }
 
@@ -157,7 +152,6 @@ function compareTwoAdaptive(a: StrategyName, b: StrategyName, tStrategies, confi
   }
 
   const winRate = awins / games;
-
   const confidenceInterval = calculateConfidenceInterval(awins, games, config.significanceLevel);
 
   return {
@@ -366,7 +360,7 @@ function runMultipleTrials(strategies, config: EarlyStopConfig, trials: number):
 if (import.meta.main) {
   roundRobinTournament(Strategies, {
     minGames: 50,
-    maxGames: 500,
+    maxGames: 1000,
     significanceLevel: 0.01,
   });
 }

@@ -763,3 +763,6 @@ bugs:
 - FIXED: the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up
 
 now, probably need to learn new factors... geez, what a time.
+
+- the tournaments have been doing what are likely to be statistically invalid comparisons, which means that the learning was probably more random and fuzzy than actually directed. Not impossible to improve, but it means it wasn't as good as actually, yaknow, really doing it. Hard to say how much it really counts.
+- expectimax is of possible, but maybe marginal? benefit. Its harder to show that it's dominant
