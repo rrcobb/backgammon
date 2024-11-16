@@ -654,6 +654,51 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 - hide / show for different labeled sections
   - also, making the panels nice
 
+## fixing and refactoring
+
+Speed of applying strategies, before we refactor `evaluate`
+
+```
+bun run bench/evaluate.ts
+clk: ~3.38 GHz
+cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
+runtime: bun 1.1.33 (x64-darwin)
+
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+evaluate 1000 positions   1.43 ms/iter   1.46 ms      ▃█▄
+                   (1.27 ms … 1.83 ms)   1.67 ms ▁▁▂▁▂████▆▅▄▄▃▂▂▂▁▁▁▁
+```
+
+after the refactor...
+
+```
+benchmark              avg (min … max) p75   p99    (min … top 1%)
+-------------------------------------- -------------------------------
+evaluate 1000 positions   1.87 ms/iter   1.89 ms    █▄
+                   (1.62 ms … 2.68 ms)   2.60 ms ▃▃▂██▅▃▃▃▃▃▂▁▁▁▁▁▁▁▁▁
+```
+
+:sad:
+
+
+## bugs
+
+Mother....fucker. I had bugs in the evaluation function all this time. Things were not symmetric between white and black! Fixing the bugs will help, but all the past training is likely kinda garbage.
+
+And... the tournament data too? Like, if one player was consistently getting one color vs the other, it might have gotten a big boost. FUCK.
+
+bugs:
+- FIXED: hit chance is wrong
+- IGNORED: is accumulation of error via floating point math doing me in? I think it is resulting in small differences...
+  - definitely seems to be in boardStrength
+- FIXED: the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up
+
+now, probably need to learn new factors... geez, what a time.
+
+- the tournaments have been doing what are likely to be statistically invalid comparisons, which means that the learning was probably more random and fuzzy than actually directed. Not impossible to improve, but it means it wasn't as good as actually, yaknow, really doing it. Hard to say how much it really counts.
+- expectimax is of possible, but maybe marginal? benefit. Its harder to show that it's dominant
+
 ## UI / TODO
 
 - display about the strategy
@@ -724,45 +769,5 @@ Tested, seems like this isn't happening -- Seems like there are bugs in validmov
 
 - ask claude for nice style refactors (and other refactors!)
 
-Speed of applying strategies, before we refactor `evaluate`
-
-```
-bun run bench/evaluate.ts
-clk: ~3.38 GHz
-cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
-runtime: bun 1.1.33 (x64-darwin)
-
-benchmark              avg (min … max) p75   p99    (min … top 1%)
--------------------------------------- -------------------------------
-evaluate 1000 positions   1.43 ms/iter   1.46 ms      ▃█▄
-                   (1.27 ms … 1.83 ms)   1.67 ms ▁▁▂▁▂████▆▅▄▄▃▂▂▂▁▁▁▁
-```
-
-after the refactor...
-
-```
-benchmark              avg (min … max) p75   p99    (min … top 1%)
--------------------------------------- -------------------------------
-evaluate 1000 positions   1.87 ms/iter   1.89 ms    █▄
-                   (1.62 ms … 2.68 ms)   2.60 ms ▃▃▂██▅▃▃▃▃▃▂▁▁▁▁▁▁▁▁▁
-```
-
-:sad:
-
-
-## bugs
-
-Mother....fucker. I had bugs in the evaluation function all this time. Things were not symmetric between white and black! Fixing the bugs will help, but all the past training is likely kinda garbage.
-
-And... the tournament data too? Like, if one player was consistently getting one color vs the other, it might have gotten a big boost. FUCK.
-
-bugs:
-- FIXED: hit chance is wrong
-- IGNORED: is accumulation of error via floating point math doing me in? I think it is resulting in small differences...
-  - definitely seems to be in boardStrength
-- FIXED: the position values were adding a bonus point for every position, which seems kinda wrong, it was probably messing things up
-
-now, probably need to learn new factors... geez, what a time.
-
-- the tournaments have been doing what are likely to be statistically invalid comparisons, which means that the learning was probably more random and fuzzy than actually directed. Not impossible to improve, but it means it wasn't as good as actually, yaknow, really doing it. Hard to say how much it really counts.
-- expectimax is of possible, but maybe marginal? benefit. Its harder to show that it's dominant
+- bug: if the human player has no valid moves (bar entry) does it switch the turn?
+- bug: maybe a missing valid move on turn 58? file:///Users/rob/dev/projects/backgammon/index.html?w=learned&b=human#data=H4sIAAAAAAAAE9WayW7jOBCG34XnOrC4aLvNnOY0tzkZPjg9xiCAOw7czjSCRt69QZGySFsskbKsKIghO7KzfPhr+Vnk5hc7v51e/j6yBoF9P/6/Z81mgwiot7BBDVhst8BeD7v3/Yk17CcDdjoeDqzZKMAtsP923/es+cWe/tydWMOB/exePP11NG+ZW5dX5m+xRgpgr8cfz+fn48sP88Pn99c9a9g/zy/n6o/TaffOgP27O+9Ys8EKuPuSpblo951wN9xrDgL7T6rtB7Bvb0971uDHB/SQwoMUUG1hU0JI+DQHIRZTCaUEqcy1YyyyGWWmkAhqcSEDTKw9TEzFVD2mkIC1wRRQxsXUnyKm9in1FaV7i4OUMUzdY3IQW9gIiCopBpTE+ZUsfUYs72csesZCgZBWyiom5fSAzZJyCFNdMFUUMxqxpS9lYSCRSEttPvLwtOQBZOVDVh6kSIasgrQUbcS6Z210a69RYZcouH1pMbSpzOZ+jLn2Km4BghtpKxPH0dY5tRZNkXaME12nkdCGvFSAZYwUuSevsKjCJERMUkFJiktL2qEqV5AoUgyKEhpNCxPH0dp7m67z114OriyNkfKAFEuKVITlV7SuSMYbqVhEURuM0iNVCaS0pjIgNX1GxrupXKSbXitaz8GpbhXVgPMrmgfaV1JTY1JByXLUu6OXt8MBzGVKO103ZBHUXCxNzXXPVRvEVTxbNdVqZszWFtuyXrj5ELZUHjensMswiF0Bxrhfkos0VdsnR1Ht/Q61zXGC1XNNZStpSaXrVGOYKanqXa8F5Xdzek7JrNWsT+LxnrqMT2r/dR/04v1vSd21HEMVnlMyv7Fd1EhAETe/i8lKwOobWJkCi3784qhZmh7CdwrLPTwdaOyjknZJiAFhicFDscjgYYD1slhzXUiGtDwJVgZLGztloZSVn6XsMC3vY9w9KopWBeNBA1vHhZWUbXqosH5FkhNRdTgllG4cQaxvbhdyYhFhe6twqUTZtOGEqQ1j4yl43DYRIybxabRW7VHaMsMVf2VOf9bEXXEqAYn5EmERl6Xtlgny8vYobZ2sKjlfWjun9I1TqyZsUJkKFa3DxIhJLkfrl+JkWEwWtaA669oxfc+kTJexZhitd0Juuw8xRSRarX50q/WJeS55OHLiW7oaE5GsZty/eQCnb514O+gnrFNB6fkQUN2B6ivATMz0gRPp+1fNWPiLOZOqZvoSNUrLKWknpLd1aSJmuksamu1/EcgqXKy2zbQ2hwKmGN9FUftq5Nbto6w5BmktUZtNqXx7pF3rVMRciRyiLcJqZ8MyDN8k1nR3RDqElVOGh5KsohyiKTpd0MzjDwGqvkblE0hnM0Oz+d3LvuKcmLdeqIwfeiAnZo/hLDrOa8A8zBwvRHSVVTMGXki3Xii6MSOo8cKslF2sWlBvrj0NMmdetFSwzozo+SBt9xIBRfSEWaKSOEu86v5xN2aOBfqaiJpfKyniGZk4GhqAzDz06ROGO03TIDGjUZIbh2I2JevZIT3fI9psNMdxiKwcOpAzACpnAfVMwd2gMqO+Jk2o14eorrOSOOZJZuXckJaz6FGmM+YcNkoawK+O0HM79sjjHPmo7qcs3BnzdrJ1N2XO4CcpHVdHWPk6dhM8sIk35nyIdXRPrO/smJa47BZZdwPXQb/Udns3ev6aXI5wCnKCrN2miWGYgrn9Dc8+9b2kNQAA

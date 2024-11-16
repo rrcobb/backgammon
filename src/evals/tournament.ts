@@ -163,7 +163,7 @@ function compareTwoAdaptive(a: StrategyName, b: StrategyName, tStrategies, confi
 }
 
 // ansi colorize
-const ac = (color) => (string) => Bun.color(color, 'ansi') + string + '\033[0m'
+const ac = (color) => (string) => Bun.color(color, 'ansi') + string + '\x1b[0m'; 
 const green = ac('green')
 const blue = ac('blue')
 const red = ac('red')
@@ -250,14 +250,14 @@ function roundRobinTournament(strategies, config: EarlyStopConfig): TournamentRe
         console.log(
           `${ac('#00ea6e')(winner)} vs ${ac('#ffa9af')(loser)}`.padEnd(60, ' ') +
           `${winner} wins ${(winnerResult.winRate * 100).toFixed(1)}% ± ${((winnerResult.confidenceInterval[1] - winnerResult.confidenceInterval[0]) * 50).toFixed(1)}%` +
-          `{${result.games} games simulated}`
+          ` {${result.games} games simulated}`
         );
       } else if (names[i] != names[j]) {
         console.log(
           `${ac('#fbc9a3')(names[i])} vs ${ac('#fbc9a3')(names[j])}`.padEnd(61, ' ') +
           `No significant advantage after ${result.games} simulated games. ` +
           `(${(result.winRate * 100).toFixed(1)}% ± ${((result.confidenceInterval[1] - result.confidenceInterval[0]) * 50).toFixed(1)}%)` +
-          `{${result.games} games simulated}`
+          ` {${result.games} games simulated}`
         );
       }
     }
