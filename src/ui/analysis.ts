@@ -6,6 +6,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   const container = document.getElementById('strategic-info');
   const player = game.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
   const strat = player == c.WHITE ? bstrat : wstrat;
+  const f = strat.factors;
 
   const header = container.querySelector('.section-header');
   if (!header) {
@@ -20,8 +21,17 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   }
   infoBox.innerHTML = '';
 
+  const blots = getBlots(game, player)
+  const info = {
+    game,
+    pips: getPipCounts(game, player),
+    primes: analyzePrimes(game, player),
+    blots,
+    strength: getBoardStrength(game, player, blots, f),
+  }
+
   infoBox.appendChild(stats(game));
-  infoBox.appendChild(factors(game, strat));
+  infoBox.appendChild(factors(info, strat, f));
   const prev = turnhistory[turnhistory.length -1];
   infoBox.appendChild(moveRankings(prev, strat));
 }
@@ -39,12 +49,13 @@ function stats(game) {
   return div;
 }
 
+const signed = (n, digits=0) => n > 0 ? `+${n.toFixed(digits)}` : n.toFixed(digits); // - is in the string already
 function pips(game) {
   const { white, black, diff, isRacing } = getPipCounts(game, game.turn);  
   const player = game.turn == c.WHITE ? "White" : "Black";
   const sign = diff > 0 ? "+" : ""; // - is in the string already
   const div = document.createElement('div');
-  div.innerText = `Pips: ${player} ${sign}${diff} (${stage(isRacing)})`
+  div.innerText = `Pips: ${player} ${signed(diff)} (${stage(isRacing)})`
   return div
 }
 
@@ -118,16 +129,38 @@ function home(game) {
   return div;
 }
 
-function factors() {
+function factors(info, player, f: Factors) {
   const div = document.createElement('div');
   div.classList.add('factor-analysis');
-  div.innerHTML = `
-    <div>Primes      ●●●●●  +4.2</div>
-    <div>Bar Safety  ●●●    +2.1</div>
-    <div>Blot Risk   ○○○    -1.4</div>
-    <div>Home Board  ●      +0.8</div>
-  `;
+
+  const { blots, primes, strength, pips, game } = info;
+
+  // see evaluate.ts
+  // these are the rewards and penalties from there
+  const rows = [
+    ["Home Reward", (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward],
+    ["Opp Home Penalty", -(player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty],
+    ["Bar Penalty", -(player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty],
+    ["Opp Bar Reward", (player === c.WHITE ? game.bBar : game.wBar) * f.barReward],
+    ["Blot Risk", -blots.totalPenalty * f.blotPenalty],
+    ["Board Control", strength.fivePointControl],
+    ["Home Bonus", strength.homeCount * f.homeBonus],
+    ["Anchor Bonus", strength.anchorCount * f.anchorBonus],
+    ["Primes", primes.count * f.primeReward],
+    ["Pip Count", pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward]
+  ]
+  .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))
+  .map(([name, score]) => factor(name, score));
+  rows.forEach(row => div.appendChild(row));
   return div;
+}
+
+const normCount = score => Math.round(score);
+const dots = (score) => '●'.repeat(normCount(score))
+function factor(name, score) {
+  const div = document.createElement('div');
+  div.innerText = `${name}\t ${dots(score)} ${signed(score, 2)}`
+  return div 
 }
 
 function moveRankings() {

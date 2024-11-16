@@ -36,6 +36,12 @@ function useEval(evalFn: EvaluationFunction): AppliedStrategy {
   });
 }
 
+function useFactors(f: Factors) {
+  const strategy = useEval(evaluate(f));
+  strategy.factors = f;
+  return strategy;
+}
+
 /*
   Add some global counters to keep track of calls to different functions.
 */
@@ -255,7 +261,7 @@ function _random(options: Result[]): Result {
 const random = makeApplied(_random);
 random.description = `Chooses a random valid move each turn.`;
 
-const balanced = useEval(evaluate(f.balancedFactors));
+const balanced = useFactors(f.balancedFactors);
 balanced.description = `A well-rounded evaluation strategy.
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
@@ -267,7 +273,7 @@ ${JSON.stringify(f.balancedFactors, null, 2)}
 
 Has proven most effective in practice.`;
 
-const runner = useEval(evaluate(f.runnerFactors));
+const runner = useFactors(f.runnerFactors);
 runner.description = `An aggressive racing strategy. Bring the pieces home!
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
@@ -277,7 +283,7 @@ The racing strategy values pip count, with low weights on defensive positioning,
 Features:
 ${JSON.stringify(f.runnerFactors, null, 2)}`;
 
-const learned = useEval(evaluate(f.learned));
+const learned = useFactors(f.learned);
 learned.description = `An evaluation function using machine-learned weights.
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
@@ -341,8 +347,8 @@ Interesting comparison point for heuristic impact on MCTS.`;
 const mctsLearnedRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: learned });
 mctsLearnedRollouts.description = `(slow) MCTS using learned evaluation function for rollouts.`;
 
-const prev = useEval(evaluate(f.prevLearned));
-const prevPrev = useEval(evaluate(f.prevPrevLearned));
+const prev = useFactors(f.prevLearned);
+const prevPrev = useFactors(f.prevPrevLearned);
 const Strategies = {
   random,
   balanced,
