@@ -34,7 +34,10 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   infoBox.appendChild(stats(game));
   infoBox.appendChild(factors(info, strat, f));
   const prev = turnhistory[turnhistory.length -1];
-  infoBox.appendChild(moveRankings(prev, strat));
+  const rankings = moveRankings(prev, strat);
+  if (rankings) {
+    infoBox.appendChild(rankings);
+  }
 }
 
 function stats(game) {
@@ -139,16 +142,33 @@ function factor(name, score) {
   return div 
 }
 
-function moveRankings() {
+function moveRankings(prevTurn, strat) {
+  if (!prevTurn?.moves || !strat?.moveScores) return null;
+  
   const div = document.createElement('div');
   div.classList.add('move-rankings');
-  div.innerHTML = `
-    <div>23→20, 20→18   +4.2  100%</div>
-    <div>23→20, 20→17   +3.9   93%</div>
-    <div>23→19, 19→17   +3.1   74%</div>
-  `;
+  
+  // Get top 3 moves by score
+  const topMoves = strat.moveScores
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+    
+  // Calculate percentages relative to best move
+  const bestScore = topMoves[0].score;
+  
+  topMoves.forEach(move => {
+    const moveDiv = document.createElement('div');
+    const moveText = move.moves
+      .map(m => `${m.from + 1}→${m.to + 1}`)
+      .join(', ');
+    const percent = ((move.score / bestScore) * 100).toFixed(0);
+    const score = signed(move.score, 1);
+    
+    moveDiv.innerText = `${moveText.padEnd(15)} ${score.padStart(6)}  ${percent.padStart(3)}%`;
+    div.appendChild(moveDiv);
+  });
+  
   return div;
 }
-
 
 export { renderStrategicInfo }
