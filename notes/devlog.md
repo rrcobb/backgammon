@@ -701,6 +701,9 @@ now, probably need to learn new factors... geez, what a time.
 
 ## UI / TODO
 
+- update evaluation function to subtract the opponents position / compare to them
+  - right now, you and the opponent might both get monotonically better towards the end
+
 - display about the strategy
   - show current pip count for each player
   - show probabilities of hits / other events
@@ -771,3 +774,6 @@ now, probably need to learn new factors... geez, what a time.
 
 - bug: if the human player has no valid moves (bar entry) does it switch the turn?
 - bug: maybe a missing valid move on turn 58? file:///Users/rob/dev/projects/backgammon/index.html?w=learned&b=human#data=H4sIAAAAAAAAE9WayW7jOBCG34XnOrC4aLvNnOY0tzkZPjg9xiCAOw7czjSCRt69QZGySFsskbKsKIghO7KzfPhr+Vnk5hc7v51e/j6yBoF9P/6/Z81mgwiot7BBDVhst8BeD7v3/Yk17CcDdjoeDqzZKMAtsP923/es+cWe/tydWMOB/exePP11NG+ZW5dX5m+xRgpgr8cfz+fn48sP88Pn99c9a9g/zy/n6o/TaffOgP27O+9Ys8EKuPuSpblo951wN9xrDgL7T6rtB7Bvb0971uDHB/SQwoMUUG1hU0JI+DQHIRZTCaUEqcy1YyyyGWWmkAhqcSEDTKw9TEzFVD2mkIC1wRRQxsXUnyKm9in1FaV7i4OUMUzdY3IQW9gIiCopBpTE+ZUsfUYs72csesZCgZBWyiom5fSAzZJyCFNdMFUUMxqxpS9lYSCRSEttPvLwtOQBZOVDVh6kSIasgrQUbcS6Z210a69RYZcouH1pMbSpzOZ+jLn2Km4BghtpKxPH0dY5tRZNkXaME12nkdCGvFSAZYwUuSevsKjCJERMUkFJiktL2qEqV5AoUgyKEhpNCxPH0dp7m67z114OriyNkfKAFEuKVITlV7SuSMYbqVhEURuM0iNVCaS0pjIgNX1GxrupXKSbXitaz8GpbhXVgPMrmgfaV1JTY1JByXLUu6OXt8MBzGVKO103ZBHUXCxNzXXPVRvEVTxbNdVqZszWFtuyXrj5ELZUHjensMswiF0Bxrhfkos0VdsnR1Ht/Q61zXGC1XNNZStpSaXrVGOYKanqXa8F5Xdzek7JrNWsT+LxnrqMT2r/dR/04v1vSd21HEMVnlMyv7Fd1EhAETe/i8lKwOobWJkCi3784qhZmh7CdwrLPTwdaOyjknZJiAFhicFDscjgYYD1slhzXUiGtDwJVgZLGztloZSVn6XsMC3vY9w9KopWBeNBA1vHhZWUbXqosH5FkhNRdTgllG4cQaxvbhdyYhFhe6twqUTZtOGEqQ1j4yl43DYRIybxabRW7VHaMsMVf2VOf9bEXXEqAYn5EmERl6Xtlgny8vYobZ2sKjlfWjun9I1TqyZsUJkKFa3DxIhJLkfrl+JkWEwWtaA669oxfc+kTJexZhitd0Juuw8xRSRarX50q/WJeS55OHLiW7oaE5GsZty/eQCnb514O+gnrFNB6fkQUN2B6ivATMz0gRPp+1fNWPiLOZOqZvoSNUrLKWknpLd1aSJmuksamu1/EcgqXKy2zbQ2hwKmGN9FUftq5Nbto6w5BmktUZtNqXx7pF3rVMRciRyiLcJqZ8MyDN8k1nR3RDqElVOGh5KsohyiKTpd0MzjDwGqvkblE0hnM0Oz+d3LvuKcmLdeqIwfeiAnZo/hLDrOa8A8zBwvRHSVVTMGXki3Xii6MSOo8cKslF2sWlBvrj0NMmdetFSwzozo+SBt9xIBRfSEWaKSOEu86v5xN2aOBfqaiJpfKyniGZk4GhqAzDz06ROGO03TIDGjUZIbh2I2JevZIT3fI9psNMdxiKwcOpAzACpnAfVMwd2gMqO+Jk2o14eorrOSOOZJZuXckJaz6FGmM+YcNkoawK+O0HM79sjjHPmo7qcs3BnzdrJ1N2XO4CcpHVdHWPk6dhM8sIk35nyIdXRPrO/smJa47BZZdwPXQb/Udns3ev6aXI5wCnKCrN2miWGYgrn9Dc8+9b2kNQAA
+
+
+bugs, bugs everywhere. eval fn was counting pips backwards.

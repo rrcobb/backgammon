@@ -40,94 +40,68 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
 function stats(game) {
   const div = document.createElement('div');
   div.classList.add('raw-stats');
-
-  div.appendChild(pips(game))
-  div.appendChild(home(game))
-  div.appendChild(bar(game))
-  div.appendChild(primes(game))
-  div.appendChild(blots(game))
-
-  return div;
-}
-
-const signed = (n, digits=0) => n > 0 ? `+${n.toFixed(digits)}` : n.toFixed(digits); // - is in the string already
-function pips(game) {
-  const { white, black, diff, isRacing } = getPipCounts(game, game.turn);  
-  const player = game.turn == c.WHITE ? "White" : "Black";
-  const sign = diff > 0 ? "+" : ""; // - is in the string already
-  const div = document.createElement('div');
-  div.innerText = `Pips: ${player} ${signed(diff)} (${stage(isRacing)})`
-  return div
-}
-
-function stage(isRacing) {
-  return isRacing ? "Racing" : "Contact";
-}
-
-const formatPrimes = (primes, reverse=false) => primes.map(({start, length}) => {
-  if (reverse) {
-    return `${start + length}..${start + 1}`
-  } else {
-    return `${start + 1}..${start + length}`
-  }
-}).join(', ');
-
-function primes(game) {
+  
+  const table = document.createElement('table');
+  table.classList.add('stats-table');
+  
+  const header = table.createTHead();
+  const headerRow = header.insertRow();
+  headerRow.insertCell();
+  headerRow.insertCell().innerHTML = 'Black';
+  headerRow.insertCell().innerHTML = 'White';
+  
+  const tbody = table.createTBody();
+  
+  // Pip counts
+  const { white, black, diff, isRacing } = getPipCounts(game, game.turn);
+  const pipRow = tbody.insertRow();
+  pipRow.insertCell().innerHTML = 'Pips';
+  pipRow.insertCell().innerHTML = black;
+  pipRow.insertCell().innerHTML = white;
+  
+  // Home counts
+  const homeRow = tbody.insertRow();
+  homeRow.insertCell().innerHTML = 'Home';
+  homeRow.insertCell().innerHTML = game.bHome;
+  homeRow.insertCell().innerHTML = game.wHome;
+  
+  // Bar counts
+  const barRow = tbody.insertRow();
+  barRow.insertCell().innerHTML = 'Bar';
+  barRow.insertCell().innerHTML = game.bBar;
+  barRow.insertCell().innerHTML = game.wBar;
+  
+  // Primes
   const bPrimes = analyzePrimes(game, c.BLACK);
   const wPrimes = analyzePrimes(game, c.WHITE);
-  const div = document.createElement('div');
-  const b = document.createElement('div');
-  const w = document.createElement('div');
-
-  b.innerText = `Black (${bPrimes.primes.length}): [${formatPrimes(bPrimes.primes, true)}]`;
-  w.innerText = `White (${wPrimes.primes.length}): [${formatPrimes(wPrimes.primes)}]`;
+  const primesRow = tbody.insertRow();
+  primesRow.insertCell().innerHTML = 'Primes';
+  primesRow.insertCell().innerHTML = formatPrimeDisplay(bPrimes.primes);
+  primesRow.insertCell().innerHTML = formatPrimeDisplay(wPrimes.primes);
   
-  div.appendChild(b)
-  div.appendChild(w)
-  return div;
-}
-
-const formatBlot = (i, blots) => `${Number(i) + 1}: ${(blots[i]*100).toFixed(2)}%`
-function blots(game) {
+  // Blots
   const bBlots = getBlots(game, c.BLACK);
   const wBlots = getBlots(game, c.WHITE);
-
-  const div = document.createElement('div');
-  const b = document.createElement('div');
-  const w = document.createElement('div');
-
-  b.innerText = `${Object.keys(bBlots.blots).map((i) => formatBlot(i, bBlots.blots)).join(', ')}`
-  w.innerText = `${Object.keys(wBlots.blots).map((i) => formatBlot(i, wBlots.blots)).join(', ')}`
-
-  div.appendChild(b)
-  div.appendChild(w)
+  const blotsRow = tbody.insertRow();
+  blotsRow.insertCell().innerHTML = 'Blots';
+  blotsRow.insertCell().innerHTML = formatBlotsDisplay(bBlots.blots);
+  blotsRow.insertCell().innerHTML = formatBlotsDisplay(wBlots.blots);
+  
+  div.appendChild(table);
   return div;
 }
 
-function bar(game) {
-  const div = document.createElement('div');
-  const b = document.createElement('div');
-  const w = document.createElement('div');
-
-  b.innerText = `Black: ${game.bBar}`;
-  w.innerText = `White: ${game.wBar}`;
-
-  div.appendChild(b)
-  div.appendChild(w)
-  return div;
+function formatPrimeDisplay(primes) {
+  if (!primes.length) return '';
+  return primes
+    .map(prime => `<span class="prime-span">${prime.start + 1}→${prime.start + prime.length}</span>`)
+    .join(', ');
 }
 
-function home(game) {
-  const div = document.createElement('div');
-  const b = document.createElement('div');
-  const w = document.createElement('div');
-
-  b.innerText = `Black: ${game.bHome}`;
-  w.innerText = `White: ${game.wHome}`;
-
-  div.appendChild(b)
-  div.appendChild(w)
-  return div;
+function formatBlotsDisplay(blots) {
+  return Object.entries(blots)
+    .map(([point, chance]) => `${(Number(point) + 1).toString().padStart(2)} (${(chance * 100).toFixed(1)}%)`)
+    .join('\n');
 }
 
 function factors(info, player, f: Factors) {
@@ -156,6 +130,7 @@ function factors(info, player, f: Factors) {
   return div;
 }
 
+const signed = (n, digits=0) => n > 0 ? `+${n.toFixed(digits)}` : n.toFixed(digits); // - is in the string already
 const normCount = (score, max=20) => Math.min(5, Math.max(0, Math.ceil(Math.abs(score) * 5 / max)));
 const dots = (score, max=20) => '●'.repeat(normCount(score))
 function factor(name, score) {

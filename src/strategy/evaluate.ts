@@ -23,13 +23,13 @@ function getPipCounts(game: Game, player: Player): PipCounts {
 
     if ((pos & c.WHITE) === c.WHITE) {
       lastWhite = i;
-      whitePips += count * (i + 1);
+      whitePips += count * (24 - i);
     }
     if ((pos & c.BLACK) === c.BLACK) {
       if (firstBlack == 24) {
         firstBlack = i;
       }
-      blackPips += count * (24 - i);
+      blackPips += count * (i + 1);
     }
   }
 

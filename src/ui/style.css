@@ -862,3 +862,35 @@ button#reset {
 .move-rankings {
   font-family: monospace;
 }
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
+.stats-table th {
+  text-align: left;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #ddd;
+  font-weight: 600;
+}
+
+.stats-table td {
+  padding: 0.15rem 0.5rem;
+  white-space: pre-line;
+}
+
+/* First column (labels) */
+.stats-table td:first-child {
+  color: #666;
+  font-weight: 500;
+  width: 20%;
+}
+
+/* Data columns */
+.stats-table tbody td:not(:first-child) {
+  font-family: monospace;
+  width: 40%;
+}

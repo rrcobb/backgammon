@@ -246,6 +246,7 @@ export function playFromHere() {
   state.gameHistory = state.gameHistory.slice(0, state.gameHistory.length - state.backCount);
   let target = state.gameHistory[state.gameHistory.length - 1];
   state.game = target.game
+  state.game.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
   state.turnNo = state.turnNo - state.backCount;
   state.backCount = 0;
 
