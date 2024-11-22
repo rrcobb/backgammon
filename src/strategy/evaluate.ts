@@ -215,10 +215,10 @@ const times = (n) => (func) => {
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   let score = 0;
 
-  score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
-  score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
   score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
   score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
+  score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
+  score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
 
   const blots = getBlots(game, player);
   score -= blots.totalPenalty * f.blotPenalty;

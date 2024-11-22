@@ -147,7 +147,7 @@ function factors(info, player, f: Factors) {
     ["Home Bonus", strength.homeCount * f.homeBonus],
     ["Anchor Bonus", strength.anchorCount * f.anchorBonus],
     ["Primes", primes.count * f.primeReward],
-    ["Pip Count", pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward]
+    ["Pip Diff", pips.isRacing ? (pips.diff / 24) * f.racingPipReward : (pips.diff / 24) * f.contactPipReward]
   ]
   .sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))
   .map(([name, score]) => factor(name, score));
@@ -155,8 +155,8 @@ function factors(info, player, f: Factors) {
   return div;
 }
 
-const normCount = score => Math.round(score);
-const dots = (score) => '●'.repeat(normCount(score))
+const normCount = (score, max=20) => Math.min(5, Math.max(0, Math.ceil(Math.abs(score) * 5 / max)));
+const dots = (score, max=20) => '●'.repeat(normCount(score))
 function factor(name, score) {
   const div = document.createElement('div');
   div.innerText = `${name}\t ${dots(score)} ${signed(score, 2)}`
