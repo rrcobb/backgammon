@@ -6,7 +6,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   const container = document.getElementById('strategic-info');
   const player = game.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
   const strat = player == c.WHITE ? bstrat : wstrat;
-  const f = strat.factors;
+  const f = strat?.factors;
 
   const header = container.querySelector('.section-header');
   if (!header) {
@@ -20,6 +20,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
     container.appendChild(infoBox)
   }
   infoBox.innerHTML = '';
+  if (!f) return;
 
   const blots = getBlots(game, player)
   const info = {
