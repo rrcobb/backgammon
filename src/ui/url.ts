@@ -48,6 +48,7 @@ async function objectToUrl(obj) {
     throw err;
   }
 }
+
 async function objectFromUrl(url) {
   try {
     const hash = url.split('#data=')[1];
@@ -76,9 +77,9 @@ export function saveStrategyToUrl(state) {
   history.replaceState(null, '', '?' + params.toString() + window.location.hash);
 }
 
-async function saveGameHistoryToUrl(gHistory, state) {
+async function saveGameHistoryToUrl(gameHistory, state) {
   saveStrategyToUrl(state);
-  const url = await objectToUrl(gHistory);
+  const url = await objectToUrl(gameHistory);
   window.location.hash = url 
 }
 

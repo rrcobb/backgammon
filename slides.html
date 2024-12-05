@@ -1,0 +1,276 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.x/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.x/dist/theme/black.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section data-markdown>
+          <textarea data-template>
+            ### Building a Backgammon Engine (Fast)
+
+            Rob Cobb
+
+            ---
+
+            Demo
+
+            <iframe src="index.html" width="600" height="500"></iframe>
+
+            [full demo](index.html)
+
+          </textarea>
+        </section>
+        <section data-markdown data-separator="\-\-\-" data-separator-vertical="^\.\.\.">
+          <textarea data-template>
+            ### What costs you time?
+
+            - debugging
+            - pressing keys
+            - slow code
+
+            ---
+            ### What saves you time?
+
+            - don't debug (or debug faster)
+            - press fewer keys, faster
+            - write fast code
+
+            ---
+            ### Don't debug
+
+            - write correct code
+            - test for correctness
+
+            ...
+
+            write correct code
+
+            ...
+
+            test for correctness
+
+<!-- this is modified from it's original form to fit your screen -->
+
+```javascript
+it("should always move pieces in the correct direction", () =&gt; {
+  fc.assert(
+    fc.property(
+      arbitraryGame, 
+      fc.constantFrom(...ALL_ROLLS), 
+      (game, roll) =&gt; {
+       const moves = validMoves(game, roll);
+       return moves.every(move =&gt; {
+        let [start, end] = move;
+        return end &gt; start
+      })
+  })));
+```
+            ...
+
+            property tests
+
+            - write just one test, cover every situation
+            - sometimes harder to think about
+            - much faster overall
+            - finds bugs you didn't consider
+
+            ---
+            ### Debug faster
+
+            - write code that's easy to debug
+            - make bug reproduction fast
+
+            ...
+
+            write code that's easy to debug
+
+            ...
+
+            make bug reproduction fast
+
+            - write failing test cases
+            - restore state on reload
+
+            ...
+
+            Restore state on reload
+
+            [demo](index.html?w=learned&b=balanced#data=H4sIAAAAAAAAE9WZTW+jMBCG/4vPc/DY2Hzcdk972tueEIdkN1pVSpMqTbeqqv731WAINmAHXECqEgWaBrVPnrH9eijf2fXlcvp5ZgUCezz/O7CiLDEDISqoj1hVwJ6Ou7fDhRXslQG7nI9HVpQJyArY393jgRXvbP99d2EFB/banux/nOlX9NbtjP4WK6QA9nR+frg+nE/PdPH17enACvbr4XTNvl0uuzcG7M/uumMF/Qu8eciUXlTzk0DzBj0wb184YEpPmVQfwH6/7A+swI8P6DBFh6kAKygVCAdxvwQi6lmIUtKTt3yfhpSWSw2Y3XMpQWzjchJoZoFmYdCkAxXSFG17VJBUUCv02EXS74PGxe3W3DKZSE0f9EGrDlondQ0jAqY+uQL0gBPXkEumxjm5w0nVOwlUO6DGruiT7m1StY3RqaRSTiRNXdJ7SuWIUrGSUsPaB8U8TmnmgvIKTi/Ho3f+ja3c+T5nYZLXMGduzcBEUWJKtF6fw8JdxSe3OenUA9ouN+k9TuSDMRoQOrbOrCI0jlMFOK14JIzQLCA0iQaNCEc3zizE2bzc4xTu4pI3c27um3PVVhlpDqn5yL3StVISr5XyXliwhOoRzOUrl7fpzlDmS1B2EYkGZnh0flVGKxHJJvahd2zqkdy3/Nhsdy09SrOCRGL28pCsU64334pQvl1YpxmYch6olF5SKw+ZIATDY0rfgNfxFpk3wN5LvFmfHVMvezZMvSmg3/KQdA3LLeUNNZmGqkKodkrigFTQKAO5d5uegxeW91nz6azCCkppPUchcJ9UucnQbXfi7faUQOXnQa2kpIHyQ05mvck32cDogDTrkWIahSpspyrcTBKbBKW2aG1UvgCp3VGSgHX90pU+r7id1xCtU8H5VFirq4QCqHuW+b3qaNL5XhMfqY4ktYITracYs69ZS+sk2NtqkzfrbwBWj2j1pqck1EtaXmsySqoiSe12EiBZbQ4UnvTt6JGsotGjJLfofIxc8HnkmePYMIuOnTeN4ZiW8CrSExtaOt/EXPTcafqbsawDYUpFw8ZqDsA661Fe91FDsNJKU6Y9ASVdr/yJatNZOgRrRnmfNrQlkOiq5UZt6N7c1iM4RMs7WGFuegRhhbP3q+9dcfCK3ab/5KLaaNbJfFQ5svyGtrVjDfG1vQZhUwtWmNDhhU3cIaubzqJu5il+L2Ztsc816MpFtzf5XX332HkIvRez6htZCCi88XnshkCQFuNFT6LlTlXX7F5aO2flTbMmOIJnZkpcwKw9X/VQb/tDH2v1H+btwKo2IQAA)
+
+            ...
+            ### URL restoration
+
+            - take the game state
+            - compress and serialize it
+            - stick that in the url
+            - on page load, get it from the url
+            - decompress it
+            - set the state from the decompressed value
+
+            ...
+            ```js
+            async function saveGameHistoryToUrl(gameHistory, state) {
+              saveStrategyToUrl(state);
+              const url = await objectToUrl(gameHistory);
+              window.location.hash = url 
+            }
+            ```
+
+            ...
+            ```js
+            async function objectToUrl(obj) {
+              const jsonStr = JSON.stringify(obj);
+              const compressed = await compressString(jsonStr);
+              return `#data=${compressed}`;
+            }
+            ```
+            ...
+
+            ```js
+            async function compressString(str) {
+              const compressed = await new Response(
+                new Blob([str])
+                  .stream()
+                  .pipeThrough(new CompressionStream("gzip")))
+              return btoa(
+                String.fromCharCode(
+                  ...new Uint8Array(
+                  await compressed.arrayBuffer()
+              )));
+            }
+            ```
+
+            some of the apis are a pain to remember. 
+
+            let the LLM do that part.
+
+            ---
+
+            ### Press fewer keys
+
+            - script your workflow
+            - keyboard shortcuts
+            - build the right thing
+            - LLMs... sometimes
+
+            ...
+            #### Script your workflow
+
+            ```json
+            // package.json
+            "scripts": {
+              "build": "bun src/ui/build.js",
+              "watch": "watchexec bun src/ui/build.js",
+              "check": "tsc --noEmit",
+              "test": "bun test",
+              "bench": "bun bench/strategies.ts",
+              "bench-all": "bun bench/clone.ts && bun bench/helpers.ts && bun bench/game.ts && bun bench/keys.ts && bun bench/strategies.ts",
+              "tournament": "bun src/evals/tournament.ts"
+            }
+            ```
+            ...
+
+            shoutout `watchexec`
+
+            ```json
+              "watch": "watchexec bun src/ui/build.js",
+            ```
+
+            run [something] when your files change
+
+            <small>[github](https://github.com/watchexec/watchexec)</small>
+            ...
+
+            ### Keyboard Shortcuts
+
+            - run a file, tests, type check, a script
+            - All editors have something good
+            - Me: nvim + vimux + some lua functions
+
+            ...
+
+            ### LLMs... sometimes
+
+            - practice to get good at using them
+            - you still have to lead
+            - they're good at some things, not others
+
+            ---
+
+            ### Fast Code
+
+            - write fast code
+            - use benchmarks
+            - measure / improve / repeat
+
+            ...
+
+            write fast code
+
+            ...
+
+            Benchmarks
+            
+            - measure how fast your code runs
+            - whole program vs microbenchmarks (do both)
+            - find tools you like (e.g. mitata, hyperfine)
+
+            ...
+
+            microbenchmarks
+
+            ```
+            import { run, bench, summary } from "mitata";
+            summary(() => {
+              const initial = h.newGame();
+              initial.turn = c.WHITE;
+              bench("newgame", () => { const game = h.newGame(); });
+              bench("spread", () => { spread(initial) });
+              bench("literal", () => { literal(initial); });
+              bench("structured clone", () => { clone(initial); });
+              bench("Object.assign", () => { assign(initial); });
+            });
+            await run();
+            ```
+            ...
+
+            ![benchmark results](image/bench-clone-results.png)
+
+            ---
+
+            End
+
+            - [backgammon]()
+            - [github](https://github.com/rrcobb/backgammon)
+
+          </textarea>
+        </section>
+
+<!--
+        <section data-markdown>
+          <textarea data-template>
+            ### Build the right thing
+
+            - I wasted a bunch of time because of flawed assumptions!
+            - Good evaluations / clear goals work
+            - Statistics is hard! Make sure the evaluations are legit
+
+            ---
+            ### Fast Code
+
+            - Classic AI is very sensitive to performance
+              - Expectimax performance is limited by tree search depth
+              - MCTS uses lots of rollouts
+            - Training for ML models
+            - Have to make the code run fast!
+          </textarea>
+        </section>
+    -->        
+      </div>
+    </div>
+    <script src="dest/slides.js"></script>
+  </body>
+</html>

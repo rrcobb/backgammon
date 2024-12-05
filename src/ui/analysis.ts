@@ -1,5 +1,5 @@
 import { containerHeader } from './_components';
-import { constants as c } from '../backgammon';
+import { constants as c, helpers as h } from '../backgammon';
 import { getPipCounts, getBlots, analyzePrimes, getBoardStrength } from '../strategy/evaluate'
 
 function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
@@ -33,7 +33,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
 
   infoBox.appendChild(stats(game));
   infoBox.appendChild(factors(info, strat, f));
-  const prev = turnhistory[turnhistory.length -1];
+  const prev = turnhistory[game.turnNo - 1];
   const rankings = moveRankings(prev, strat);
   if (rankings) {
     infoBox.appendChild(rankings);
@@ -143,28 +143,22 @@ function factor(name, score) {
 }
 
 function moveRankings(prevTurn, strat) {
-  if (!prevTurn?.moves || !strat?.moveScores) return null;
+  if (!prevTurn) return null;
   
   const div = document.createElement('div');
   div.classList.add('move-rankings');
+
+  const moves = h.validMoves(prevTurn.game, prevTurn.roll);
+  if (!moves?.length) return null;
   
-  // Get top 3 moves by score
-  const topMoves = strat.moveScores
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
-    
-  // Calculate percentages relative to best move
-  const bestScore = topMoves[0].score;
-  
-  topMoves.forEach(move => {
+  // Top 3 moves
+  moves.slice(0, 3).forEach(([move, _]) => {
     const moveDiv = document.createElement('div');
-    const moveText = move.moves
-      .map(m => `${m.from + 1}→${m.to + 1}`)
+    const moveText = move
+      .filter(m => m !== null)
+      .map(([from, to]) => `${from === c.BAR ? 'bar' : from + 1}→${to === c.HOME ? 'home' : to + 1}`)
       .join(', ');
-    const percent = ((move.score / bestScore) * 100).toFixed(0);
-    const score = signed(move.score, 1);
-    
-    moveDiv.innerText = `${moveText.padEnd(15)} ${score.padStart(6)}  ${percent.padStart(3)}%`;
+    moveDiv.innerText = moveText;
     div.appendChild(moveDiv);
   });
   

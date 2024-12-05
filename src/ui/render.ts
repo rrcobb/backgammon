@@ -360,6 +360,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     initGame();
     setStrategy(c.WHITE, "learned", state);
-    setStrategy(c.BLACK, "human", state);
+    setStrategy(c.BLACK, "random", state);
   }
 });

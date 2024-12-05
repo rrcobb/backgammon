@@ -334,6 +334,7 @@ body {
   height: 100vh;
   max-width: min(1680px, 100%);
   margin: auto;
+  background: white;
 }
 
 .container {

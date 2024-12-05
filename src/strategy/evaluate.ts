@@ -208,10 +208,6 @@ function blotHitChance(game, blotPosition, player) {
   return Math.min(1, totalProb); // Cap at 100% chance
 }
 
-const times = (n) => (func) => {
-  for (let i = 0; i < n; i++) func();
-};
-
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   let score = 0;
 

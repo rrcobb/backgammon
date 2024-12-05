@@ -33,26 +33,11 @@ function literal(game: Game): Game {
 summary(() => {
   const initial = h.newGame();
   initial.turn = c.WHITE;
-
-  bench("newgame", () => {
-    const game = h.newGame();
-  });
-
-  bench("spread", () => {
-    spread(initial);
-  });
-
-  bench("literal", () => {
-    literal(initial);
-  });
-
-  bench("structured clone", () => {
-    clone(initial);
-  });
-
-  bench("Object.assign", () => {
-    assign(initial);
-  });
+  bench("newgame", () => { const game = h.newGame(); });
+  bench("spread", () => { spread(initial) });
+  bench("literal", () => { literal(initial); });
+  bench("structured clone", () => { clone(initial); });
+  bench("Object.assign", () => { assign(initial); });
 });
 
 await run();
