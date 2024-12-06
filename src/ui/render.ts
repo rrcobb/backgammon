@@ -190,7 +190,7 @@ function renderRoll(roll) {
   roll.forEach((die) => {
     const img = document.createElement("img");
     const ordinal = ["one", "two", "three", "four", "five", "six"][die - 1];
-    img.src = `src/ui/dice/${ordinal}.svg`;
+    img.src = `src/assets/dice/${ordinal}.svg`;
     img.alt = ordinal;
     rollDiv.appendChild(img);
   });
