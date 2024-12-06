@@ -15,7 +15,8 @@ esbuild
       "index.html",
       "slides.html",
       "src/ui/style.css",
-      "src/ui/dice/*.svg"
+      "src/assets/*",
+      "src/assets/dice/*.svg"
     ],
     outdir: "dest",
     bundle: true,
@@ -28,6 +29,7 @@ esbuild
       '.html': 'copy',
       '.css': 'css',
       '.svg': 'file',
+      '.png': 'file',
     },
     publicPath: '/',  // This helps with asset path resolution
     assetNames: '[dir]/[name]',
