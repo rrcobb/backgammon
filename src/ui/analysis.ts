@@ -20,7 +20,6 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
     container.appendChild(infoBox)
   }
   infoBox.innerHTML = '';
-  if (!f) return;
 
   const blots = getBlots(game, player)
   const info = {
@@ -28,10 +27,11 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
     pips: getPipCounts(game, player),
     primes: analyzePrimes(game, player),
     blots,
-    strength: getBoardStrength(game, player, blots, f),
+    strength: f && getBoardStrength(game, player, blots, f),
   }
 
   infoBox.appendChild(stats(game));
+  if (!f) return;
   infoBox.appendChild(factors(info, strat, f));
   const prev = turnhistory[game.turnNo - 1];
   const rankings = moveRankings(prev, strat);
