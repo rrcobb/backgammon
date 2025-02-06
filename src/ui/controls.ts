@@ -1,11 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import { showArrow, clearArrows } from './arrows'
-import { state, play, playTurn, jumpToLatest, back, newGame, Settings, isHuman } from './render'
+import { state, sleep, play, playTurn, jumpToLatest, back, newGame, Settings, isHuman } from './render'
 import { playerUI, highlightValidSources, clearHighlights, undoCurrentMoves } from './player'
-
-export async function sleep(s) {
-  await new Promise(resolve => setTimeout(resolve, s))
-}
 
 function enable(elid) {
   (document.getElementById(elid) as HTMLButtonElement).disabled = false;
@@ -66,7 +62,7 @@ function setButtons() {
 function setupControls() {
   document.getElementById("fast")?.addEventListener("click", async () => {
     for (let i = 0; i < 10; i++) {
-      playTurn();
+      await playTurn();
       if (Settings.delay) {
         await sleep(Settings.delay)
       }
@@ -75,7 +71,7 @@ function setupControls() {
 
   document.getElementById('end')?.addEventListener('click', async () => {
     while (!h.checkWinner(state.game)) {
-      playTurn();
+      await playTurn();
       if (Settings.delay) {
         await sleep(Settings.delay / 5);
       } 

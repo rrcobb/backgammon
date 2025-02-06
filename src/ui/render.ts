@@ -8,7 +8,7 @@ import { renderScoreboard, recordGame } from './scores';
 import { setStrategy, renderStrategyConfig } from './strategy';
 import { renderStrategicInfo } from './analysis';
 import { playerUI, highlightValidSources } from './player'
-import { sleep, setButtons, setupControls } from './controls'
+import { setButtons, setupControls } from './controls'
 
 type Turn = {turnNo: number, move: Move, player: string, roll: Roll, game: Game}
 export type UIState = {
@@ -30,7 +30,11 @@ export const state: UIState = {
 }
 
 export const Settings = {
-  delay: 0.3, // seconds
+  delay: 80, // ms
+}
+
+export async function sleep(s) {
+  await new Promise(resolve => setTimeout(resolve, s))
 }
 
 function renderHome(game: Game) {
