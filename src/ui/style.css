@@ -941,10 +941,6 @@ button#reset {
     overflow: visible;
   }
 
-  .right-widgets {
-    padding-bottom: env(safe-area-inset-bottom, 4em);
-  }
-
   .container {
     max-height: calc(var(--board-height) * 1.5); 
   }
@@ -967,6 +963,7 @@ button#reset {
 
   .left-widgets, .right-widgets {
     width: 100%;
+    overflow-y: visible;
   }
 
   #controls {
