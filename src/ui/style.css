@@ -952,7 +952,7 @@ button#reset {
 
 @media (orientation: landscape) {
   :root {
-    --board-height: calc(100vw / 3);
+    --board-height: calc(95vw / 3);
   }
 
   #game {
@@ -965,6 +965,10 @@ button#reset {
     flex: 1 0 70%;
   }
 
+  .left-widgets, .right-widgets {
+    width: 100%;
+  }
+
   #controls {
     flex: 0.8 1 min-content;
   }
@@ -975,8 +979,13 @@ button#reset {
     margin: 0;
   }
 
-  #controls button {
+  #controls #steppers button {
     margin: 1px;
+    padding: 2px;
+  }
+
+  #controls button#play {
+    padding: 0.5em 1em;
   }
 
   #controls div button {
