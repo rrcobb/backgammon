@@ -147,6 +147,8 @@ function hitLocations(turn, prev): number[] {
 }
 
 function describeTurn(turn, prev): string {
+  if (!turn.game) return `Game start. Players roll to determine who plays first.`;
+
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
@@ -219,18 +221,18 @@ function renderHistory(gameHistory, backCount=0) {
   // Clear just the content
   content.innerHTML = '';
 
+  if (gameHistory.length == 0) {
+    const startDiv = renderTurn({player: 'b', turnNo: 'start', roll: null}, null, 0, backCount);
+    content.appendChild(startDiv);
+  }
+
   const reverseChronology = gameHistory.slice().reverse();
   reverseChronology.forEach((turn, index) => {
     const prev = reverseChronology[index + 1]
-    const hitOpponent = checkHit(turn, prev);
-    
-    const turnDiv = document.createElement('div');
-
-    turnDiv.classList.add('history-turn');
-    turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
+    const turnDiv = renderTurn(turn, prev, index, backCount);
 
     if (index === 0) {
-      if (h.checkWinner(turn.game)) {
+      if (turn.game && h.checkWinner(turn.game)) {
         turnDiv.classList.add('winning-turn');
         const winnerBanner = document.createElement('div');
         winnerBanner.classList.add('winner-banner');
@@ -238,47 +240,6 @@ function renderHistory(gameHistory, backCount=0) {
         content.appendChild(winnerBanner);
       }
     }
-
-    if (turn.roll == null) {
-      return
-    }
-
-    const num = document.createElement('span')
-    num.innerText = turn.turnNo
-    num.classList.add('turn-number')
-    turnDiv.appendChild(num);
-
-    const rollSpan = document.createElement('span');
-    rollSpan.innerText = showRoll(turn.roll);
-    rollSpan.classList.add('turn-roll')
-    turnDiv.appendChild(rollSpan);
-
-    const moves = document.createElement('span');
-    const movesText = showMoves(turn.move, turn, prev);
-    moves.innerText = movesText;
-    moves.classList.add('turn-moves');
-    if (movesText === "no moves possible") {
-      moves.classList.add('no-moves');
-    } else if (movesText.includes(' pass')) {
-      moves.classList.add('has-passes');
-    }
-    turnDiv.appendChild(moves)
-
-    const isCurrentTurn = index == backCount
-    if (isCurrentTurn) {
-      turnDiv.classList.add('history-current');
-      turnDiv.classList.add('expanded');
-      const descDiv = document.createElement('div');
-      descDiv.classList.add('turn-description');
-      descDiv.innerText = describeTurn(turn, prev);
-      turnDiv.appendChild(descDiv);
-    }
-
-    const indicator = document.createElement('span');
-    indicator.classList.add('expand-indicator');
-    indicator.innerText = isCurrentTurn ? '◉' : '○';
-    turnDiv.appendChild(indicator);
-    turnDiv.addEventListener('click', () => viewTurn(index));
 
     content.appendChild(turnDiv);
   });
@@ -306,6 +267,54 @@ function addHistoryControls(historyEl, backCount) {
   controls.appendChild(jumpLatestButton);
   controls.appendChild(playFromHereButton);
   historyEl.appendChild(controls);
+}
+
+function renderTurn(turn, prev, index, backCount) {
+  const hitOpponent = checkHit(turn, prev);
+    
+  const turnDiv = document.createElement('div');
+
+  turnDiv.classList.add('history-turn');
+  turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
+
+  const num = document.createElement('span')
+  num.innerText = turn.turnNo
+  num.classList.add('turn-number')
+  turnDiv.appendChild(num);
+
+  const rollSpan = document.createElement('span');
+  rollSpan.innerText = turn.roll ? showRoll(turn.roll) : '';
+  rollSpan.classList.add('turn-roll')
+  turnDiv.appendChild(rollSpan);
+
+  const moves = document.createElement('span');
+  const movesText = showMoves(turn.move, turn, prev);
+  moves.innerText = movesText;
+  moves.classList.add('turn-moves');
+  if (movesText === "no moves possible") {
+    moves.classList.add('no-moves');
+  } else if (movesText.includes(' pass')) {
+    moves.classList.add('has-passes');
+  }
+  turnDiv.appendChild(moves)
+
+  const isCurrentTurn = index == backCount
+  if (isCurrentTurn) {
+    turnDiv.classList.add('history-current');
+    turnDiv.classList.add('expanded');
+    const descDiv = document.createElement('div');
+    descDiv.classList.add('turn-description');
+    descDiv.innerText = describeTurn(turn, prev);
+    turnDiv.appendChild(descDiv);
+  }
+
+  const indicator = document.createElement('span');
+  indicator.classList.add('expand-indicator');
+  indicator.innerText = isCurrentTurn ? '◉' : '○';
+  turnDiv.appendChild(indicator);
+  turnDiv.addEventListener('click', () => viewTurn(index));
+
+  return turnDiv
 }
 
 function renderInfo(turn, turnHistory) {

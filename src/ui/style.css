@@ -359,8 +359,6 @@ body {
   flex-direction: column;
 }
 
-
-
 #turn-history {
   overflow: auto;
   width: 100%;
@@ -924,7 +922,9 @@ button#reset {
 
   #turn-info {
     max-width: calc(var(--board-width) - 20px);
-    max-height: fit-content;
+    min-height: 6rem;
+    height: 6rem;
+    max-height: 6rem;
     overflow-y: visible;
   }
 
