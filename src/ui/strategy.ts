@@ -93,7 +93,7 @@ export function renderStrategyConfig(state: UIState) {
   strategySection.classList.add('collapsed');
   container.classList.add('collapsed'); 
 
-  container.appendChild(containerHeader("Select Strategies", container));
+  container.appendChild(containerHeader("Select Strategy", container));
   container.appendChild(strategySection);
 }
 

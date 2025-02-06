@@ -39,11 +39,11 @@ function renderHome(game: Game) {
 
   const blackHome = document.createElement("div");
   blackHome.classList.add("home-count", "black-home");
-  blackHome.textContent = `Black ${game.bHome}`;
+  blackHome.textContent = `${game.bHome}`;
 
   const whiteHome = document.createElement("div");
   whiteHome.classList.add("home-count", "white-home");
-  whiteHome.textContent = `White ${game.wHome}`;
+  whiteHome.textContent = `${game.wHome}`;
 
   home.appendChild(blackHome);
   home.appendChild(whiteHome);

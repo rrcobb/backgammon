@@ -89,7 +89,7 @@ export function renderScoreboard() {
   if (!scoreboard) return;
   
   scoreboard.innerHTML = "";
-  scoreboard.appendChild(containerHeader("Scoreboard", scoreboard));
+  scoreboard.appendChild(containerHeader("Leaderboard", scoreboard));
 
   const games = loadGames();
   

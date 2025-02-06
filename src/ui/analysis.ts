@@ -7,7 +7,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
 
   const header = container.querySelector('.section-header');
   if (!header) {
-    container.appendChild(containerHeader('Analysis', container));
+    container.appendChild(containerHeader('Position Analysis', container));
   }
 
   let infoBox = container.querySelector('.section-content');

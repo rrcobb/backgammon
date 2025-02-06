@@ -175,7 +175,7 @@ div#board {
   clip-path: inset(var(--clip-size) round var(--clip-size));
   width: var(--die-size);
   display: inline-block;
-  zoom: 125%;
+  zoom: 115%;
 }
 
 .bottom .label {
@@ -923,7 +923,7 @@ button#reset {
   }
 
   .roll img {
-    zoom: 140%;
+    zoom: 125%;
   }
 
   .left-widgets, .right-widgets {

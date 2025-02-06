@@ -202,7 +202,7 @@ function renderHistory(gameHistory, backCount=0) {
     historyEl.innerHTML = '';
     
     // Add header outside content area
-    const header = containerHeader("History", historyEl);
+    const header = containerHeader("Timeline", historyEl);
     historyEl.appendChild(header);
     
     // Create content wrapper
@@ -329,7 +329,6 @@ function renderInfo(turn, turnHistory) {
       info += (winner == c.WHITE ? " White" : " Black") + " wins!";
     } else {
       // note the inversion; turn.player is the previous turn
-      info += (turn.player == 'w' ? ' Black' : ' White') + ' to play.';
       if (turn.game.wBar && turn.player == 'b') info += ` White has ${turn.game.wBar} on the bar.`;
       if (turn.game.bBar && turn.player == 'w') info += ` Black has ${turn.game.bBar} on the bar.`;
     }
