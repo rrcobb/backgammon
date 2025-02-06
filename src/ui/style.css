@@ -908,6 +908,7 @@ button#reset {
     justify-items: center;
     max-width: fit-content;
     gap: 0;
+    padding: 0;
   }
 
   #steppers {
@@ -946,5 +947,47 @@ button#reset {
 
   .container {
     max-height: calc(var(--board-height) * 1.5); 
+  }
+}
+
+@media (orientation: landscape) {
+  :root {
+    --board-height: calc(100vw / 3);
+  }
+
+  #game {
+    flex-direction: row;
+    justify-content: space-between;
+    max-width: 100%;
+  }
+
+  #board {
+    flex: 1 0 70%;
+  }
+
+  #controls {
+    flex: 0.8 1 min-content;
+  }
+
+  #steppers {
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: 0;
+  }
+
+  #controls button {
+    margin: 1px;
+  }
+
+  #controls div button {
+    margin: 2px auto;
+  } 
+
+  #turn-info {
+    overflow-y: visible;
+    font-size: 12px;
+    max-height: 7em;
+    height: 7em;
+    min-height: 7em;
   }
 }
