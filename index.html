@@ -42,12 +42,11 @@
       </div>
     </div>
     <script src="src/ui/render.js"></script>
-  </body>
 
   <!-- defining some textures for use in the game board-->
-  <svg width="0" height="0">
+  <svg xmlns="http://www.w3.org/2000/svg"  width="0" height="0">
   <defs>
-    <filter id="mahogany-filter-horizontal" filterUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <filter id="mahogany-filter-horizontal" filterUnits="objectBoundingBox" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence 
         type="fractalNoise" 
         baseFrequency="0.008 0.25" 
@@ -70,7 +69,7 @@
       <feBlend mode="multiply" in2="SourceGraphic"/>
     </filter>
 
-    <filter id="mahogany-filter-vertical" filterUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <filter id="mahogany-filter-vertical" filterUnits="objectBoundingBox" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
       <feTurbulence 
         type="fractalNoise" 
         baseFrequency="0.20 0.007" 
@@ -96,9 +95,9 @@
 </svg>
 
 
-  <svg width="0" height="0">
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0">
   <defs>
-    <filter id="felt-filter" filterUnits="userSpaceOnUse" x="-10%" y="-10%" width="120%" height="120%">
+    <filter id="felt-filter" filterUnits="objectBoundingBox" x="-10%" y="-10%" width="120%" height="120%">
       <feTurbulence 
         type="fractalNoise" 
         baseFrequency="1.7" 
