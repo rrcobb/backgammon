@@ -408,6 +408,11 @@ body {
   cursor: pointer;
 }
 
+#controls button:not(:disabled) {
+  color: black;
+  border-color: black;
+}
+
 #controls button:hover {
   /* border: 1px solid skyblue; */
   box-shadow: 0 0 2px 1px skyblue;
