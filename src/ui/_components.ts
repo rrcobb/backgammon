@@ -7,7 +7,7 @@ export function containerHeader(title, parent) {
 
   const toggleBtn = document.createElement('button');
   toggleBtn.classList.add('toggle-button');
-  toggleBtn.textContent = '-';
+  toggleBtn.textContent = '+';
   div.addEventListener('click', () => {
     const content = parent.querySelector('.section-content');
     const isCollapsed = content.classList.contains('collapsed');

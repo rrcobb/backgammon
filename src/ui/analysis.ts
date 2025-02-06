@@ -4,9 +4,6 @@ import { getPipCounts, getBlots, analyzePrimes, getBoardStrength } from '../stra
 
 function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   const container = document.getElementById('strategic-info');
-  const player = game.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
-  const strat = player == c.WHITE ? bstrat : wstrat;
-  const f = strat?.factors;
 
   const header = container.querySelector('.section-header');
   if (!header) {
@@ -18,9 +15,17 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
     infoBox = document.createElement('div');
     infoBox.classList.add('section-content');
     container.appendChild(infoBox)
+
+    // default closed
+    infoBox.classList.add('collapsed');
+    container.classList.add('collapsed'); 
   }
   infoBox.innerHTML = '';
+  if (!game) return; 
 
+  const player = game.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
+  const strat = player == c.WHITE ? bstrat : wstrat;
+  const f = strat?.factors;
   const blots = getBlots(game, player)
   const info = {
     game,

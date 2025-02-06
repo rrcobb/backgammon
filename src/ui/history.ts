@@ -195,6 +195,7 @@ function describeTurn(turn, prev): string {
 
 function renderHistory(gameHistory, backCount=0) {
   // Create or get content wrapper
+  const container = document.getElementById("history-container");
   const historyEl = document.getElementById("turn-history");
   let content = historyEl.querySelector('.section-content');
   if (!content) {
@@ -207,6 +208,11 @@ function renderHistory(gameHistory, backCount=0) {
     // Create content wrapper
     content = document.createElement('div');
     content.classList.add('section-content');
+
+    // default closed
+    content.classList.add('collapsed');
+    container.classList.add('collapsed'); 
+
     historyEl.appendChild(content);
   }
 

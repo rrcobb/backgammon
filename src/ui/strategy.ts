@@ -89,6 +89,10 @@ export function renderStrategyConfig(state: UIState) {
   strategySection.appendChild(blackPicker);
   strategySection.appendChild(whitePicker);
 
+  // default closed
+  strategySection.classList.add('collapsed');
+  container.classList.add('collapsed'); 
+
   container.appendChild(containerHeader("Select Strategies", container));
   container.appendChild(strategySection);
 }

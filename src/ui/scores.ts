@@ -89,6 +89,7 @@ export function renderScoreboard() {
   if (!scoreboard) return;
   
   scoreboard.innerHTML = "";
+  scoreboard.appendChild(containerHeader("Scoreboard", scoreboard));
 
   const games = loadGames();
   
@@ -157,7 +158,10 @@ export function renderScoreboard() {
   content.classList.add('section-content');
   content.classList.add('scores');
 
-  scoreboard.appendChild(containerHeader("Scoreboard", scoreboard));
+  // default closed
+  content.classList.add('collapsed');
+  scoreboard.classList.add('collapsed');
+
   content.appendChild(table);
   content.appendChild(resetButton);
   scoreboard.appendChild(content);
@@ -165,8 +169,13 @@ export function renderScoreboard() {
 
 function renderEmptyState(scoreboard: HTMLElement) {
   const table = document.createElement("table");
+  table.classList.add('section-content');
   table.classList.add("stats-table");
   
+  // default closed
+  table.classList.add('collapsed');
+  scoreboard.classList.add('collapsed'); 
+
   const row = document.createElement("tr");
   const cell = document.createElement("td");
   cell.colSpan = 4;
