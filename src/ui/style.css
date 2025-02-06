@@ -334,6 +334,7 @@ body {
   gap: 8px;
   padding: 8px;
   height: 100vh;
+  height: -webkit-fill-available;
   max-width: min(1680px, 100%);
   margin: auto;
   background: white;
@@ -935,7 +936,7 @@ button#reset {
   }
 
   .right-widgets {
-    margin-bottom: env(safe-area-inset-bottom, 16px);
+    padding-bottom: env(safe-area-inset-bottom, 4em);
   }
 
   .container {
