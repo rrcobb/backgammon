@@ -2,9 +2,9 @@ import { getArrow } from "perfect-arrows"
 
 function perfectArrow(b1, b2, container) {
   const cr = container.getBoundingClientRect();
-  // adjustments to stick the arrows on the outsides of the circles:
+  // adjustments to stick the arrows to the edges of the pieces
   // - adjust the frame of reference to the container by subtracting off cr.x and cr.y
-  // - shift by +10 x and -10 y to account for the element size; this was found by testing
+  // - shift by +10 x and -6 y to account for the element size; this was found by testing
   const r1 = { x: b1.x - cr.x + 10, y: b1.y - cr.y - 6 };
   const r2 = { x: b2.x - cr.x + 10, y: b2.y - cr.y - 6 };
   const dx = r2.x - r1.x;

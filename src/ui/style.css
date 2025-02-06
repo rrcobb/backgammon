@@ -16,7 +16,8 @@ body {
 img, picture, video, canvas, svg { display: block; max-width: 100%; }
 
 /* 6. Inherit fonts for form controls */
-input, button, textarea, select { font: inherit; }
+/* NOTE: Skipping from the reset -- we want consistent fonts in our buttons! */
+/* input, button, textarea, select { font: inherit; } */
 
 /* 7. Avoid text overflows */
 p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
@@ -167,13 +168,14 @@ div#board {
   --die-size: calc(6.5 * var(--clip-size));
   position: absolute;
   top: calc(var(--angle-length) + var(--frame-width) - var(--clip-size));
-  left: 165px;
+  left: calc(var(--angle-width) * 3);
 }
 
 .roll img {
   clip-path: inset(var(--clip-size) round var(--clip-size));
   width: var(--die-size);
   display: inline-block;
+  zoom: 125%;
 }
 
 .bottom .label {
@@ -912,6 +914,16 @@ button#reset {
     order: 0;
     grid-column: 1;
     max-width: 634px;
+  }
+
+  #turn-info {
+    max-width: calc(var(--board-width) - 20px);
+    max-height: fit-content;
+    overflow-y: visible;
+  }
+
+  .roll img {
+    zoom: 140%;
   }
 
   .left-widgets, .right-widgets {
