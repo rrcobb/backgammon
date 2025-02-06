@@ -89,7 +89,7 @@ export function renderStrategyConfig(state: UIState) {
   strategySection.appendChild(blackPicker);
   strategySection.appendChild(whitePicker);
 
-  container.appendChild(containerHeader("Strategy Config", container));
+  container.appendChild(containerHeader("Select Strategies", container));
   container.appendChild(strategySection);
 }
 
