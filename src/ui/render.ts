@@ -263,7 +263,7 @@ export function jumpToLatest() {
 }
 
 export function renderCurrentTurn() {
-  if (!state.gameHistory) {console.log('no history'); return; }
+  if (!state.gameHistory) { console.log('no history'); return; }
   const turn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
   renderTurn(turn, state.gameHistory);
 }

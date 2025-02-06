@@ -21,11 +21,15 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
     container.classList.add('collapsed'); 
   }
   infoBox.innerHTML = '';
-  if (!game) return; 
 
-  const player = game.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
-  const strat = player == c.WHITE ? bstrat : wstrat;
-  const f = strat?.factors;
+  const player = game?.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
+  let strat = player == c.WHITE ? bstrat : wstrat;
+  let f = strat?.factors;
+  if (!game) {
+    game = h.newGame(); // before the game has really started
+    strat = null;
+    f = null;
+  };
   const blots = getBlots(game, player)
   const info = {
     game,
@@ -100,14 +104,16 @@ function stats(game) {
 }
 
 function formatPrimeDisplay(primes) {
-  if (!primes.length) return '';
+  if (!primes.length) return 'none';
   return primes
     .map(prime => `<span class="prime-span">${prime.start + 1}→${prime.start + prime.length}</span>`)
     .join(', ');
 }
 
 function formatBlotsDisplay(blots) {
-  return Object.entries(blots)
+  const blotlist = Object.entries(blots)
+  if (blotlist.length == 0) return 'none';
+  return blotlist
     .map(([point, chance]) => `${(Number(point) + 1).toString().padStart(2)} (${(chance * 100).toFixed(1)}%)`)
     .join('\n');
 }
