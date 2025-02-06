@@ -19,6 +19,9 @@ img, picture, video, canvas, svg { display: block; max-width: 100%; }
 /* NOTE: Skipping from the reset -- we want consistent fonts in our buttons! */
 /* input, button, textarea, select { font: inherit; } */
 
+/* make double-tapping on buttons not zoom on ios safari */
+button { touch-action: manipulation }
+
 /* 7. Avoid text overflows */
 p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
 
@@ -792,7 +795,6 @@ button#reset {
 }
 
 .container.collapsed {
-  height: 2.5rem;
   min-height: unset;
   flex: 0 0 auto;
 }
@@ -946,9 +948,18 @@ button#reset {
   }
 }
 
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 601px) {
   :root {
     --board-height: calc(95vw / 3);
+  }
+
+  body {
+    gap: 0;
+    padding: 0;
+  }
+
+  .container {
+    padding: 4px;
   }
 
   #game {
