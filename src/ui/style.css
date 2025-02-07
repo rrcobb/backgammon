@@ -956,10 +956,15 @@ button#reset {
   body {
     gap: 0;
     padding: 0;
+    margin: unset;
+    min-height: 100vh;  /* instead of height: 100vh */
+    height: auto;
   }
 
   .container {
     padding: 4px;
+    min-height: 250px;
+    height: auto;
   }
 
   #game {
@@ -978,7 +983,8 @@ button#reset {
   }
 
   #controls {
-    flex: 0.8 1 min-content;
+    flex: 0.8 1 30vw;
+    padding-right: 8px;
   }
 
   #steppers {
