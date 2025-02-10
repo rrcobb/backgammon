@@ -29,10 +29,19 @@ function makeApplied(strategy: Strategy): AppliedStrategy {
 function useEval(evalFn: EvaluationFunction): AppliedStrategy {
   return makeApplied((options: Result[]) => {
     if (!options) return;
-    return options.reduce((best, current) => {
+
+    let best = null
+    let bestScore = -Infinity;
+    for (let current of options) {
       const player = current[1].turn;
-      return evalFn(current[1], player) > evalFn(best[1], player) ? current : best;
-    });
+      const score = evalFn(current[1], player)
+      if (score > bestScore) {
+        best = current;
+        bestScore = score
+      }
+    }
+
+    return best
   });
 }
 
@@ -75,7 +84,7 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
       let rollWeight = roll[0] === roll[1] ? 1 : 2;
       total += score * rollWeight;
     }
-    const result = total / 36; // c.ALL_ROLLS.length;
+    const result = total / 36;
     return result;
   }
 
@@ -326,8 +335,8 @@ Trades complete analysis for speed, which allows deeper search: 3 moves ahead in
 
 Uses learned factors for evaluation.`;
 
-const fastOnePlyExpectimax = makeApplied(useSpeedExpectimax(evaluate(f.balancedFactors), 1, 10, 5));
-fastOnePlyExpectimax.description = `Ultra-fast single-ply sampling expectimax. Samples 10 rolls
+const fastOnePly = makeApplied(useSpeedExpectimax(evaluate(f.learned), 1, 10, 5));
+fastOnePly.description = `Ultra-fast single-ply sampling expectimax. Samples 10 rolls
 and 5 moves, but only looks one move ahead. Quick responses while maintaining some probability assessment.`;
 
 const mcts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced });
@@ -357,12 +366,12 @@ const Strategies = {
   expectimax,
   balancedFastExpectimax,
   learnedFastExp,
-  fastOnePlyExpectimax,
+  fastOnePly,
   mcts,
   mctsRandomRollouts,
   mctsLearnedRollouts,
 };
-const forCompare = { learned, balanced, random, prev };
+const forCompare = { learnedFastExp, fastOnePly, learned };
 // export these to check how expectimax helps (or..doesn't)
 // const forCompare = { prev, prevPrev, learned, learnedFastExp  }
 export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };

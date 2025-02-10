@@ -6,6 +6,7 @@ import { arbitraryGame, expectGamesEqual } from "./helpers";
 
 import { helpers as h, constants as c } from "../src/backgammon.ts";
 import { useSpeedExpectimax, useExpectimax, useAbPruning } from "../src/strategy/strategies.ts";
+import { evaluate, factors } from "../src/strategy/factors.ts";
 
 // Property-based test
 describe("Dice roll validity", () => {
@@ -127,25 +128,78 @@ describe("Bar entry priority", () => {
   });
 });
 
-// this is currently failing
-// I think pruning is busted, in some way
-// skipping for now
-xdescribe("ab pruning matches expectimax", () => {
-  const evalFn = (g) => {
-    const val = g.wHome * 10 - g.bHome * 10 + g.wBar * -50 + g.bBar * 50;
-    return g.turn == c.WHITE ? val : -val;
-  };
-  const expectimax = useExpectimax(evalFn, 2);
-  const abPruning = useAbPruning(evalFn, 2);
-  fc.assert(
-    fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
-      const moves = h.validMoves(game, roll);
-      const currentPlayer = game.turn;
+describe("ab pruning", () => {
+  it("matches expectimax", () => {
+    const evalFn = (g) => {
+      const val = g.wHome * 10 - g.bHome * 10 + g.wBar * -50 + g.bBar * 50;
+      return g.turn == c.WHITE ? val : -val;
+    };
+    const expectimax = useExpectimax(evalFn, 2);
+    const abPruning = useAbPruning(evalFn, 2);
+    fc.assert(
+      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+        const moves = h.validMoves(game, roll);
+        const currentPlayer = game.turn;
 
-      const abResult = abPruning(moves);
-      const expectiResult = expectimax(moves);
+        const abResult = abPruning(moves);
+        const expectiResult = expectimax(moves);
 
-      expect(abResult).toEqual(expectiResult);
-    }),
-  );
+        expect(abResult).toEqual(expectiResult);
+      }),
+    );
+  });
+});
+
+// const WHITE = 0b00010000;
+// const BLACK = 0b00100000;
+// bottom 4 bits are the position
+function mirrorPositions(positions) {
+  // convert back to Uint8Array
+  return new Uint8Array(Array.from(positions)
+    .reverse() // reverse the board
+    .map(pos => {
+      // flip the colors
+      if (pos & c.WHITE) {
+        return (pos & 0b1111) | c.BLACK
+      } else if (pos & c.BLACK) {
+        return (pos & 0b1111) | c.WHITE
+      } else {
+        return pos
+      }
+    }))
+}
+
+function mirror(game) {
+  return {
+    bBar: game.wBar,
+    wBar: game.bBar,
+    bHome: game.wHome,
+    wHome: game.bHome,
+    turn: game.turn == c.WHITE ? c.BLACK : c.WHITE,
+    positions: mirrorPositions(game.positions),
+    cube: 1,
+  }
+}
+
+describe("mirror", async () => {
+  it("should roundtrip", () => {
+    fc.assert(fc.property(arbitraryGame, (game) => {
+      expect(game).toEqual(mirror(mirror(game))); 
+    }))
+  })
+})
+
+describe("evaluate", async () => {
+  it("is equivalent over a flip in player", () => {
+    const evalFn = evaluate(factors.balancedFactors)
+    fc.assert(
+      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+        const score = evalFn(game, game.turn)
+        const m = mirror(game)
+        const mirrorScore = evalFn(m, m.turn);
+
+        expect(score).toEqual(expect.closeTo(mirrorScore));
+      }),
+    );
+  });
 });

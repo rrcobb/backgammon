@@ -59,3 +59,14 @@ I did genetic learning, and it seemed to do good?
 Or maybe we got a curriculum learning effect from running against some bad opponents in the 'normal' learn-factors process... or something.
 
 Now, the learned weights are kicking the crap out of 'balanced', which is neat to see. Expectimax also seems like it is a plus, though it's a litttttle bit unclear. learned is realllly well trained against balanced - I wonder if it's overfit to beating that strategy in particular?
+
+## neural net!
+
+rough design:
+- inputs are bits that represent the game
+- net should have... 2? 3? 4? 5? layers of MLP
+- output should be... a percent chance that the side is winning?
+- gradient descent, but weighted by the amount the percent was off
+- curriculum learning, in that we start with the endgame / bearing off, then move to earlier and earlier games
+- self-play? play against particular opponents?
+

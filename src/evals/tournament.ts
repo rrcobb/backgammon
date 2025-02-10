@@ -359,8 +359,8 @@ function runMultipleTrials(strategies, config: EarlyStopConfig, trials: number):
 
 if (import.meta.main) {
   roundRobinTournament(Strategies, {
-    minGames: 50,
-    maxGames: 1000,
+    minGames: 30,
+    maxGames: 100,
     significanceLevel: 0.01,
   });
 }
