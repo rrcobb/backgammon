@@ -71,17 +71,14 @@ rough design:
 - self-play? play against particular opponents?
 
 first version: tdg.ts (td-gammon using convnet.js)
+- 3 hidden layers (40 units each)
 
 - it maybe sort of trains? It at least shows some weights!
 - interestingly: narrower fully-connected mlp layers (40 vs 100) are much faster, even if there are more of them
 - the loss doesn't go down fast, so it would (I think) take a ton of training to converge
 
 TODO:
-- Add second hidden layer (40-80 units first layer, 40 second layer)
-- Lower learning rate to 0.001
 - Add TD(λ) as discussed
-- Add gradient clipping to prevent instability
-- Longer training duration (measure in games not steps)
 
 - implement and switch to self-play mode
 - curriculum learning

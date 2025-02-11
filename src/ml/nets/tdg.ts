@@ -5,8 +5,10 @@ import cnnutil from 'convnetjs/build/util.js'
 globalThis.convnetjs = convnetjs;
 globalThis.cnnutil = cnnutil;
 
+import * as fc from "fast-check";
 import { helpers as h, constants as c } from '../../backgammon'
 import { Strategies } from '../../strategy/strategies.ts'
+import { genGameWithHome, genGame } from '../../../test/helpers'
 
 const input_size = 212
 
@@ -19,8 +21,8 @@ function initNet() {
   layer_defs.push({type:'fc', num_neurons:40, activation:'relu'});
 
   // a regression for the output: did white win?
-  // probability, between -1 and 1
-  layer_defs.push({type:'regression', num_neurons:1});
+  // probability, between 0 and 1
+  layer_defs.push({type: 'regression', num_neurons:1});
    
   // create a net out of it
   const net = new convnetjs.Net();
@@ -82,43 +84,83 @@ function representation(game) {
   return new convnetjs.Vol(repr)
 }
 
-// gamma
+// params
 const gamma = 0.8;
-
+const lambda = 0.9; // trace decay
 const k = 1000
-function train(net, maxGames=1*k) {
-  const trainer = new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001, method: 'adadelta'});
-  let game = h.newGame()
-  let prev_prediction = null;
-  let games = 0;
+
+function curriculum_strategy(net, training_status, game_count) {
+  return Strategies.learned
+}
+
+function curriculum_game_setup(training_status, game_count) {
+  if (game_count < 150) {
+    let p1Home = Math.floor((150 - game_count) / 10)
+    let p2Home = Math.max(0, p1Home - 1) // try to be one less than p1
+    return genGameWithHome(p1Home, p2Home)
+  }
+  // start from scratch
+  return h.newGame()
+}
+
+function train(net, max_games=k) {
+  const trainer = new convnetjs.Trainer(net, {learning_rate:0.0001, l2_decay:0.00001, method: 'adadelta'});
+  let game_count = 0;
   let start = Date.now()
   let end;
-  while (games < maxGames) {
+  let V = [];
+  let training_status;
+  let game = curriculum_game_setup(training_status, game_count)
+  let game_lens = [];
+
+  while (game_count < max_games) {
     const input = representation(game)
     const prediction = net.forward(input).w[0];
+    V.push({input, prediction});
     const winner = h.checkWinner(game);
-    // can't update if there wasn't a prev_prediction
-    if (prev_prediction) {
-      // training the net to detect a WHITE win; take care with the predictions
-      const r = winner ? (winner == c.WHITE ? 1 : -1) : 0;
-      // td learning reward: r + γ(V(s_t+1) - V(s_t))
-      const reward = r + gamma * (prediction - prev_prediction);
-      var traininfo = trainer.train(input, [reward]);
-    }
 
     if (winner) {
-      games++;
-      game = h.newGame();
-      if (games % 10 == 0) {
+      game_count++;
+      game = curriculum_game_setup(training_status, game_count)
+
+      // training the net to predict chances of WHITE win, with 50/50 at 0
+      const r = winner == c.WHITE ? 1 : -1;
+
+      let decay = 1;
+      let loss_window = [];
+      let td_error_window = [];
+      let target_window = [];
+      // walk backwards through the history
+      for (let t=V.length-1; t >=0; t--) {
+        // td error: r + γV(s_t+1) - V(s_t)
+        const next = (t == V.length-1) ? r : V[t+1].prediction
+        const tderror = decay * (r + gamma * next - V[t].prediction);
+        const target = Math.min(Math.max(V[t].prediction + tderror, -1), 1);
+
+        training_status = trainer.train(V[t].input, [target]);
+        loss_window.push(training_status.loss)
+        td_error_window.push(tderror)
+        target_window.push(target)
+        decay = decay * lambda;
+      }
+
+      game_lens.push(V.length)
+      // clear the history
+      V = []
+
+      const batch_size = 100;
+      if (game_count % batch_size == 0) {
         end = Date.now()
-        const ten_game_time = end - start;
-        console.log('game:', games, 'loss:', traininfo.loss.toFixed(2), 'time: ', ten_game_time, 'ms /10 games', ten_game_time / 10, 'ms /game avg')
+        const batch_time = end - start;
+        let avg_loss = loss_window.reduce((s, l) => s + l) / loss_window.length
+        let avg_length = game_lens.reduce((s, l) => s + l) / game_lens.length
+        console.log('game:', game_count, 'len:', avg_length, 'avg loss:', avg_loss.toFixed(2), 'time: ', batch_time, 'ms /batch', batch_time / batch_size, 'ms /game avg', td_error_window.map(n => n.toFixed(1)).join(','), target_window.length)
+        game_lens = []
         start = Date.now()
       }
     } else {
-      prev_prediction = prediction;
       const roll = h.generateRoll();
-      game = h.takeTurn(game, roll, Strategies.learned)[1];
+      game = h.takeTurn(game, roll, curriculum_strategy(net, training_status, game_count))[1];
     }
   }
 }
@@ -134,3 +176,18 @@ if (await file.exists()) {
 train(net)
 await Bun.write(path, JSON.stringify(net.toJSON(), null, 2));
 console.log("saved weights to ", path)
+
+
+function checkNeuronWeights(net) {
+  net.layers.forEach((layer, i) => {
+    if (layer.layer_type !== 'fc') return;
+    
+    // Count tiny weights
+    const dead = layer.filters.filter(f => 
+      Object.values(f.w).every(w => Math.abs(w) < 1e-6)
+    ).length;
+    
+    console.log(`Layer ${i}: ${dead}/${layer.filters.length} neurons have tiny weights`);
+  });
+}
+checkNeuronWeights(net);
