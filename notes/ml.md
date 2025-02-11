@@ -70,3 +70,24 @@ rough design:
 - curriculum learning, in that we start with the endgame / bearing off, then move to earlier and earlier games
 - self-play? play against particular opponents?
 
+first version: tdg.ts (td-gammon using convnet.js)
+
+- it maybe sort of trains? It at least shows some weights!
+- interestingly: narrower fully-connected mlp layers (40 vs 100) are much faster, even if there are more of them
+- the loss doesn't go down fast, so it would (I think) take a ton of training to converge
+
+TODO:
+- Add second hidden layer (40-80 units first layer, 40 second layer)
+- Lower learning rate to 0.001
+- Add TD(λ) as discussed
+- Add gradient clipping to prevent instability
+- Longer training duration (measure in games not steps)
+
+- implement and switch to self-play mode
+- curriculum learning
+
+also:
+- Track win rates in windows (e.g. every 100 games)
+- Monitor hidden layer activations for dead neurons
+- Add evaluation against fixed opponent
+- Track average position evaluation
