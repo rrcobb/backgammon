@@ -159,6 +159,8 @@ The 40-hidden five-output net (100k games) against the one-output nets, 200 pair
 
 It wins about as many games and scores more points.
 
+The 80-hidden five-output net (100k games), 300 pairs: against the 40-hidden five-output net, +0.06 points per game [-0.05, +0.17]; against the 200k one-output net, +0.19 [+0.06, +0.32].
+
 ### Cube
 
 Money play. The game tracks the cube's value and owner; before each roll except the opening, the player on roll may double if the cube is centered or theirs. A drop ends the game for the cube's value; a take doubles the cube and passes it. Strategies have an optional `cube` (double, take); without one they never double and always take. Not in the UI yet.
@@ -167,7 +169,9 @@ Nets decide from their cubeless equity E for the doubler, at their search depth:
 
 - The 200k one-output net with the cube vs itself without, 200 pairs: +0.62 points per game [+0.54, +0.70]. The moves are the same, so this is all from doubling against an opponent that always takes.
 
-Next for the cube: compare thresholds in cube-vs-cube play, and use the five-output nets' equity.
+Cube thresholds, the 40-hidden five-output net playing itself with different settings. At 300 pairs, taking up to 0.6 beat taking only up to 0.5 by +0.17 points per game [+0.01, +0.33]. At 3000 pairs, double at 0.4 or 0.5 and take at 0.6 or 0.7 all score within ±0.05 points per game of each other, none significant. The defaults stay at 0.4 and 0.6.
+
+With the cube, the win rate counts drops as wins for the doubler, so points per game is the measure that matters. Cube decisions make the two games in a pair diverge, so these comparisons need many more pairs than cubeless ones.
 
 ### Other net ideas
 
