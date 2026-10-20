@@ -10,7 +10,6 @@
     "differences": "bun src/evals/differences.ts"
   },
   "dependencies": {
-    "convnetjs": "^0.3.0",
     "esbuild": "0.28.2",
     "fast-check": "^4.10.2",
     "mitata": "^1.0.34",

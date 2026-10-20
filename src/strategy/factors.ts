@@ -52,4 +52,7 @@ const prevPrevLearned = learnedFactors[learnedFactors.length - 3];
 
 const factors = { balancedFactors, runnerFactors, learned, prevLearned, prevPrevLearned };
 
-export { evaluate, factors };
+// every weight's name, typed, for code that loops over the weights
+const FACTOR_KEYS = Object.keys(balancedFactors) as (keyof Factors)[];
+
+export { evaluate, factors, FACTOR_KEYS };

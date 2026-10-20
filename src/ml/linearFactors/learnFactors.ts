@@ -1,6 +1,7 @@
 import { Game, Player, Roll, constants as c, helpers as h } from "../../backgammon";
 import { evaluate } from "../../strategy/evaluate";
-import { Factors, factors as f } from "../../strategy/factors";
+import { factors as f, FACTOR_KEYS } from "../../strategy/factors";
+import type { Factors } from "../../strategy/factors";
 import { AppliedStrategy, useEval, Strategies } from "../../strategy/strategies";
 import { compareTwo } from "../../evals/tournament";
 import { default as learnedFactors } from "../learnedFactors.json";
@@ -8,7 +9,7 @@ import { default as learnedFactors } from "../learnedFactors.json";
 type Position = { game: Game; score: number; roll: Roll };
 type GameOutcome = 1 | -1; // 1 for win, -1 for loss
 
-const factorScales = {
+const factorScales: Record<keyof Factors, number> = {
   barPenalty: 1,
   barReward: 1,
   homeReward: 1,
@@ -33,7 +34,7 @@ function scaleFactors(factors: Factors): Factors {
   if (maxAbsValue > 10) {
     const scale = 10 / maxAbsValue;
     const newFactors = { ...factors };
-    for (const key in factors) {
+    for (const key of FACTOR_KEYS) {
       newFactors[key] = factors[key] * scale;
     }
     return newFactors;
@@ -49,14 +50,14 @@ function updateFactors(factors: Factors, gameHistory: Position[], outcome: GameO
   for (const { game } of gameHistory) {
     const key = JSON.stringify(game);
     if (!baselineScores.has(key)) {
-      baselineScores.set(key, evaluate(factors)(game, game.turn));
+      baselineScores.set(key, evaluate(factors)(game, h.toMove(game)));
     }
   }
 
   // Track factor updates for adaptive learning rates
   const updates = new Map<string, number>();
 
-  for (const key in factors) {
+  for (const key of FACTOR_KEYS) {
     const tweakedFactors = { ...factors };
     const perturbation = 0.003 * Math.abs(factors[key]); // Relative perturbation
     tweakedFactors[key] += perturbation;
@@ -68,7 +69,7 @@ function updateFactors(factors: Factors, gameHistory: Position[], outcome: GameO
       const { game } = gameHistory[i];
       const gameKey = JSON.stringify(game);
       const originalEval = baselineScores.get(gameKey)!;
-      const tweakedEval = evaluate(tweakedFactors)(game, game.turn);
+      const tweakedEval = evaluate(tweakedFactors)(game, h.toMove(game));
 
       // Progressive weighting - more weight to later positions
       const weight = Math.exp(i / gameHistory.length - 1);
@@ -195,7 +196,7 @@ function trainFactors(): Factors {
         const numFactorsToPerturb = Math.floor(Object.keys(currentFactors).length * 0.7); // Perturb 70% of factors
 
         // Randomly select factors to perturb
-        const factorKeys = Object.keys(currentFactors);
+        const factorKeys = [...FACTOR_KEYS];
         const shuffled = factorKeys.sort(() => Math.random() - 0.5);
         const toPerturb = shuffled.slice(0, numFactorsToPerturb);
 

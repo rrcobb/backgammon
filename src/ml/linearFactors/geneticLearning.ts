@@ -1,5 +1,6 @@
 import { useEval } from "../../strategy/strategies";
 import type { Factors } from "../../strategy/factors";
+import { FACTOR_KEYS } from "../../strategy/factors";
 import { evaluate } from "../../strategy/evaluate";
 import { roundRobinTournament, printTournament } from "../../evals/tournament";
 
@@ -46,7 +47,8 @@ function generateSynthetics(basePopulation: Factors[], targetSize: number): Fact
 function mutate(factors: Factors, mutationRate = MUTATION_RATE): Factors {
   const result = { ...factors };
 
-  for (const [key, value] of Object.entries(factors)) {
+  for (const key of FACTOR_KEYS) {
+    const value = factors[key];
     if (Math.random() < mutationRate) {
       const multiplier = 1 + MUTATION_RANGE * (2 * Math.random() - 1);
       result[key] = Math.max(0.0001, value * multiplier);
@@ -73,7 +75,7 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
     const child1: Partial<Factors> = {};
     const child2: Partial<Factors> = {};
 
-    for (const key in parent1) {
+    for (const key of FACTOR_KEYS) {
       child1[key] = weight * parent1[key] + (1 - weight) * parent2[key];
       child2[key] = (1 - weight) * parent1[key] + weight * parent2[key];
     }
@@ -81,7 +83,7 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
     return [child1 as Factors, child2 as Factors];
   } else if (strategy < 0.8) {
     // Single point crossover
-    const keys = Object.keys(parent1);
+    const keys = FACTOR_KEYS;
     const crossPoint = Math.floor(Math.random() * keys.length);
     const child1: Partial<Factors> = {};
     const child2: Partial<Factors> = {};
@@ -102,7 +104,7 @@ function crossover(parent1: Factors, parent2: Factors): [Factors, Factors] {
     const child1: Partial<Factors> = {};
     const child2: Partial<Factors> = {};
 
-    for (const key in parent1) {
+    for (const key of FACTOR_KEYS) {
       if (Math.random() < 0.5) {
         child1[key] = parent1[key];
         child2[key] = parent2[key];

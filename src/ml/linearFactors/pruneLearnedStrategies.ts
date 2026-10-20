@@ -1,19 +1,21 @@
 import { useEval } from "../../strategy/strategies";
 import { evaluate } from "../../strategy/evaluate";
 import { roundRobinTournament, printTournament } from "../../evals/tournament";
+import { FACTOR_KEYS } from "../../strategy/factors";
+import type { Factors } from "../../strategy/factors";
 
 const path = "src/ml/learnedFactors.json";
 // Read and process factors
-const learnedFactors = JSON.parse(await Bun.file(path).text());
+const learnedFactors: Factors[] = JSON.parse(await Bun.file(path).text());
 
 // Create strategies from factors
-const createStrategies = (factors) => {
+const createStrategies = (factors: Factors[]) => {
   return Object.fromEntries(factors.map((f, i) => [`learned${i}`, useEval(evaluate(f))]));
 };
 
 // Calculate cosine similarity between two factor vectors
-function cosineSimilarity(f1, f2) {
-  const keys = Object.keys(f1);
+function cosineSimilarity(f1: Factors, f2: Factors) {
+  const keys = FACTOR_KEYS;
   const v1 = keys.map((k) => f1[k]);
   const v2 = keys.map((k) => f2[k]);
 
@@ -24,7 +26,7 @@ function cosineSimilarity(f1, f2) {
   return dot / (mag1 * mag2);
 }
 
-function findAllSimilarGroups(factors, similarityThreshold = 0.95) {
+function findAllSimilarGroups(factors: Factors[], similarityThreshold = 0.95) {
   const n = factors.length;
   const groups = [];
   const used = new Set();
@@ -57,7 +59,7 @@ function findAllSimilarGroups(factors, similarityThreshold = 0.95) {
 const TARGET_SIZE = 15;
 const PAIR_COUNT = 100; // pairs of games per matchup
 
-async function tournamentAndPrune(factors, targetSize = TARGET_SIZE, pairsPerMatchup = PAIR_COUNT) {
+async function tournamentAndPrune(factors: Factors[], targetSize = TARGET_SIZE, pairsPerMatchup = PAIR_COUNT) {
   console.log(`Starting tournament with ${factors.length} strategies...`);
 
   // Run tournament
