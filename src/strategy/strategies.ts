@@ -257,16 +257,11 @@ learned.description = `An evaluation function using machine-learned weights.
 
 Evaluation functions look at the next board state for each valid move, and choose by weighing different factors.
 
-Notable patterns:
-- high blot penalty (4.45 vs 0.2 in balanced),
-- emphasis on contact pip count (6.20 vs 0.005),
-- low home board value
-- moderate anchor importance
+The weights were evolved by a genetic algorithm (src/ml/linearFactors/geneticLearning.ts), seeded with
+hand-tuned and hill-climbed weights (src/ml/linearFactors/learnFactors.ts).
 
 Features:
-${JSON.stringify(f.learned, null, 2)}
-
-See src/learnFactors.ts for details.`;
+${JSON.stringify(f.learned, null, 2)}`;
 
 const expectimax = makeApplied(useExpectimax(evaluate(f.balancedFactors), 2));
 expectimax.description = `Looks at future moves to (try) to choose the best path.
