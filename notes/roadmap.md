@@ -127,6 +127,7 @@ Most of the learning happens in the first 60k games.
 `net:<path>@<ply>` searches with the net: each ply averages over the 21 rolls, with the player on roll's reply picked by the 0-ply net. The root searches its 8 best moves at 0-ply.
 
 - 1-ply vs 0-ply (200k checkpoint), 200 pairs: 1-ply wins 58.5% [53.9%, 63.1%], at about 30 ms per move.
+- 2-ply vs 1-ply, 100 pairs: 2-ply wins 52.5% [46.4%, 58.6%], not significant, at about 0.3 s per move. Telling them apart would take several hundred more pairs, about 20 s per game.
 
 Difference rollouts with the 0-ply net as the rollout policy found no difference between 1-ply and 0-ply (-0.9% [-2.7%, +0.8%]), although 1-ply wins the head-to-head. The rollouts can only judge strategies weaker than the rollout policy; when the strategies being compared are as strong as the policy, use a tournament.
 
