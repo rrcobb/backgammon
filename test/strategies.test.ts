@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
-import type { Game, Result } from "../src/backgammon";
+import type { Game, Player, Result, Roll } from "../src/backgammon";
 import { constants as c, helpers as h } from "../src/backgammon";
-import { useExpectimax, useAbPruning } from "../src/strategy/strategies";
+import { useExpectimax, useSpeedExpectimax } from "../src/strategy/strategies";
 
 test("Two-option expectimax", () => {
   const simpleEval = (game: Game) => game.wHome - game.bHome;
@@ -38,8 +38,10 @@ test("Expectimax chooses optimal move", () => {
 
   const result = expectimax(moves);
 
+  // spreading to the 6, 5, and 4 points bears off more on the next roll
+  // (13.25 expected wHome) than stacking three on the 5 point (12.89)
   expect(result[0]).toEqual([
-    [18, 19],
+    [19, 20],
     [18, c.HOME],
   ]);
 });
@@ -60,7 +62,9 @@ test("Expectimax chooses optimal move with some risk when bearing off", () => {
     if (g.wBar) return -100;
     return g.wHome - g.bHome;
   };
-  const expectimax = useExpectimax(evalFn, 3);
+  // depth 2 scores the position right after black's reply; at depth 3 white
+  // would re-enter from the bar before the leaf, and the hit wouldn't count
+  const expectimax = useExpectimax(evalFn, 2);
 
   const roll: Roll = [3, 5];
   const moves = h.validMoves(game, roll);
@@ -73,33 +77,34 @@ test("Expectimax chooses optimal move with some risk when bearing off", () => {
   ]);
 });
 
-test("pruning should return the same options as normal expectimax", () => {
-  const game = h.newGame();
-  game.turn = c.WHITE;
-  game.positions.fill(0);
-  game.positions[23] = c.WHITE | 2; // White's 1-point
-  game.positions[22] = c.WHITE | 2; // White's 2-point
-  // 3
-  // 4
-  game.positions[19] = c.BLACK | 1; // Black blot on White's 5-point
-  game.positions[18] = c.WHITE | 2; // White's 6-point
-  game.positions[17] = c.BLACK | 2; // Black on White's 7-point
-  game.wHome = 9;
-  game.bHome = 12;
+describe("searches let the opponent move", () => {
+  // the game in a Result still has turn set to the player who just moved,
+  // so a search that doesn't switch turns has white moving twice
+  const blackPositions = (g: Game) => Array.from(g.positions).map((p) => (p & c.BLACK ? p : 0));
 
-  const evalFn = (g: Game) => {
-    if (g.wBar) return -100;
-    return g.wHome * 10 + (24 - g.positions.filter((p) => p & c.BLACK).length);
+  const searches = {
+    expectimax: (evalFn) => useExpectimax(evalFn, 2),
+    speedExpectimax: (evalFn) => useSpeedExpectimax(evalFn, 2, 21, 100),
   };
 
-  const abPruning = useAbPruning(evalFn, 2);
-  const expectimax = useExpectimax(evalFn, 2);
+  for (const [name, make] of Object.entries(searches)) {
+    test(name, () => {
+      const game = h.newGame();
+      game.turn = c.WHITE;
+      const start = blackPositions(game);
 
-  const roll: Roll = [5, 2];
-  const moves = h.validMoves(game, roll);
+      const leaves: { game: Game; player: Player }[] = [];
+      const spy = (g: Game, player: Player) => {
+        leaves.push({ game: g, player });
+        return 0;
+      };
+      make(spy)(h.validMoves(game, [3, 1]));
 
-  const abResult = abPruning(moves);
-  const expectiResult = expectimax(moves);
-
-  expect(abResult).toEqual(expectiResult);
+      expect(leaves.length).toBeGreaterThan(0);
+      // every leaf is scored for white, the player choosing at the root
+      expect(leaves.every((l) => l.player === c.WHITE)).toBe(true);
+      // and black has moved in every leaf
+      expect(leaves.every((l) => JSON.stringify(blackPositions(l.game)) !== JSON.stringify(start))).toBe(true);
+    });
+  }
 });

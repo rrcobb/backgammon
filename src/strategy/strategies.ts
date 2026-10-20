@@ -56,28 +56,39 @@ function useFactors(f: Factors) {
 /*
   Add some global counters to keep track of calls to different functions.
 */
-export const counts = { pruned: 0, validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0, evaluate: 0 };
+export const counts = { validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0, evaluate: 0 };
 export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
 
+// The game states in a Result still have `turn` set to the player who just
+// moved; takeTurn is what switches it. Searches call this before generating
+// the next player's moves.
+function nextToMove(game: Game): Game {
+  const next = h.cloneGame(game);
+  next.turn = game.turn === c.WHITE ? c.BLACK : c.WHITE;
+  return next;
+}
+
+// Searches score every leaf from the point of view of the player choosing at the root.
 function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
-  function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
+  function expectimax(game: Game, depth: number, isMaxPlayer: boolean, player: Player): number {
     counts.expectimax++;
 
     if (depth === 0 || h.checkWinner(game)) {
-      let result = evalFunc(game, game.turn);
+      let result = evalFunc(game, player);
       counts.evalFunc++;
       return result;
     }
 
     // there's a chance node in between players
     let total = 0;
+    const toMove = nextToMove(game);
     for (let roll of c.UNIQUE_ROLLS) {
-      const moves = h.validMoves(game, roll);
+      const moves = h.validMoves(toMove, roll);
       // let extremum = isMaxPlayer ? -Infinity : Infinity;
       const scores: number[] = [];
       for (let r of moves) {
         let nextGame = r[1];
-        let score = expectimax(nextGame, depth - 1, !isMaxPlayer);
+        let score = expectimax(nextGame, depth - 1, !isMaxPlayer, player);
         scores.push(score);
         // extremum = isMaxPlayer !== score > extremum ? extremum : score;
       }
@@ -93,9 +104,10 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
   function _expecti(options: Result[]): Result {
     let maxScore = -Infinity;
     let maxOption = null;
+    const player = options[0][1].turn;
     for (let option of options) {
       let [move, game] = option;
-      let score = expectimax(game, startDepth - 1, false);
+      let score = expectimax(game, startDepth - 1, false, player);
       if (score > maxScore) {
         maxScore = score;
         maxOption = option;
@@ -106,63 +118,6 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
 
   return _expecti;
 }
-
-const useAbPruning = (evalFunc: EvaluationFunction, startDepth: number) => {
-  function expectimax(game: Game, depth: number, isMaxPlayer: boolean, alpha: number = -Infinity, beta: number = Infinity): number {
-    counts.expectimax++;
-
-    if (depth === 0 || h.checkWinner(game)) {
-      counts.evalFunc++;
-      return evalFunc(game, game.turn);
-    }
-
-    let total = 0;
-    for (let roll of c.UNIQUE_ROLLS) {
-      const moves = h.validMoves(game, roll);
-      let rollScore = isMaxPlayer ? -Infinity : Infinity;
-      // scope these here to not pollute other rolls
-      let a = alpha;
-      let b = beta;
-      for (let [_, nextGame] of moves) {
-        let score = expectimax(nextGame, depth - 1, !isMaxPlayer, alpha, beta);
-        if (isMaxPlayer) {
-          // max
-          rollScore = score > rollScore ? score : rollScore;
-          a = rollScore > a ? rollScore : a;
-        } else {
-          // min
-          rollScore = rollScore < score ? rollScore : score;
-          b = rollScore < b ? rollScore : b;
-        }
-        if (a >= b) {
-          counts.pruned++;
-          break; // Prune
-        }
-      }
-      let rollWeight = roll[0] === roll[1] ? 1 : 2;
-      total += rollScore * rollWeight;
-    }
-    return total / 36;
-  }
-
-  function _expecti(options: Result[]): Result {
-    let maxScore = -Infinity;
-    let maxOption = null;
-    let alpha = -Infinity;
-    for (let option of options) {
-      let [move, game] = option;
-      let score = expectimax(game, startDepth - 1, false, alpha, Infinity);
-      if (score > maxScore) {
-        maxScore = score;
-        maxOption = option;
-      }
-      alpha = score > alpha ? score : alpha;
-    }
-    return maxOption;
-  }
-
-  return _expecti;
-};
 
 function sample<T>(list: Array<T>, sampleSize: number): Array<T> {
   if (list.length < sampleSize) return list;
@@ -211,11 +166,11 @@ function bestN<T>(list: Array<T>, sampleSize: number, metric: (a: T) => number):
 function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nSampleRolls: number, sampleMoves: number) {
   const evaluateOption = ([move, game]) => evalFunc(game, game.turn);
 
-  function expectimax(game: Game, depth: number, isMaxPlayer: boolean): number {
+  function expectimax(game: Game, depth: number, isMaxPlayer: boolean, player: Player): number {
     counts.expectimax++;
 
     if (depth === 0 || h.checkWinner(game)) {
-      let result = evalFunc(game, game.turn);
+      let result = evalFunc(game, player);
       counts.evalFunc++;
       return result;
     }
@@ -223,13 +178,15 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
     // there's a chance node in between players
     let total = 0;
     let weights = 0;
+    const toMove = nextToMove(game);
     let sampleRolls = sample(c.UNIQUE_ROLLS, nSampleRolls);
     for (let roll of sampleRolls) {
-      const moves = bestN(h.validMoves(game, roll), sampleMoves, evaluateOption);
+      // the mover's best few moves, by the mover's own evaluation
+      const moves = bestN(h.validMoves(toMove, roll), sampleMoves, evaluateOption);
       let extremum = isMaxPlayer ? -Infinity : Infinity;
       for (let r of moves) {
         let nextGame = r[1];
-        let score = expectimax(nextGame, depth - 1, !isMaxPlayer);
+        let score = expectimax(nextGame, depth - 1, !isMaxPlayer, player);
 
         // typescript likes !== for XOR; this would be ^ otherwise
         extremum = isMaxPlayer !== score > extremum ? extremum : score;
@@ -246,9 +203,10 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
     let maxScore = -Infinity;
     let maxOption = null;
     let sampleOptions = bestN(options, sampleMoves, evaluateOption);
+    const player = options[0][1].turn;
     for (let option of sampleOptions) {
       let [move, game] = option;
-      let score = expectimax(game, startDepth - 1, false);
+      let score = expectimax(game, startDepth - 1, false, player);
       if (score > maxScore) {
         maxScore = score;
         maxOption = option;
@@ -337,9 +295,9 @@ Trades complete analysis for speed, which allows deeper search: 3 moves ahead in
 
 Uses learned factors for evaluation.`;
 
-const fastOnePly = makeApplied(useSpeedExpectimax(evaluate(f.learned), 1, 10, 5));
-fastOnePly.description = `Ultra-fast single-ply sampling expectimax. Samples 10 rolls
-and 5 moves, but only looks one move ahead. Quick responses while maintaining some probability assessment.`;
+const fastOnePly = makeApplied(useSpeedExpectimax(evaluate(f.learned), 2, 10, 5));
+fastOnePly.description = `Fast one-ply sampling expectimax. Takes its 5 best moves by the learned
+evaluation, and for each one samples 10 of the opponent's rolls and their 5 best replies.`;
 
 const mcts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced });
 mcts.description = `(slow) Monte Carlo Tree Search with balanced evaluation rollouts.
@@ -376,4 +334,4 @@ const Strategies = {
 const forCompare = { learnedFastExp, fastOnePly, learned };
 // export these to check how expectimax helps (or..doesn't)
 // const forCompare = { prev, prevPrev, learned, learnedFastExp  }
-export { Strategies, forCompare, makeApplied, useExpectimax, useAbPruning, useSpeedExpectimax, useEval, random };
+export { Strategies, forCompare, makeApplied, useExpectimax, useSpeedExpectimax, useEval, random };

@@ -5,7 +5,7 @@ const xdescribe = test.skip;
 import { arbitraryGame, expectGamesEqual } from "./helpers";
 
 import { helpers as h, constants as c } from "../src/backgammon.ts";
-import { useSpeedExpectimax, useExpectimax, useAbPruning } from "../src/strategy/strategies.ts";
+import { useSpeedExpectimax, useExpectimax } from "../src/strategy/strategies.ts";
 import { evaluate, factors } from "../src/strategy/factors.ts";
 
 // Property-based test
@@ -124,30 +124,6 @@ describe("Bar entry priority", () => {
           }
         });
       }),
-    );
-  });
-});
-
-describe("ab pruning", () => {
-  it("matches expectimax", () => {
-    const evalFn = (g) => {
-      const val = g.wHome * 10 - g.bHome * 10 + g.wBar * -50 + g.bBar * 50;
-      return g.turn == c.WHITE ? val : -val;
-    };
-    const expectimax = useExpectimax(evalFn, 2);
-    const abPruning = useAbPruning(evalFn, 2);
-    fc.assert(
-      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
-        const moves = h.validMoves(game, roll);
-        const currentPlayer = game.turn;
-
-        const abResult = abPruning(moves);
-        const expectiResult = expectimax(moves);
-
-        expect(abResult).toEqual(expectiResult);
-      }),
-      // each run is two 2-ply searches; 100 runs takes ~7s
-      { numRuns: 25 },
     );
   });
 });

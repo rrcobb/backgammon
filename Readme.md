@@ -40,7 +40,9 @@ One step more complicated are search evaluations. There's a couple of versions o
 
 Because the branching factor of the game is large (~400?), search depth-limited. We can't actually search very far into the future / down the tree. This makes it relatively ineffective.
 
-There's a basic version of expectimax that attempts to evaluate all the nodes, and there's two versions that try to speed things up. One uses a/b pruning, and the other uses sampling. A/b pruning should be equivalent to vanilla expectimax, but skips searching deep into nodes that the player won't care about. Sampling trades accuracy for depth of search. A/b pruning doesn't help very much. Sampling allows another layer of search depth, which appears to be significant in improving the strategy, at least a little bit.
+There's a basic version of expectimax that attempts to evaluate all the nodes, and a version that uses sampling to speed things up. Sampling trades accuracy for depth of search, and allows another layer of search depth. (There used to be an a/b pruning version too, but pruning within a roll isn't sound when chance nodes average over rolls, so it was removed.)
+
+Until October 2026, the searches never switched turns between plies, so the "opponent's" ply was really the same player moving again. That's likely why expectimax kept losing to the evaluation function it wraps.
 
 There's an implementation of Monte Carlo Tree Search (src/strategy/mcts.ts). At each turn, MCTS does a bunch of rollouts of the available moves, and then scores the based on how the rollouts worked out. If a move ended up getting a lot of wins in the rollouts, MCTS figures it's a good move.
 
