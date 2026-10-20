@@ -1,6 +1,6 @@
-import { constants as c, helpers as h } from "../backgammon";
-import type { Die, Game, Player, Roll } from "../backgammon";
+import { constants as c } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
+import { playGame, meanInterval } from "./play";
 import { Strategies as AllStrategies, forCompare } from "../strategy/strategies";
 
 /*
@@ -46,66 +46,14 @@ interface TournamentResult {
 
 const DEFAULTS = { seed: 1, confidence: 0.95, progress: true };
 
-// mulberry32, a small seeded PRNG
-function seededRandom(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seededDice(seed: number) {
-  const rand = seededRandom(seed);
-  const die = () => (Math.floor(rand() * 6) + 1) as Die;
-  return { die, roll: (): Roll => [die(), die()] };
-}
-
-// play one game; returns the winner
-function playGame(white: AppliedStrategy, black: AppliedStrategy, seed: number): Player {
-  const dice = seededDice(seed);
-
-  // roll off: the higher die moves first, and plays the two dice as its first roll
-  let wDie: Die, bDie: Die;
-  do {
-    wDie = dice.die();
-    bDie = dice.die();
-  } while (wDie === bDie);
-
-  let game: Game = h.newGame();
-  game.turn = wDie > bDie ? c.WHITE : c.BLACK;
-  let roll: Roll = [wDie, bDie];
-
-  let winner: Player | false;
-  while (!(winner = h.checkWinner(game))) {
-    const strategy = game.turn === c.WHITE ? white : black;
-    [, game] = h.takeTurn(game, roll, strategy);
-    roll = dice.roll();
-  }
-  return winner;
-}
-
-function zScore(confidence: number): number {
-  // two-sided z for common levels; fall back to 95%
-  const table = { 0.9: 1.645, 0.95: 1.96, 0.99: 2.576, 0.999: 3.291 };
-  return table[confidence] ?? 1.96;
-}
-
 function summarize(pairScores: number[], confidence: number): MatchResult {
   const n = pairScores.length;
-  const mean = pairScores.reduce((s, x) => s + x, 0) / n;
-  const variance = n > 1 ? pairScores.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1) : 0;
-  const half = zScore(confidence) * Math.sqrt(variance / n);
-  const low = Math.max(0, mean - half);
-  const high = Math.min(1, mean + half);
+  const { mean, low, high } = meanInterval(pairScores, confidence);
   return {
     wins: Math.round(mean * n * 2),
     games: n * 2,
     winRate: mean,
-    confidenceInterval: [low, high],
+    confidenceInterval: [Math.max(0, low), Math.min(1, high)],
     significant: low > 0.5 || high < 0.5,
   };
 }
