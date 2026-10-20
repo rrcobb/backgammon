@@ -70,3 +70,7 @@ ehthumbs.db
 Desktop.ini
 
 .vercel
+
+# training checkpoints; commit a net only when we want to keep it
+checkpoints/
+*.safetensors

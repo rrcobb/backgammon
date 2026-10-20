@@ -34,7 +34,7 @@ function encodePoint(out: Float32Array, at: number, n: number) {
 }
 
 // `onRoll` is the player who rolls next
-function encode(game: Game, onRoll: Player, out = new Float32Array(INPUT_SIZE)): Float32Array {
+function encode(game: Game, onRoll: Player, out: Float32Array = new Float32Array(INPUT_SIZE)): Float32Array {
   for (let i = 0; i < 24; i++) {
     const pos = game.positions[i];
     const n = pos & 0b1111;
