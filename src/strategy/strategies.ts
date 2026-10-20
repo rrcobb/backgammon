@@ -1,42 +1,66 @@
-import type { Result, Player, Game, Roll } from "../backgammon";
+import type { Result, Player, Game, Roll, Move } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { factors as f, EvaluationFunction } from "./factors";
 import type { Factors } from "./factors";
 import { evaluate } from "./evaluate";
 import { useMCTS } from "./mcts";
 
-export type Strategy = (options: Result[]) => Result;
-export type AppliedStrategy = ((game: Game, roll: Roll) => Result) & {
+/*
+  A strategy picks a move. Callers that want to know why (the UI) pass a
+  `report` callback, and the strategy calls it with what it computed: the moves
+  it considered, best first, valued in its own measure. Callers in hot loops
+  (tournaments, rollouts, searches) don't pass one, and pay nothing for it.
+*/
+export type Candidate = {
+  move: Move;
+  game: Game;
+  value: number; // in the analysis's measure; NaN when there's nothing to compare
+  detail?: string; // extra context, e.g. visit counts
+};
+export type Analysis = {
+  measure: string; // what `value` is, e.g. "evaluation" or "rollout win rate"
+  percent?: boolean; // value is a probability
+  candidates: Candidate[]; // the moves the strategy considered, best first
+};
+export type Report = (analysis: Analysis) => void;
+
+export type Strategy = (options: Result[], report?: Report) => Result;
+export type AppliedStrategy = ((game: Game, roll: Roll, report?: Report) => Result) & {
   description?: string;
   sname?: string;
   factors?: Factors;
 };
 
 // validMoves always returns at least one option (a pass when nothing can move)
-function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
-  return strategy(h.validMoves(game, roll));
+function applyStrategy(game: Game, roll: Roll, strategy: Strategy, report?: Report): Result {
+  return strategy(h.validMoves(game, roll), report);
 }
 
 function makeApplied(strategy: Strategy): AppliedStrategy {
-  return function (game, roll) {
-    return applyStrategy(game, roll, strategy);
+  return function (game, roll, report) {
+    return applyStrategy(game, roll, strategy, report);
   };
 }
 
+const byValue = (a: Candidate, b: Candidate) => b.value - a.value;
+
 // strategies use an evaluation function (depth = 0)
 function useEval(evalFn: EvaluationFunction): AppliedStrategy {
-  return makeApplied((options: Result[]) => {
+  return makeApplied((options: Result[], report?: Report) => {
     let best = options[0];
     let bestScore = -Infinity;
+    const candidates: Candidate[] = [];
     for (let current of options) {
       const player = h.toMove(current[1]);
       const score = evalFn(current[1], player)
+      if (report) candidates.push({ move: current[0], game: current[1], value: score });
       if (score > bestScore) {
         best = current;
         bestScore = score
       }
     }
 
+    report?.({ measure: "evaluation", candidates: candidates.sort(byValue) });
     return best
   });
 }
@@ -95,18 +119,21 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
     return result;
   }
 
-  function _expecti(options: Result[]): Result {
+  function _expecti(options: Result[], report?: Report): Result {
     let maxScore = -Infinity;
     let maxOption = options[0];
     const player = h.toMove(options[0][1]);
+    const candidates: Candidate[] = [];
     for (let option of options) {
       let [move, game] = option;
       let score = expectimax(game, startDepth - 1, false, player);
+      if (report) candidates.push({ move, game, value: score, detail: `0-ply ${evalFunc(game, player).toFixed(2)}` });
       if (score > maxScore) {
         maxScore = score;
         maxOption = option;
       }
     }
+    report?.({ measure: `expected evaluation, ${startDepth}-ply`, candidates: candidates.sort(byValue) });
     return maxOption;
   }
 
@@ -193,19 +220,25 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
     return result;
   }
 
-  function _speedExpecti(options: Result[]): Result {
+  function _speedExpecti(options: Result[], report?: Report): Result {
     let maxScore = -Infinity;
     let maxOption = options[0];
     let sampleOptions = bestN(options, sampleMoves, evaluateOption);
     const player = h.toMove(options[0][1]);
+    const candidates: Candidate[] = [];
     for (let option of sampleOptions) {
       let [move, game] = option;
       let score = expectimax(game, startDepth - 1, false, player);
+      if (report) candidates.push({ move, game, value: score, detail: `0-ply ${evalFunc(game, player).toFixed(2)}` });
       if (score > maxScore) {
         maxScore = score;
         maxOption = option;
       }
     }
+    report?.({
+      measure: `expected evaluation, ${startDepth}-ply, sampling ${nSampleRolls} rolls; searched its ${sampleMoves} best moves by evaluation`,
+      candidates: candidates.sort(byValue),
+    });
     return maxOption;
   }
 

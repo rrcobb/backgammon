@@ -3,7 +3,8 @@
  *
  * Game representation
  */
-import { counts, Strategy, AppliedStrategy } from "./strategy/strategies";
+import { counts } from "./strategy/strategies";
+import type { AppliedStrategy, Report } from "./strategy/strategies";
 
 // binary game representation
 const WHITE = 0b00010000;
@@ -412,8 +413,8 @@ function isBearingOff(player: Player, game: Game) {
   return 15 == pieceCount;
 }
 
-function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
-  let choice = strategy(game, roll);
+function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy, report?: Report): Result {
+  let choice = strategy(game, roll, report);
   let move = choice ? choice[0] : nullMove;
   let next = choice ? choice[1] : game;
   next.turn = game.turn == BLACK ? WHITE : BLACK;

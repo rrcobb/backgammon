@@ -1,5 +1,5 @@
 import type { Result, Player, Game, Roll, Move } from "../backgammon";
-import type { AppliedStrategy } from "./strategies";
+import type { AppliedStrategy, Report } from "./strategies";
 import { helpers as h, constants as c } from "../backgammon";
 
 /*
@@ -143,20 +143,31 @@ function search(game: Game, roll: Roll, options: MCTSOptions): Decision {
   return root;
 }
 
+// most visits first, then most wins
+const byVisits = (a: AfterState, b: AfterState) => b.visits - a.visits || b.wins - a.wins;
+
 function mostVisited(root: Decision): AfterState {
-  let best = root.children[0];
-  for (const child of root.children) {
-    const better = child.visits > best.visits || (child.visits === best.visits && child.wins > best.wins);
-    if (better) best = child;
-  }
-  return best;
+  return [...root.children].sort(byVisits)[0];
 }
 
 function useMCTS(options: MCTSOptions): AppliedStrategy {
-  return function mcts(game: Game, roll: Roll): Result {
-    const options_ = h.validMoves(game, roll);
-    if (options_.length === 1) return options_[0];
-    const best = mostVisited(search(game, roll, options));
+  const measure = `rollout win rate, ${options.simulations} simulations; plays the most visited move`;
+  return function mcts(game: Game, roll: Roll, report?: Report): Result {
+    const moves = h.validMoves(game, roll);
+    if (moves.length === 1) {
+      const [move, next] = moves[0];
+      report?.({ measure, percent: true, candidates: [{ move, game: next, value: NaN, detail: "the only move; no search" }] });
+      return moves[0];
+    }
+    const root = search(game, roll, options);
+    const best = mostVisited(root);
+    report?.({
+      measure,
+      percent: true,
+      candidates: [...root.children]
+        .sort(byVisits)
+        .map((child) => ({ move: child.move, game: child.game, value: child.wins / child.visits, detail: `${child.visits} visits` })),
+    });
     return [best.move, best.game];
   };
 }
