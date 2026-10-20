@@ -8,10 +8,17 @@ A backgammon training ground. You play or watch a game, and for any position you
 
 ## State as of October 2026
 
-- `bun test`: 27 pass, 1 skip, 1 fail. `ab pruning > matches expectimax` times out (about 12s against a 5s limit).
-- `tsc --noEmit`: about 45 errors. Most are import paths in `src/ml/linearFactors/` that broke when those files moved into a subfolder. Others are in `tournament.ts`, `analysis.ts`, and `evaluate.ts`.
-- `getPositionInfo` in `src/strategy/evaluate.ts` treats indices 0–5 as white's home board, but white's home board is 18–23 (see `isBearingOff`). So `homeBonus` rewards points made in the opponent's home board, `anchorBonus` rewards points made in your own home board, and "five-point control" measures distance to the opponent's 5-point. It's symmetric between colors. Fixing it changes how `balanced` plays and what the learned weights mean.
-- The expectimax searches never switched turns between plies, so the opponent never moved inside a search. Fixed in October 2026, and alpha-beta pruning was removed (it isn't sound with chance nodes). After the fix, the searches still don't beat the plain `learned` evaluation (see below).
+When we picked the project up, `tsc` had about 45 errors and one test timed out. Fixing those, and building a fair tournament, turned up a set of sign and perspective errors in the engine's strategies:
+
+- The expectimax searches never switched turns between plies, so the opponent never moved inside a search, and the minimizing ply chose the root player's own worst move.
+- Alpha-beta pruning cut off a roll's replies against alpha, which isn't sound when the node averages over rolls. It was removed.
+- In `evaluate.ts`: the pip difference rewarded being behind, `isRacing` was inverted, checkers on the bar had no pips, shots from the bar were attributed to the wrong side, and the home board and anchor points were swapped (so five-point control measured the opponent's 5 point).
+- The evaluation charged blot risk to the scored player even when that player was on roll, as at a 2-ply search leaf.
+- The linear learner scored each recorded position for the opponent while using the learner's outcome, always played white, and validated with unpaired games.
+- The genetic learner saved its population best-first, but `factors.ts` uses the last entry as `learned`.
+
+All of these are fixed, with tests, and `learned` has been retrained. Still open:
+
 - MCTS (`src/strategy/mcts.ts`) is a flat UCB1 bandit over the root moves, not a tree. `evaluate()` always selects from the root, and child nodes have no roll, so they never expand.
 - The TD net (`src/ml/nets/tdg.ts`) differs from TD-Gammon:
   - the input doesn't encode whose turn it is
@@ -32,29 +39,36 @@ The main checkout had an uncommitted `convnet.json` from a training run after th
 
 Both nets do worse than predicting 0 on MSE. Early in the game they predict a black win with no better than chance accuracy. Late-game accuracy is high, but late-game positions are easy to call from the pip count. The uncommitted run wasn't better, so we dropped it.
 
-### Search vs evaluation
+### Strategy results after the fixes
 
-Tournament after the expectimax fix, 50 pairs (100 games) per matchup, seed 1:
+0-ply strategies, 300 pairs (600 games) per matchup, seed 42. "Hill-climbed" is the linear learner's result, "genetic" is the genetic learner's result (now `learned`), and "old learned" is the previous `learned`:
+
+| | average win rate against the field |
+|---|---|
+| genetic | 80.6% |
+| old learned | 76.6% |
+| hill-climbed | 67.5% |
+| `balanced` | 36.3% |
+| `runner` | 30.7% |
+| `random` | 8.2% |
+
+Genetic beats old learned 56.8% [53.2%, 60.4%].
+
+Search vs evaluation, 100 pairs (200 games) per matchup, seed 1:
 
 | | win rate | 95% interval |
 |---|---|---|
-| `learnedFastExp` (3-ply, sampled) vs `learned` | 46.0% | 36.8–55.2% |
-| `fastOnePly` (2-ply, sampled) vs `learned` | 40.0% | 31.1–48.9% |
-| `learnedFastExp` vs `fastOnePly` | 50.0% | 40.3–59.7% |
+| `fastOnePly` (2-ply, sampled) vs `learned` | 58.0% | 50.5–65.5% |
+| `learnedFastExp` (3-ply, sampled) vs `learned` | 52.5% | 45.5–59.5% |
+| `balancedFastExpectimax` (3-ply, sampled) vs `balanced` | 56.0% | 49.9–62.1% |
 
-Searching with the hand-written evaluation makes play no better, and the 2-ply search is worse. Likely causes:
-
-- The evaluation assumes the opponent rolls next: the blot penalty is the opponent's chance to hit. At a 2-ply leaf the root player rolls next, so the leaf is scored as if the opponent were about to roll, and the root player's own shots aren't counted.
-- The learned weights were tuned for 0-ply play.
-- The search samples 10 of the 21 rolls, which adds noise.
-
-An evaluation that estimates win probability for a given player to move (the net) avoids the first two. 100 games per matchup only resolves differences of about 10 points; smaller differences need more pairs.
+Before the fixes, 2-ply search lost to `learned` 40% of the time. Now it wins significantly, and the 3-ply searches lean positive but aren't significant at 200 games.
 
 ## Basics
 
 1. Done: get `tsc` clean and all tests passing.
 2. Done: make the tournament fair: play each pairing as both colors, use the same dice sequences for both sides of a pairing, and report win rates with confidence intervals.
-3. Fix the home and anchor labels in `evaluate.ts`, then re-learn the weights and compare with the tournament.
+3. Done: fix the sign errors in the evaluation, searches, and learners, then retrain and compare.
 4. Add a difference-rollout comparison: find positions where two strategies pick different moves, roll out from each choice, and compare the results.
 
 ## Nets
