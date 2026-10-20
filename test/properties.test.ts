@@ -146,6 +146,8 @@ describe("ab pruning", () => {
 
         expect(abResult).toEqual(expectiResult);
       }),
+      // each run is two 2-ply searches; 100 runs takes ~7s
+      { numRuns: 25 },
     );
   });
 });

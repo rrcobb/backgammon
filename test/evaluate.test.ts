@@ -12,9 +12,13 @@ test("genGames produces consistent output with same seed", () => {
   expect(games1).toEqual(games2);
 });
 
-test.skip("evaluate matches scoring snapshot", async () => {
+// regenerate with `bun test/scoring-snapshot.ts` after an intended change to evaluate
+test("evaluate matches scoring snapshot", async () => {
   const snapshot = JSON.parse(await Bun.file("test/scoring-snapshot.json").text());
-  const snapScores = snapshot.map(({ game, score }) => expect.closeTo(score, 0));
-  const evalScores = snapshot.map(({ game, score }) => evaluate(f.balancedFactors)(game, game.turn));
-  expect(snapScores).toEqual(evalScores);
+  const snapScores = snapshot.map(({ score }) => expect.closeTo(score, 6));
+  const evalScores = snapshot.map(({ game }) => {
+    const g = { ...game, positions: new Uint8Array(game.positions) };
+    return evaluate(f.balancedFactors)(g, g.turn);
+  });
+  expect(evalScores).toEqual(snapScores);
 });
