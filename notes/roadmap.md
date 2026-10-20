@@ -94,6 +94,34 @@ The MCTS strategies now use 1000–2000 simulations.
 
 Build a few nets, each small enough to understand fully.
 
+### First TD net
+
+198-40-1, sigmoid, α 0.1, λ 0.7, 200k games of self-play (about 25 minutes). Checkpoints are in `checkpoints/` (gitignored).
+
+Against `learned`, 100 pairs per checkpoint: 78% at 20k games, 86% at 60k, then 83–87% through 200k.
+
+Checkpoints against each other, 200 pairs per matchup:
+
+| | average win rate against the other checkpoints |
+|---|---|
+| 200k | 54.0% |
+| 140k | 53.9% |
+| 100k | 52.3% |
+| 60k | 51.4% |
+| 20k | 38.4% |
+
+Every later checkpoint beats 20k significantly; from 60k on, no pair differs significantly, though the later ones lean ahead.
+
+Predictions on 300 games of `learned` vs `learned` (Brier score; always guessing 50% scores 0.250):
+
+| | overall | first quarter of game | last quarter |
+|---|---|---|---|
+| 20k | 0.157 | 0.221 | 0.068 |
+| 60k | 0.148 | 0.216 | 0.056 |
+| 200k | 0.146 | 0.215 | 0.050 |
+
+Most of the learning happens in the first 60k games. Ideas for going further: more hidden units, a decaying learning rate, and searching 1-ply with the net.
+
 1. TD-Gammon 0.0: 198 inputs in the TD-Gammon encoding (including whose turn it is), one hidden layer of 40–80 units, sigmoid output for P(white wins). Self-play, γ=1, TD(λ) with eligibility traces.
 2. The same net with more outputs: win, gammon win, gammon loss (and backgammon). These give equity, which the learning mode and a future doubling cube both need.
 3. Variants to compare: hand-crafted features added to the raw inputs (as TD-Gammon 2 did), wider or deeper hidden layers, and other activations.
