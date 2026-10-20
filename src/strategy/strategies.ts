@@ -24,11 +24,19 @@ export type Analysis = {
 };
 export type Report = (analysis: Analysis) => void;
 
+// cube decisions, made before the doubler rolls; in both, game.turn is the player who would double.
+// Strategies without one never double and always take.
+export type CubeStrategy = {
+  double: (game: Game) => boolean;
+  take: (game: Game) => boolean;
+};
+
 export type Strategy = (options: Result[], report?: Report) => Result;
 export type AppliedStrategy = ((game: Game, roll: Roll, report?: Report) => Result) & {
   description?: string;
   sname?: string;
   factors?: Factors;
+  cube?: CubeStrategy;
 };
 
 // validMoves always returns at least one option (a pass when nothing can move)

@@ -25,15 +25,29 @@ function seededDice(seed: number): Dice {
 // who won, and how many points: 1, 2 for a gammon, 3 for a backgammon, times the cube
 type Outcome = { winner: Player; points: number };
 
-// play from `game` to the end; game.turn is the player to move
+const other = (p: Player): Player => (p === c.WHITE ? c.BLACK : c.WHITE);
+
+// play from `game` to the end; game.turn is the player to move. Before each roll except an
+// opening `firstRoll`, the player on roll may double; a drop ends the game for the cube's value.
 function playOut(game: Game, white: AppliedStrategy, black: AppliedStrategy, dice: Dice, firstRoll?: Roll): Outcome {
   let current = h.cloneGame(game);
-  let roll = firstRoll ?? dice.roll();
+  let opening = !!firstRoll;
   let result: ReturnType<typeof h.gameResult>;
   while (!(result = h.gameResult(current))) {
-    const strategy = current.turn === c.WHITE ? white : black;
+    const mover = h.toMove(current);
+    const strategy = mover === c.WHITE ? white : black;
+    const opponent = mover === c.WHITE ? black : white;
+
+    if (!opening && h.canDouble(current, mover) && strategy.cube?.double(current)) {
+      const takes = opponent.cube ? opponent.cube.take(current) : true;
+      if (!takes) return { winner: mover, points: current.cube };
+      current.cube *= 2;
+      current.cubeOwner = other(mover);
+    }
+
+    const roll = opening && firstRoll ? firstRoll : dice.roll();
+    opening = false;
     [, current] = h.takeTurn(current, roll, strategy);
-    roll = dice.roll();
   }
   return { winner: result.winner, points: result.points * current.cube };
 }

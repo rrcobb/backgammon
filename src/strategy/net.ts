@@ -1,7 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import type { Game, Player, Result, Roll } from "../backgammon";
 import { makeApplied } from "./strategies";
-import type { AppliedStrategy, Candidate, Report } from "./strategies";
+import type { AppliedStrategy, Candidate, CubeStrategy, Report } from "./strategies";
 import type { MLP } from "../ml/mlp";
 import { encode, INPUT_SIZE } from "../ml/encoding";
 
@@ -150,4 +150,36 @@ function useNetSearch(net: MLP, depth: number, candidates = 8): AppliedStrategy 
   });
 }
 
-export { useNet, useNetSearch, whiteWins, whiteEquity, whiteEquityOf, moveValues, searchValue, netOutputs, resultOutputs, GAMMON_OUTPUTS };
+/*
+  Cube decisions from the net's cubeless equity E for the doubler, in the
+  position before the doubler rolls (searched to the strategy's depth).
+
+  - Take when E <= takeAt. With a dead cube the taker should take up to E = 0.5
+    (taking loses 2E, dropping loses 1); owning the cube is worth something, so
+    the default is a little higher.
+  - Double when doubleAt <= E <= 1. Above 1, playing on for the gammon is worth
+    more than the 1 point a drop would give: too good to double.
+
+  This ignores how much the cube's value changes things beyond these
+  thresholds; it's the simplest version that plays a sensible cube.
+*/
+type CubeThresholds = { doubleAt: number; takeAt: number };
+const DEFAULT_CUBE: CubeThresholds = { doubleAt: 0.4, takeAt: 0.6 };
+
+function useNetCube(net: MLP, depth: number, thresholds: CubeThresholds = DEFAULT_CUBE): CubeStrategy {
+  const x = new Float32Array(INPUT_SIZE);
+  const doublerEquity = (game: Game) => {
+    const doubler = h.toMove(game);
+    const e = searchValue(net, game, doubler, depth, x);
+    return doubler === c.WHITE ? e : -e;
+  };
+  return {
+    double: (game) => {
+      const e = doublerEquity(game);
+      return e >= thresholds.doubleAt && e <= 1;
+    },
+    take: (game) => doublerEquity(game) <= thresholds.takeAt,
+  };
+}
+
+export { useNet, useNetSearch, useNetCube, DEFAULT_CUBE, type CubeThresholds, whiteWins, whiteEquity, whiteEquityOf, moveValues, searchValue, netOutputs, resultOutputs, GAMMON_OUTPUTS };

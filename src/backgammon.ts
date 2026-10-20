@@ -22,8 +22,9 @@ interface Game {
   turn: Player | undefined;
   positions: Uint8Array;
 
-  // doubling cube: not implemented
+  // doubling cube: its value, and who holds it (undefined: centered, either player may double)
   cube: number;
+  cubeOwner?: Player;
 }
 
 // 24 positions
@@ -86,6 +87,7 @@ function cloneGame(game: Game): Game {
     turn: game.turn,
     positions: new Uint8Array(game.positions),
     cube: game.cube,
+    cubeOwner: game.cubeOwner,
   };
 }
 
@@ -124,6 +126,13 @@ function gameResult(game: Game): GameResult | false {
   let inWinnersHome = false;
   for (let i = from; i <= to; i++) if ((game.positions[i] & loser) === loser) inWinnersHome = true;
   return { winner, points: loserBar > 0 || inWinnersHome ? 3 : 2 };
+}
+
+const MAX_CUBE = 64;
+
+// a player may double when the cube is centered or theirs
+function canDouble(game: Game, player: Player): boolean {
+  return game.cube < MAX_CUBE && (game.cubeOwner === undefined || game.cubeOwner === player);
 }
 
 // the player to move; a new game has no player until the roll off
@@ -454,6 +463,7 @@ const helpers = {
   takeTurn,
   checkWinner,
   gameResult,
+  canDouble,
   toMove,
   rollOff,
 };
