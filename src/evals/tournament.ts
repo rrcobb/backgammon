@@ -199,7 +199,11 @@ const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
 
 function printTournament(t: TournamentResult) {
   const width = Math.max(9, ...t.names.map((n) => n.length + 1));
-  console.log(`\nRow's win rate against column. * marks results whose ${pct(t.config.confidence)} interval excludes 50%.\n`);
+  console.log(`\nRow's win rate against column. * marks results whose ${pct(t.config.confidence)} interval excludes 50%.`);
+  if (t.config.pairs < 30) {
+    console.log(`Only ${t.config.pairs} pairs per matchup: the intervals use a normal approximation and aren't reliable below about 30.`);
+  }
+  console.log();
   console.log("".padStart(width) + t.names.map((n) => n.padStart(width)).join(""));
   t.names.forEach((name, i) => {
     console.log(name.padStart(width) + t.results[i].map((r) => colorCell(r, width)).join(""));
