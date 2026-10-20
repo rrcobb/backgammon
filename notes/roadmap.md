@@ -120,7 +120,30 @@ Predictions on 300 games of `learned` vs `learned` (Brier score; always guessing
 | 60k | 0.148 | 0.216 | 0.056 |
 | 200k | 0.146 | 0.215 | 0.050 |
 
-Most of the learning happens in the first 60k games. Ideas for going further: more hidden units, a decaying learning rate, and searching 1-ply with the net.
+Most of the learning happens in the first 60k games.
+
+### Search with the net
+
+`net:<path>@<ply>` searches with the net: each ply averages over the 21 rolls, with the player on roll's reply picked by the 0-ply net. The root searches its 8 best moves at 0-ply.
+
+- 1-ply vs 0-ply (200k checkpoint), 200 pairs: 1-ply wins 58.5% [53.9%, 63.1%], at about 30 ms per move.
+
+Difference rollouts with the 0-ply net as the rollout policy found no difference between 1-ply and 0-ply (-0.9% [-2.7%, +0.8%]), although 1-ply wins the head-to-head. The rollouts can only judge strategies weaker than the rollout policy; when the strategies being compared are as strong as the policy, use a tournament.
+
+### Net variants
+
+All 100k games unless noted, α 0.1 and λ 0.7 unless noted. Head to head at 0-ply, 200 pairs per matchup:
+
+| net | average win rate against the others | Brier |
+|---|---|---|
+| 80 hidden | 52.8% | 0.152 |
+| 40 hidden, 200k games | 52.8% | 0.146 |
+| 40 hidden, α 0.1 decaying to 0.01 | 51.3% | 0.150 |
+| 40 hidden | 50.3% | 0.149 |
+| 80 hidden, α 0.1 decaying to 0.01 | 49.7% | 0.147 |
+| 40 hidden, tanh | 43.0% | 0.151 |
+
+Tanh is significantly weaker than three of the others; no other pair differs significantly. More hidden units and a decaying learning rate didn't help within 100k games.
 
 1. TD-Gammon 0.0: 198 inputs in the TD-Gammon encoding (including whose turn it is), one hidden layer of 40–80 units, sigmoid output for P(white wins). Self-play, γ=1, TD(λ) with eligibility traces.
 2. The same net with more outputs: win, gammon win, gammon loss (and backgammon). These give equity, which the learning mode and a future doubling cube both need.
