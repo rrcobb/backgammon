@@ -288,22 +288,21 @@ const fastOnePly = makeApplied(useSpeedExpectimax(evaluate(f.learned), 2, 10, 5)
 fastOnePly.description = `Fast one-ply sampling expectimax. Takes its 5 best moves by the learned
 evaluation, and for each one samples 10 of the opponent's rolls and their 5 best replies.`;
 
-const mcts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: balanced });
+// with 50 simulations each move gets only a few rollouts, which plays close to random;
+// against learned, 800 simulations about breaks even and 2000 comes out ahead
+const mcts = useMCTS({ explore: 0.3, simulations: 1000, rolloutStrategy: balanced });
 mcts.description = `(slow) Monte Carlo Tree Search with balanced evaluation rollouts.
 
-Uses 50 simulations per move with 0.3 exploration constant.
+Builds a search tree with chance nodes for the dice: 1000 simulations per move, each
+played out to the end of the game by the balanced strategy.`;
 
-Currently not performing well, possibly due to limited simulation count.`;
+const mctsRandomRollouts = useMCTS({ explore: 0.3, simulations: 2000, rolloutStrategy: random });
+mctsRandomRollouts.description = `(slow) MCTS using random moves during rollouts, with 2000 simulations per move.
 
-const mctsRandomRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: random });
-mctsRandomRollouts.description = `(slow) MCTS using random move selection for rollouts.
+A comparison point for how much the rollout strategy matters.`;
 
-Same parameters as balanced MCTS (50 sims, 0.3 explore) but uses random moves during rollouts.
-
-Interesting comparison point for heuristic impact on MCTS.`;
-
-const mctsLearnedRollouts = useMCTS({ explore: 0.3, simulations: 50, rolloutStrategy: learned });
-mctsLearnedRollouts.description = `(slow) MCTS using learned evaluation function for rollouts.`;
+const mctsLearnedRollouts = useMCTS({ explore: 0.3, simulations: 2000, rolloutStrategy: learned });
+mctsLearnedRollouts.description = `(slow) MCTS with 2000 simulations per move, played out by the learned strategy.`;
 
 const prev = useFactors(f.prevLearned);
 const prevPrev = useFactors(f.prevPrevLearned);
