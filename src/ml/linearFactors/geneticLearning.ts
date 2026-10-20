@@ -194,13 +194,13 @@ async function evolvePopulation() {
   // Final evaluation to sort population
   const finalFitnesses = evaluatePopulation(population);
 
-  // Sort population by fitness
+  // Sort population by fitness, best last: factors.ts uses the last entry as `learned`
   const finalOrder = population
     .map((f, i) => ({
       factors: f,
       fitness: finalFitnesses[i],
     }))
-    .sort((a, b) => b.fitness - a.fitness);
+    .sort((a, b) => a.fitness - b.fitness);
 
   population = finalOrder.map(({ factors }) => factors);
 
