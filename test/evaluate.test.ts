@@ -132,3 +132,29 @@ describe("board strength", () => {
     expect(control(4, c.BLACK)).toBeCloseTo(whiteFive);
   });
 });
+
+describe("who rolls next", () => {
+  // game.turn is the player who just moved; the other player rolls next
+  const score = (g: Game, player: Player) => evaluate(f.balancedFactors)(g, player);
+
+  test("your blots are at risk after you move, not while you're on roll", () => {
+    const g = emptyGame();
+    g.positions[10] = c.WHITE | 1;
+    g.positions[12] = c.BLACK | 2; // black can hit the white blot with a 2
+    const justMoved = score({ ...g, turn: c.WHITE }, c.WHITE);
+    const onRoll = score({ ...g, turn: c.BLACK }, c.WHITE);
+    expect(onRoll).toBeGreaterThan(justMoved);
+  });
+
+  test("on roll, you get credit for shots at the opponent's blots", () => {
+    const g = emptyGame();
+    g.positions[10] = c.WHITE | 2;
+    g.positions[12] = c.BLACK | 1; // white can hit this with a 2
+    const shots = getBlots(g, c.BLACK).totalPenalty;
+    expect(shots).toBeGreaterThan(0);
+
+    const justMoved = score({ ...g, turn: c.WHITE }, c.WHITE);
+    const onRoll = score({ ...g, turn: c.BLACK }, c.WHITE);
+    expect(onRoll - justMoved).toBeCloseTo(shots * f.balancedFactors.blotPenalty);
+  });
+});

@@ -109,7 +109,7 @@ function getBoardStrength(game: Game, player: Player, blots: BlotAnalysis, f: Fa
         if (positions[i].isHome) homeCount++;
         if (positions[i].isAnchor) anchorCount++;
       } else {
-        const hitChance = blots.blots[i];
+        const hitChance = blots.blots[i] ?? 0;
         const scaleFactor = 1 - hitChance;
         fivePointControl += positions[i].distanceValue * scaleFactor;
         if (positions[i].isHome) homeCount += scaleFactor;
@@ -211,16 +211,23 @@ function blotHitChance(game, blotPosition, player) {
   return Math.min(1, totalProb); // Cap at 100% chance
 }
 
+const NO_RISK: BlotAnalysis = { blots: {}, totalPenalty: 0 };
+
+// `game.turn` is the player who just moved, as in a Result from validMoves; the other player rolls next.
+// The player who just moved has blots at risk. The player on roll doesn't, yet, and has shots at the opponent's blots.
 const evaluate: (f: Factors) => EvaluationFunction = (f: Factors) => (game, player) => {
   let score = 0;
+  const opponent = player === c.WHITE ? c.BLACK : c.WHITE;
+  const onRoll = game.turn !== player;
 
   score += (player === c.WHITE ? game.wHome : game.bHome) * f.homeReward;
   score -= (player === c.WHITE ? game.bHome : game.wHome) * f.homePenalty;
   score -= (player === c.WHITE ? game.wBar : game.bBar) * f.barPenalty;
   score += (player === c.WHITE ? game.bBar : game.wBar) * f.barReward;
 
-  const blots = getBlots(game, player);
+  const blots = onRoll ? NO_RISK : getBlots(game, player);
   score -= blots.totalPenalty * f.blotPenalty;
+  if (onRoll) score += getBlots(game, opponent).totalPenalty * f.blotPenalty;
 
   const strength = getBoardStrength(game, player, blots, f);
   score += strength.fivePointControl;
