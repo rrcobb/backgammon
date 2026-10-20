@@ -1,14 +1,15 @@
 import { constants as c, helpers as h } from "../backgammon";
 import { showArrow, clearArrows } from './arrows'
 import { state, sleep, play, playTurn, jumpToLatest, back, newGame, Settings, isHuman } from './render'
-import { playerUI, highlightValidSources, clearHighlights, undoCurrentMoves } from './player'
+import { undoCurrentMoves } from './player'
+import { byId } from './_components'
 
-function enable(elid) {
-  (document.getElementById(elid) as HTMLButtonElement).disabled = false;
+function enable(elid: string) {
+  byId<HTMLButtonElement>(elid).disabled = false;
 }
 
-function disable (elid) {
-  (document.getElementById(elid) as HTMLButtonElement).disabled = true;
+function disable (elid: string) {
+  byId<HTMLButtonElement>(elid).disabled = true;
 }
 
 // buttons are:

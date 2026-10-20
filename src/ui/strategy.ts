@@ -1,21 +1,32 @@
-import { constants as c, helpers as h } from "../backgammon";
-import { Strategies as S, AppliedStrategy } from "../strategy/strategies";
-import { UIState, renderCurrentTurn, state, playTurn } from './render'
+import { constants as c } from "../backgammon";
+import type { Player } from "../backgammon";
+import { Strategies as S } from "../strategy/strategies";
+import type { AppliedStrategy } from "../strategy/strategies";
+import { renderCurrentTurn, state, playTurn } from './render'
+import type { UIState } from './render'
 import { setButtons } from './controls'
-import { playerUI, highlightValidSources, clearHighlights } from './player'
+import { playerUI, clearHighlights } from './player'
 import { saveStrategyToUrl } from './url'
-import { containerHeader } from './_components'
+import { byId, find, containerHeader } from './_components'
 
-const human: AppliedStrategy = {
-  sname: 'human',
-  description: `Human player. 
+// the UI waits for clicks on a human's turn instead of calling a strategy (see isHuman)
+const human: AppliedStrategy = Object.assign(
+  () => {
+    throw new Error("the human player's moves come from the board, not a strategy");
+  },
+  {
+    sname: 'human',
+    description: `Human player. 
 
 When it's your turn:
 1. Click a valid piece to select it
-2. Click a destination to move`
-} as AppliedStrategy; // we special-case this type... a lot
+2. Click a destination to move`,
+  },
+);
 
 const Strategies = { human, ...S }
+type UIStrategyName = keyof typeof Strategies;
+const isUIStrategyName = (name: string): name is UIStrategyName => name in Strategies;
 
 function strategyPicker(player: "white" | "black") {
   const div = document.createElement("div");
@@ -45,37 +56,39 @@ function strategyPicker(player: "white" | "black") {
   return div;
 }
 
-export function setStrategy(player, stratName, s: UIState) {
+export function setStrategy(player: Player, stratName: string, s: UIState) {
+  if (!isUIStrategyName(stratName)) {
+    console.warn(`unknown strategy ${stratName}; keeping the current one`);
+    return;
+  }
   if (player == c.WHITE) {
     s.whiteStrategy = Strategies[stratName];
     s.whiteStrategy.sname = stratName;
-    const select = (document.getElementById("white-strategy") as HTMLSelectElement)
+    const select = byId<HTMLSelectElement>("white-strategy");
     select.value = stratName;
-    showStrategyInfo(stratName, select.parentElement);
+    showStrategyInfo(stratName, select.parentElement!);
   } else {
     s.blackStrategy = Strategies[stratName];
     s.blackStrategy.sname = stratName;
-    const select = (document.getElementById("black-strategy") as HTMLSelectElement)
+    const select = byId<HTMLSelectElement>("black-strategy");
     select.value = stratName;
-    showStrategyInfo(stratName, select.parentElement);
+    showStrategyInfo(stratName, select.parentElement!);
   }
 
-  if (s.whiteStrategy && s.blackStrategy) {
-    clearHighlights();
-    playerUI.selectedMoves = [];
-    renderCurrentTurn();
-    // If switching to human and it's their turn, show valid moves
-    if (stratName === 'human' && state.game.turn === player) {
-      playTurn();
-    }
-  
-    setButtons();
-    saveStrategyToUrl(state);
+  clearHighlights();
+  playerUI.selectedMoves = [];
+  renderCurrentTurn();
+  // If switching to human and it's their turn, show valid moves
+  if (stratName === 'human' && state.game.turn === player) {
+    playTurn();
   }
+
+  setButtons();
+  saveStrategyToUrl(state);
 }
 
 export function renderStrategyConfig(state: UIState) {
-  let container = document.getElementById("strategy");
+  let container = byId("strategy");
 
   let strategySection = document.createElement('div');
   strategySection.id = "strategy-selectors";
@@ -97,8 +110,7 @@ export function renderStrategyConfig(state: UIState) {
   container.appendChild(strategySection);
 }
 
-function showStrategyInfo(stratName, parent) {
+function showStrategyInfo(stratName: UIStrategyName, parent: HTMLElement) {
   const description = Strategies[stratName].description || `The ${stratName} strategy. [TODO: add description]`;
-  const descriptionBox = parent.querySelector('.strategy-description');
-  descriptionBox.innerText = description;
+  find('.strategy-description', parent).innerText = description;
 }

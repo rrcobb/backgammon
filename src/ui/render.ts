@@ -1,6 +1,7 @@
-import type { Player, Game, Move, Roll, Die, Result, Movement } from "../backgammon";
+import type { Player, Game, Move, Roll, Result } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
-import { AppliedStrategy } from "../strategy/strategies";
+import { Strategies } from "../strategy/strategies";
+import type { AppliedStrategy } from "../strategy/strategies";
 import { renderHistory, renderInfo, renderPlayerTurn } from "./history";
 import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
@@ -9,31 +10,34 @@ import { setStrategy, renderStrategyConfig } from './strategy';
 import { renderStrategicInfo } from './analysis';
 import { playerUI, highlightValidSources } from './player'
 import { setButtons, setupControls } from './controls'
+import { byId, find } from './_components'
 
-type Turn = {turnNo: number, move: Move, player: string, roll: Roll, game: Game}
+// one played turn; player is who moved, and game is the position after the move
+export type Turn = {turnNo: number, move: Move, player: 'w' | 'b', roll: Roll, game: Game}
 export type UIState = {
-  whiteStrategy: AppliedStrategy | null;
-  blackStrategy: AppliedStrategy | null;
-  game: Game | null;
-  turnNo: number | null;
-  gameHistory: Turn[] | null;
-  backCount: number | null;
+  whiteStrategy: AppliedStrategy;
+  blackStrategy: AppliedStrategy;
+  game: Game;
+  turnNo: number;
+  gameHistory: Turn[];
+  backCount: number; // how many turns back from the latest we're viewing
 }
 
+// the page sets the strategies on load, from the URL or the defaults
 export const state: UIState = {
-  whiteStrategy: null,
-  blackStrategy: null,
-  game: null,
-  turnNo: null,
-  gameHistory: null,
-  backCount: null,
+  whiteStrategy: Strategies.learned,
+  blackStrategy: Strategies.random,
+  game: h.newGame(),
+  turnNo: 0,
+  gameHistory: [],
+  backCount: 0,
 }
 
 export const Settings = {
   delay: 80, // ms
 }
 
-export async function sleep(s) {
+export async function sleep(s: number) {
   await new Promise(resolve => setTimeout(resolve, s))
 }
 
@@ -92,15 +96,15 @@ function renderPosition(value: number, index: number) {
 }
 
 function renderMovement(game: Game, move: Move, board: HTMLElement) {
-  const arrows = move.map(_ => []);
-  const moveCountByPosition = {};
+  const arrows: Element[][] = move.map(_ => []);
+  const moveCountByPosition: Record<number, number> = {};
   
   // note: we're showing the previous move, the turn has updated
-  const getBarElement = () => document.querySelector(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
-  const getHomeElement = () => document.querySelector(game.turn == c.BLACK ? '.white-home' : '.black-home');
+  const getBarElement = () => find(game.turn == c.BLACK ? '.bottom .bar' : '.top .bar');
+  const getHomeElement = () => find(game.turn == c.BLACK ? '.white-home' : '.black-home');
 
   // First pass: Create ghosts and count moves
-  for (let n in move) {
+  for (let n = 0; n < move.length; n++) {
     const m = move[n];
     if (!m) continue;
     const [from, to] = m;
@@ -109,16 +113,13 @@ function renderMovement(game: Game, move: Move, board: HTMLElement) {
     const ghost = document.createElement("span");
     ghost.classList.add("piece", "ghost");
     
-    let fromPieces = document.querySelector(`.position-${from} .pieces`);
-    if (from == c.BAR) {
-      fromPieces = getBarElement();
-    }
+    const fromPieces = from == c.BAR ? getBarElement() : find(`.position-${from} .pieces`);
     fromPieces.appendChild(ghost);
     arrows[n].push(ghost);
   }
 
   // Second pass: Connect arrows
-  for (let n in move) {
+  for (let n = 0; n < move.length; n++) {
     const m = move[n];
     if (!m) continue;
     const [from, to] = m;
@@ -150,7 +151,7 @@ function renderMovement(game: Game, move: Move, board: HTMLElement) {
 }
 
 export function renderBoard(game: Game, move?: Move): void {
-  const board = document.getElementById("board");
+  const board = byId("board");
   board.innerHTML = "";
 
   const home = renderHome(game);
@@ -187,7 +188,7 @@ export function renderBoard(game: Game, move?: Move): void {
   board.insertAdjacentElement("beforeend", frameBottom);
 }
 
-function renderRoll(roll) {
+function renderRoll(roll: Roll) {
   const rollDiv = document.createElement("div");
   rollDiv.classList.add("roll");
 
@@ -199,17 +200,16 @@ function renderRoll(roll) {
     rollDiv.appendChild(img);
   });
 
-  const board = document.getElementById("board");
-  board.appendChild(rollDiv);
+  byId("board").appendChild(rollDiv);
 }
 
-function renderTurn(turn, turnHistory) {
+function renderTurn(turn: Turn | undefined, turnHistory: Turn[]) {
   renderScoreboard();
   renderBoard(turn?.game || state.game, turn?.move);
   if (turn?.roll) { renderRoll(turn.roll); }
   renderHistory(turnHistory, state.backCount);
   renderInfo(turn, turnHistory);
-  renderStrategicInfo(turn?.game, turnHistory, state.whiteStrategy, state.blackStrategy);
+  renderStrategicInfo(turn, turnHistory, state.whiteStrategy, state.blackStrategy);
 }
 
 function initGame() {
@@ -236,7 +236,7 @@ function forward() {
   viewTurn(state.backCount-1);
 }
 
-export function viewTurn(count) {
+export function viewTurn(count: number) {
   state.backCount = count;
   let nextTurn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
   if (!nextTurn) throw new Error("no turn available");
@@ -250,7 +250,7 @@ export function playFromHere() {
   state.gameHistory = state.gameHistory.slice(0, state.gameHistory.length - state.backCount);
   let target = state.gameHistory[state.gameHistory.length - 1];
   state.game = target.game
-  state.game.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+  state.game.turn = h.toMove(state.game) == c.BLACK ? c.WHITE : c.BLACK;
   state.turnNo = state.turnNo - state.backCount;
   state.backCount = 0;
 
@@ -260,21 +260,21 @@ export function playFromHere() {
 
 export function jumpToLatest() {
   state.backCount = 0;
-  let currentTurn = state.gameHistory[state.gameHistory.length - 1];
 
   setButtons();
   renderCurrentTurn();
 }
 
 export function renderCurrentTurn() {
-  if (!state.gameHistory) { console.log('no history'); return; }
   const turn = state.gameHistory[state.gameHistory.length - 1 - state.backCount];
   renderTurn(turn, state.gameHistory);
 }
 
-export function isHuman(strategy) {
+export function isHuman(strategy: AppliedStrategy) {
   return strategy.sname === 'human'
 }
+
+const other = (p: Player): Player => (p === c.WHITE ? c.BLACK : c.WHITE);
 
 async function getNextMove(game: Game, roll: Roll): Promise<Result> {
   const strat = state.game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
@@ -287,7 +287,7 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
       // no legal move: validMoves returns a single pass, [null, null]
       if (!nextTurn || nextTurn[0].every((m) => m === null)) {
         let next = nextTurn ? nextTurn[1] : h.cloneGame(state.game);
-        next.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        next.turn = other(h.toMove(state.game));
         resolve([c.nullMove, next]); 
         return;
       }
@@ -296,7 +296,7 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
       highlightValidSources();
       playerUI.humanMoveCallback = (result: Result) => {
         const [move, next] = result;
-        next.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+        next.turn = other(h.toMove(state.game));
         resolve([move, next]);
       };
     });
@@ -307,7 +307,7 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
 
 async function handleTurn(roll: Roll) {
   state.turnNo++;
-  const player = state.game.turn == c.WHITE ? "w" : "b";
+  const player = h.toMove(state.game) == c.WHITE ? "w" : "b";
 
   const [move, next] = await getNextMove(state.game, roll);
 
@@ -319,9 +319,10 @@ async function handleTurn(roll: Roll) {
 
   const finished = h.checkWinner(state.game);
   if (finished) {
+    const name = (s: AppliedStrategy) => s.sname ?? "unknown";
     const result = {
-      winningStrategy: finished === c.WHITE ? state.whiteStrategy.sname : state.blackStrategy.sname,
-      losingStrategy: finished === c.WHITE ? state.blackStrategy.sname : state.whiteStrategy.sname,
+      winningStrategy: name(finished === c.WHITE ? state.whiteStrategy : state.blackStrategy),
+      losingStrategy: name(finished === c.WHITE ? state.blackStrategy : state.whiteStrategy),
       numTurns: state.turnNo
     };
     recordGame(result);

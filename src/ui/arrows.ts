@@ -1,6 +1,6 @@
 import { getArrow } from "perfect-arrows"
 
-function perfectArrow(b1, b2, container) {
+function perfectArrow(b1: DOMRect, b2: DOMRect, container: Element) {
   const cr = container.getBoundingClientRect();
   // adjustments to stick the arrows to the edges of the pieces
   // - adjust the frame of reference to the container by subtracting off cr.x and cr.y
@@ -85,7 +85,7 @@ function perfectArrow(b1, b2, container) {
           </svg>`)
 }
 
-function showArrow(fromPiece, toPiece, container) {
+function showArrow(fromPiece: Element, toPiece: Element, container: Element) {
   let from = fromPiece.getBoundingClientRect();
   let to = toPiece.getBoundingClientRect();
   let arrow = perfectArrow(from, to, container)

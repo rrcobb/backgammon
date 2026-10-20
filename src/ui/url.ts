@@ -1,7 +1,8 @@
 import { constants as c } from '../backgammon'
 import { setStrategy } from './strategy';
+import type { Turn, UIState } from './render';
 
-async function compressString(str) {
+async function compressString(str: string) {
   // Convert string to stream
   const stream = new Blob([str]).stream();
 
@@ -14,7 +15,7 @@ async function compressString(str) {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
-async function decompressString(base64Str) {
+async function decompressString(base64Str: string) {
   // Convert base64 back to binary
   const binaryStr = atob(base64Str);
   const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
@@ -28,7 +29,7 @@ async function decompressString(base64Str) {
   return await decompressedResponse.text();
 }
 
-async function objectToUrl(obj) {
+async function objectToUrl(obj: unknown) {
   try {
     // Custom replacer to handle Uint8Array
     const jsonStr = JSON.stringify(obj, (key, value) => {
@@ -49,7 +50,7 @@ async function objectToUrl(obj) {
   }
 }
 
-async function objectFromUrl(url) {
+async function objectFromUrl(url: string) {
   try {
     const hash = url.split('#data=')[1];
     if (!hash) throw new Error('No data found in URL');
@@ -69,30 +70,32 @@ async function objectFromUrl(url) {
   }
 }
 
-export function saveStrategyToUrl(state) {
+export function saveStrategyToUrl(state: UIState) {
   const params = new URLSearchParams();
-  params.set('w', state.whiteStrategy.sname);
-  params.set('b', state.blackStrategy.sname);
+  if (state.whiteStrategy.sname) params.set('w', state.whiteStrategy.sname);
+  if (state.blackStrategy.sname) params.set('b', state.blackStrategy.sname);
 
   history.replaceState(null, '', '?' + params.toString() + window.location.hash);
 }
 
-async function saveGameHistoryToUrl(gameHistory, state) {
+async function saveGameHistoryToUrl(gameHistory: Turn[], state: UIState) {
   saveStrategyToUrl(state);
   const url = await objectToUrl(gameHistory);
   window.location.hash = url 
 }
 
-async function restoreFromUrl(state) {
-  let urlHistory = await objectFromUrl(window.location.hash);
+async function restoreFromUrl(state: UIState) {
+  let urlHistory = (await objectFromUrl(window.location.hash)) as Turn[];
   state.gameHistory = urlHistory;
   let last = state.gameHistory[state.gameHistory.length - 1];
   state.game = last.game;
   state.turnNo = last.turnNo;
   state.backCount = 0;
   const params = new URLSearchParams(window.location.search);
-  if (params.has('w')) setStrategy(c.WHITE, params.get('w'), state);
-  if (params.has('b')) setStrategy(c.BLACK, params.get('b'), state);
+  const w = params.get('w');
+  const b = params.get('b');
+  if (w) setStrategy(c.WHITE, w, state);
+  if (b) setStrategy(c.BLACK, b, state);
 }
 
 export { saveGameHistoryToUrl, restoreFromUrl }

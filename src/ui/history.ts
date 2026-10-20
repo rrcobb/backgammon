@@ -1,13 +1,16 @@
-import type { Player, Game, Move } from "../backgammon";
+import type { Move, Movement, Roll } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { playFromHere, jumpToLatest, viewTurn } from './render'
-import { containerHeader } from './_components';
+import type { Turn } from './render'
+import { byId, containerHeader } from './_components';
+
+type Step = NonNullable<Movement>;
 
 function showDie(n: number): string {
   return ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
 }
 
-function showRoll(roll: [number, number]): string {
+function showRoll(roll: Roll): string {
   if (roll[0] === roll[1]) {
     // For doubles, show all four dice
     return new Array(4).fill(showDie(roll[0])).join('')
@@ -15,22 +18,22 @@ function showRoll(roll: [number, number]): string {
   return showDie(roll[0]) + showDie(roll[1]);
 }
 
-function showPos(move, isHit) {
+function showPos(move: Step, isHit: boolean) {
   const start = move[0] == c.BAR ? 'bar' : (1 + move[0]);
   const end = move[1] == c.HOME ? 'home' : (1 + move[1]);
   return start + "→" + end + (isHit ? '⊗' : '');
 }
 
-function showMoves(moves, turn, prev): string {
+function showMoves(moves: Move, turn: Turn, prev?: Turn): string {
   let passes = 0
   let result = "";
 
-  let hitLocs = [];
-  if (checkHit(turn, prev)) {
+  let hitLocs: number[] = [];
+  if (prev && checkHit(turn, prev)) {
     hitLocs = hitLocations(turn, prev);
   }
 
-  for (let m in moves) {
+  for (let m = 0; m < moves.length; m++) {
     let move = moves[m];
     if (move) {
       const isHit = hitLocs.includes(move[1]);
@@ -42,37 +45,37 @@ function showMoves(moves, turn, prev): string {
       }
       result += "pass";
     }
-    if (+m < moves.length - 1) result += ",";
+    if (m < moves.length - 1) result += ",";
   }
   return result;
 }
 
-function identical(a, b) {
+function identical(a: Step, b: Step) {
   return a[0] == b[0] && a[1] == b[1];
 }
 
-function chained(a, b) {
+function chained(a: Step, b: Step) {
   return a[1] == b[0] || a[0] == b[1];
 }
 
-function groupMoves(_moves: Move[]): [Move[], number][] {
-  const moves = _moves.filter(m => m !== null);
+// group a move's checker movements: identical ones together, and a checker moving twice as one sequence
+function groupMoves(move: Move): [Step[], number][] {
+  const moves = move.filter((m): m is Step => m !== null);
   if (moves.length === 0) return [];
   if (moves.length === 1) return [[moves, 1]];
   if (moves.length === 2) {
     let [a,b] = moves;
     if (identical(a, b)) return [[[a], 2]];
     if (chained(a,b)) return [[[a,b], 1]];
-    return moves.map(m => [[m], 1])
+    return moves.map((m): [Step[], number] => [[m], 1])
   }
 
   // rolled doubles, have 3 or 4 moves
-  let result: [Move[], number][] = [];
+  let result: [Step[], number][] = [];
   let remaining = [...moves];
   
   while (remaining.length > 0) {
     const move = remaining[0];
-    const chains = remaining.filter(m => chained(m, move));
     const count = remaining.filter(m => identical(m, move)).length;
     result.push([[move], count]);
     remaining = remaining.filter(m => !identical(m, move));
@@ -81,42 +84,42 @@ function groupMoves(_moves: Move[]): [Move[], number][] {
   return result;
 }
 
-function describeLocation(point: number, player: string, to: boolean): string {
+function describeLocation(point: number): string {
   if (point == c.BAR) return "the bar";
   if (point == c.HOME) return "home";
   return "" + (point + 1)
 }
 
-function describeRoll([d1, d2]: [number, number]): string {
+function describeRoll([d1, d2]: Roll): string {
   if (d1 === d2) {
     return `double ${d1}s`;
   }
   return `${d1}, ${d2}`;
 }
 
-function describeSequence(sequence, player) {
+function describeSequence(sequence: Step[]) {
   if (sequence.length == 1) {
     let move = sequence[0];
-    const fromDesc = describeLocation(move[0], player, false);
-    const toDesc = describeLocation(move[1], player, true);
+    const fromDesc = describeLocation(move[0]);
+    const toDesc = describeLocation(move[1]);
     return `from ${fromDesc} to ${toDesc}`;
   } else {
     let [first, ...rest] = sequence;
-    const fromDesc = describeLocation(first[0], player, false);
-    const toDesc = describeLocation(first[1], player, false);
+    const fromDesc = describeLocation(first[0]);
+    const toDesc = describeLocation(first[1]);
     let description = `a piece from ${fromDesc} to ${toDesc}`
     for (let move of rest) {
-      description += ` and then to ${describeLocation(move[1], player, false)}`
+      description += ` and then to ${describeLocation(move[1])}`
     }
     return description;
   }
 }
 
-function checkHit(turn, prev): boolean {
+function checkHit(turn: Turn, prev?: Turn): boolean {
   if (!prev) return false;
   
   // Check if opponent's bar count increased
-  let prevBarCount, newBarCount;
+  let prevBarCount: number, newBarCount: number;
   if(turn.player === 'w') {
     prevBarCount = prev.game.bBar;
     newBarCount = turn.game.bBar;
@@ -128,7 +131,7 @@ function checkHit(turn, prev): boolean {
   return newBarCount > prevBarCount;
 }
 
-function hitLocations(turn, prev): number[] {
+function hitLocations(turn: Turn, prev: Turn): number[] {
   const opponent = turn.player === 'w' ? c.BLACK : c.WHITE;
   const hits: number[] = [];
   
@@ -146,9 +149,7 @@ function hitLocations(turn, prev): number[] {
   return hits;
 }
 
-function describeTurn(turn, prev): string {
-  if (!turn.game) return `Game start. Players roll to determine who plays first.`;
-
+function describeTurn(turn: Turn, prev?: Turn): string {
   const player = turn.player === 'w' ? 'White' : 'Black';
   let description = `${player} rolled ${describeRoll(turn.roll)}. `;
 
@@ -167,12 +168,12 @@ function describeTurn(turn, prev): string {
     let [sequence, count] = group;
     if (count == 1) {
       if (seenMulti) {
-        return `once piece ${describeSequence(sequence, turn.player)}`
+        return `once piece ${describeSequence(sequence)}`
       }
-      return describeSequence(sequence, turn.player)
+      return describeSequence(sequence)
     } else {
       seenMulti = true;
-      return `${count} pieces ${describeSequence(sequence, turn.player)}`
+      return `${count} pieces ${describeSequence(sequence)}`
     }
   });
 
@@ -185,7 +186,7 @@ function describeTurn(turn, prev): string {
     description += "Moved " + sequenceDescriptions.join(', ') + ', and ' + lastMove + ".";
   }
 
-  if (checkHit(turn, prev)) {
+  if (prev && checkHit(turn, prev)) {
     const hitLocs = hitLocations(turn, prev);
     let hitDesc = `Hit ${turn.player === 'w' ? 'Black' : 'White'}'s blot`
     hitDesc += hitLocs.map(pos => ` on ${pos + 1}`).join(' and');
@@ -195,11 +196,11 @@ function describeTurn(turn, prev): string {
   return description;
 }
 
-function renderHistory(gameHistory, backCount=0) {
+function renderHistory(gameHistory: Turn[], backCount=0) {
   // Create or get content wrapper
-  const container = document.getElementById("history-container");
-  const historyEl = document.getElementById("turn-history");
-  let content = historyEl.querySelector('.section-content');
+  const container = byId("history-container");
+  const historyEl = byId("turn-history");
+  let content = historyEl.querySelector<HTMLElement>('.section-content');
   if (!content) {
     historyEl.innerHTML = '';
     
@@ -222,8 +223,7 @@ function renderHistory(gameHistory, backCount=0) {
   content.innerHTML = '';
 
   if (gameHistory.length == 0) {
-    const startDiv = renderTurn({player: 'b', turnNo: 'start', roll: null}, null, 0, backCount);
-    content.appendChild(startDiv);
+    content.appendChild(renderStart());
   }
 
   const reverseChronology = gameHistory.slice().reverse();
@@ -246,7 +246,7 @@ function renderHistory(gameHistory, backCount=0) {
   addHistoryControls(content, backCount);
 }
 
-function addHistoryControls(historyEl, backCount) {
+function addHistoryControls(historyEl: HTMLElement, backCount: number) {
   const controls = document.createElement('div');
   controls.classList.add('history-controls');
 
@@ -269,21 +269,34 @@ function addHistoryControls(historyEl, backCount) {
   historyEl.appendChild(controls);
 }
 
-function renderTurn(turn, prev, index, backCount) {
-  const hitOpponent = checkHit(turn, prev);
-    
+// the row shown before the first turn
+function renderStart() {
+  const turnDiv = document.createElement('div');
+  turnDiv.classList.add('history-turn', 'black-turn', 'history-current', 'expanded');
+  const num = document.createElement('span');
+  num.innerText = 'start';
+  num.classList.add('turn-number');
+  turnDiv.appendChild(num);
+  const descDiv = document.createElement('div');
+  descDiv.classList.add('turn-description');
+  descDiv.innerText = 'Game start. Players roll to determine who plays first.';
+  turnDiv.appendChild(descDiv);
+  return turnDiv;
+}
+
+function renderTurn(turn: Turn, prev: Turn | undefined, index: number, backCount: number) {
   const turnDiv = document.createElement('div');
 
   turnDiv.classList.add('history-turn');
   turnDiv.classList.add(turn.player === 'w' ? 'white-turn' : 'black-turn');
 
   const num = document.createElement('span')
-  num.innerText = turn.turnNo
+  num.innerText = String(turn.turnNo)
   num.classList.add('turn-number')
   turnDiv.appendChild(num);
 
   const rollSpan = document.createElement('span');
-  rollSpan.innerText = turn.roll ? showRoll(turn.roll) : '';
+  rollSpan.innerText = showRoll(turn.roll);
   rollSpan.classList.add('turn-roll')
   turnDiv.appendChild(rollSpan);
 
@@ -317,7 +330,7 @@ function renderTurn(turn, prev, index, backCount) {
   return turnDiv
 }
 
-function renderInfo(turn, turnHistory) {
+function renderInfo(turn: Turn | undefined, turnHistory: Turn[]) {
   let info = "";
   if (!turn) {
     info = "New game. Players roll to determine who goes first."
@@ -342,12 +355,11 @@ function renderInfo(turn, turnHistory) {
       if (turn.game.bBar && turn.player == 'w') info += ` Black has ${turn.game.bBar} on the bar.`;
     }
   }
-  const infoDiv = document.getElementById('turn-info');
-  infoDiv.textContent = info;
+  byId('turn-info').textContent = info;
 }
 
-function renderPlayerTurn(roll) {
-  const infoDiv = document.getElementById('turn-info');
+function renderPlayerTurn(roll: Roll) {
+  const infoDiv = byId('turn-info');
   const playerTurn = document.createElement('div');
   playerTurn.style.marginTop = '8px';
   playerTurn.textContent = `Your turn! You rolled ${describeRoll(roll)}.`;

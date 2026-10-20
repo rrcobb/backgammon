@@ -420,7 +420,7 @@ function takeTurn(game: Game, roll: Roll, strategy: AppliedStrategy): Result {
   return [move, next];
 }
 
-const constants = { ALL_ROLLS, UNIQUE_ROLLS, WHITE: WHITE as typeof WHITE, BLACK: BLACK as typeof BLACK, HOME, BAR, dice, nullMove };
+const constants = { ALL_ROLLS, UNIQUE_ROLLS, WHITE: WHITE as typeof WHITE, BLACK: BLACK as typeof BLACK, HOME: HOME as typeof HOME, BAR: BAR as typeof BAR, dice, nullMove };
 
 const helpers = {
   isBearingOff,
@@ -436,6 +436,6 @@ const helpers = {
 };
 
 // types
-export { Player, Game, Result, Die, Roll, Move, Movement };
+export type { Player, Game, Result, Die, Roll, Move, Movement, Start, Dest };
 
 export { helpers, constants };

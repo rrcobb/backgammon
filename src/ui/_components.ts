@@ -1,4 +1,18 @@
-export function containerHeader(title, parent) {
+// the element with this id; throws if the page doesn't have it
+export function byId<T extends HTMLElement = HTMLElement>(id: string): T {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`no element with id ${id}`);
+  return el as T;
+}
+
+// the first match for selector under parent; throws if there isn't one
+export function find<T extends Element = HTMLElement>(selector: string, parent: ParentNode = document): T {
+  const el = parent.querySelector(selector);
+  if (!el) throw new Error(`no element matching ${selector}`);
+  return el as T;
+}
+
+export function containerHeader(title: string, parent: HTMLElement) {
   const div = document.createElement('div');
   div.classList.add('section-header');
   const span = document.createElement('span');
@@ -9,12 +23,11 @@ export function containerHeader(title, parent) {
   toggleBtn.classList.add('toggle-button');
   toggleBtn.textContent = '+';
   div.addEventListener('click', () => {
-    const content = parent.querySelector('.section-content');
+    const content = find('.section-content', parent);
     const isCollapsed = content.classList.contains('collapsed');
     content.classList.toggle('collapsed');
     toggleBtn.textContent = isCollapsed ? '-' : '+';
-    const container = parent.closest('.container');
-    container.classList.toggle('collapsed');
+    parent.closest('.container')?.classList.toggle('collapsed');
   });
 
   div.appendChild(toggleBtn);
