@@ -10,6 +10,7 @@ A backgammon training ground. You play or watch a game, and for any position you
 
 - `bun test`: 27 pass, 1 skip, 1 fail. `ab pruning > matches expectimax` times out (about 12s against a 5s limit).
 - `tsc --noEmit`: about 45 errors. Most are import paths in `src/ml/linearFactors/` that broke when those files moved into a subfolder. Others are in `tournament.ts`, `analysis.ts`, and `evaluate.ts`.
+- `getPositionInfo` in `src/strategy/evaluate.ts` treats indices 0–5 as white's home board, but white's home board is 18–23 (see `isBearingOff`). So `homeBonus` rewards points made in the opponent's home board, `anchorBonus` rewards points made in your own home board, and "five-point control" measures distance to the opponent's 5-point. It's symmetric between colors. Fixing it changes how `balanced` plays and what the learned weights mean.
 - MCTS (`src/strategy/mcts.ts`) is a flat UCB1 bandit over the root moves, not a tree. `evaluate()` always selects from the root, and child nodes have no roll, so they never expand.
 - The TD net (`src/ml/nets/tdg.ts`) differs from TD-Gammon:
   - the input doesn't encode whose turn it is
@@ -32,9 +33,10 @@ Both nets do worse than predicting 0 on MSE. Early in the game they predict a bl
 
 ## Basics
 
-1. Get `tsc` clean and all tests passing.
-2. Make the tournament fair: play each pairing as both colors, use the same dice sequences for both sides of a pairing, and report win rates with confidence intervals.
-3. Add a difference-rollout comparison: find positions where two strategies pick different moves, roll out from each choice, and compare the results.
+1. Done: get `tsc` clean and all tests passing.
+2. Done: make the tournament fair: play each pairing as both colors, use the same dice sequences for both sides of a pairing, and report win rates with confidence intervals.
+3. Fix the home and anchor labels in `evaluate.ts`, then re-learn the weights and compare with the tournament.
+4. Add a difference-rollout comparison: find positions where two strategies pick different moves, roll out from each choice, and compare the results.
 
 ## Nets
 
