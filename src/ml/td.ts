@@ -3,7 +3,7 @@ import type { Game, Player, Roll } from "../backgammon";
 import { MLP, toSafetensors, fromSafetensors } from "./mlp";
 import type { Activation } from "./mlp";
 import { encode, INPUT_SIZE } from "./encoding";
-import { useNet, moveValues } from "../strategy/net";
+import { useNet, moveValues, resultOutputs } from "../strategy/net";
 import { Strategies } from "../strategy/strategies";
 import { compareTwo } from "../evals/tournament";
 
@@ -24,7 +24,8 @@ import { compareTwo } from "../evals/tournament";
 type TDConfig = {
   games: number;
   hidden: number;
-  activation: Activation; // hidden layer; the output is always a sigmoid
+  activation: Activation; // hidden layer; the outputs are always sigmoids
+  outputs: number; // 1 (P(white wins)) or 5 (with gammons and backgammons; see strategy/net.ts)
   alpha: number;
   alphaEnd?: number; // if set, alpha decays geometrically from alpha to alphaEnd over the run
   lambda: number;
@@ -36,19 +37,31 @@ type TDConfig = {
 
 const other = (p: Player): Player => (p === c.WHITE ? c.BLACK : c.WHITE);
 
+// traces has one block of params.length per output; grad has one
 function trainGame(net: MLP, rates: { alpha: number; lambda: number }, traces: Float32Array, grad: Float32Array, x: Float32Array): number {
   const { alpha, lambda } = rates;
   const params = net.params;
+  const n = params.length;
+  const outputs = net.sizes[net.sizes.length - 1];
   traces.fill(0);
+
+  // e_k = decay * e_k + ∇V_k, for every output k, at the position from the last forward pass
+  const accumulate = (decay: number) => {
+    for (let k = 0; k < outputs; k++) {
+      net.outputGradient(k, grad);
+      const trace = traces.subarray(k * n, (k + 1) * n);
+      for (let i = 0; i < n; i++) trace[i] = decay * trace[i] + grad[i];
+    }
+  };
 
   let [onRoll, roll]: [Player, Roll] = h.rollOff();
   let game: Game = h.newGame();
   game.turn = onRoll;
 
   // value and gradient for the current position
-  let v = net.forward(encode(game, onRoll, x))[0];
-  net.outputGradient(0, grad);
-  for (let i = 0; i < params.length; i++) traces[i] = grad[i];
+  const v = new Float32Array(outputs);
+  v.set(net.forward(encode(game, onRoll, x)));
+  accumulate(0);
 
   let moves = 0;
   while (true) {
@@ -61,19 +74,21 @@ function trainGame(net: MLP, rates: { alpha: number; lambda: number }, traces: F
     const next = options[best][1];
     next.turn = other(onRoll);
 
-    const winner = h.checkWinner(next);
-    const target = winner ? (winner === c.WHITE ? 1 : 0) : net.forward(encode(next, next.turn, x))[0];
-    const delta = target - v;
-    for (let i = 0; i < params.length; i++) params[i] += alpha * delta * traces[i];
-    if (winner) return moves;
+    const final = resultOutputs(next, outputs);
+    const targets = final ?? Array.from(net.forward(encode(next, next.turn, x)));
+    for (let k = 0; k < outputs; k++) {
+      const step = alpha * (targets[k] - v[k]);
+      const trace = traces.subarray(k * n, (k + 1) * n);
+      for (let i = 0; i < n; i++) params[i] += step * trace[i];
+    }
+    if (final) return moves;
 
     // move on: value and gradient at the new position, with the updated weights
     game = next;
     onRoll = next.turn;
     roll = h.generateRoll();
-    v = net.forward(encode(game, onRoll, x))[0];
-    net.outputGradient(0, grad);
-    for (let i = 0; i < params.length; i++) traces[i] = lambda * traces[i] + grad[i];
+    v.set(net.forward(encode(game, onRoll, x)));
+    accumulate(lambda);
   }
 }
 
@@ -90,10 +105,10 @@ async function train(config: TDConfig) {
     startGames = Number(loaded.metadata.games ?? 0);
     console.log(`resumed from ${config.resume} after ${startGames} games`);
   } else {
-    net = new MLP([INPUT_SIZE, config.hidden, 1], [config.activation, "sigmoid"]).randomize(0.1);
+    net = new MLP([INPUT_SIZE, config.hidden, config.outputs], [config.activation, "sigmoid"]).randomize(0.1);
   }
 
-  const traces = new Float32Array(net.params.length);
+  const traces = new Float32Array(net.params.length * net.sizes[net.sizes.length - 1]);
   const grad = new Float32Array(net.params.length);
   const x = new Float32Array(INPUT_SIZE);
   console.log(
@@ -130,7 +145,7 @@ async function train(config: TDConfig) {
   }
 }
 
-// bun src/ml/td.ts --games=100000 --hidden=40 --activation=sigmoid --alpha=0.1 --alphaEnd=0.01 --lambda=0.7 --name=td-h40 --resume=checkpoints/x.safetensors
+// bun src/ml/td.ts --games=100000 --hidden=40 --outputs=5 --activation=sigmoid --alpha=0.1 --alphaEnd=0.01 --lambda=0.7 --name=td-h40 --resume=checkpoints/x.safetensors
 if (import.meta.main) {
   const args = Object.fromEntries(
     process.argv.slice(2).map((a) => {
@@ -139,18 +154,21 @@ if (import.meta.main) {
     }),
   );
   const hidden = Number(args.hidden ?? 40);
+  const outputs = Number(args.outputs ?? 1);
+  if (outputs !== 1 && outputs !== 5) throw new Error("outputs must be 1 or 5");
   const activation = (args.activation ?? "sigmoid") as Activation;
   if (!["sigmoid", "relu", "tanh"].includes(activation)) throw new Error(`unknown activation ${activation}`);
   await train({
     games: Number(args.games ?? 10000),
     hidden,
+    outputs,
     activation,
     alpha: Number(args.alpha ?? 0.1),
     alphaEnd: args.alphaEnd ? Number(args.alphaEnd) : undefined,
     lambda: Number(args.lambda ?? 0.7),
     evalEvery: Number(args.evalEvery ?? 5000),
     evalPairs: Number(args.evalPairs ?? 100),
-    out: args.out ?? `checkpoints/${args.name ?? `td-h${hidden}`}`,
+    out: args.out ?? `checkpoints/${args.name ?? `td-h${hidden}${outputs === 5 ? "-g5" : ""}`}`,
     resume: args.resume,
   });
 }
