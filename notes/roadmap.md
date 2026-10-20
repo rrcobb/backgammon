@@ -16,16 +16,17 @@ When we picked the project up, `tsc` had about 45 errors and one test timed out.
 - The evaluation charged blot risk to the scored player even when that player was on roll, as at a 2-ply search leaf.
 - The linear learner scored each recorded position for the opponent while using the learner's outcome, always played white, and validated with unpaired games.
 - The genetic learner saved its population best-first, but `factors.ts` uses the last entry as `learned`.
+- MCTS was a flat UCB1 bandit over the root moves, not a tree: it always selected from the root, and child nodes had no roll, so they never expanded.
+- `validMoves` returned `[]` for a blocked player off the bar (a pass everywhere else), which made expectimax values infinite; and after entering from the bar with doubles it kept the wrong number of dice, dropping legal moves. A blocked human player waited forever.
 
-All of these are fixed, with tests, and `learned` has been retrained. Still open:
+All of these are fixed, with tests, and `learned` has been retrained. MCTS now searches a tree with chance nodes for the dice. TypeScript strict mode is on.
 
-- MCTS (`src/strategy/mcts.ts`) is a flat UCB1 bandit over the root moves, not a tree. `evaluate()` always selects from the root, and child nodes have no roll, so they never expand.
-- The TD net (`src/ml/nets/tdg.ts`) differs from TD-Gammon:
-  - the input doesn't encode whose turn it is
-  - a point with 5+ checkers encodes the same as a point with 4
-  - games are played by `Strategies.learned`, not by the net
-  - the update adds `r` at every step, uses γ=0.8, and applies λ as a decay from the end of the game, so the target is a discounted Monte Carlo return rather than TD(λ)
-  - the output is an unbounded regression trained toward ±1
+The convnetjs TD net (`src/ml/nets/tdg.ts`, removed) differed from TD-Gammon:
+  - the input didn't encode whose turn it is
+  - a point with 5+ checkers encoded the same as a point with 4
+  - games were played by `Strategies.learned`, not by the net
+  - the update added `r` at every step, used γ=0.8, and applied λ as a decay from the end of the game, so the target was a discounted Monte Carlo return rather than TD(λ)
+  - the output was an unbounded regression trained toward ±1
 
 ### The convnet nets
 
@@ -62,14 +63,32 @@ Search vs evaluation, 100 pairs (200 games) per matchup, seed 1:
 | `learnedFastExp` (3-ply, sampled) vs `learned` | 52.5% | 45.5–59.5% |
 | `balancedFastExpectimax` (3-ply, sampled) vs `balanced` | 56.0% | 49.9–62.1% |
 
-Before the fixes, 2-ply search lost to `learned` 40% of the time. Now it wins significantly, and the 3-ply searches lean positive but aren't significant at 200 games.
+Before the fixes, 2-ply search lost to `learned` 40% of the time. Now it wins significantly, and the 3-ply searches lean positive but aren't significant at 200 games. (These were measured before the `validMoves` pass fix, which affected searches whenever the opponent had no legal move for a roll.)
+
+MCTS with `learned` rollouts vs `learned`, by difference rollouts (60 disagreements, 60 rollouts per choice, `learned` playing the rollouts):
+
+| simulations | MCTS minus `learned` | time per decision |
+|---|---|---|
+| 50 | -6.7% [-9.6%, -3.7%] | 101 ms |
+| 200 | -2.7% [-5.3%, -0.2%] | 129 ms |
+| 800 | +0.2% [-2.3%, +2.8%] | 431 ms |
+| 2000 | +2.5% [+0.3%, +4.6%] | 579 ms |
+
+The MCTS strategies now use 1000–2000 simulations.
+
+## Tools
+
+- `bun run tournament [pairs] [names...]`: round robin of paired games on seeded dice, with intervals over pairs.
+- `bun run differences <A> <B> [positions] [rollouts] [policy]`: where two strategies disagree, roll out both choices on the same dice and compare the mover's win rate. Much more sensitive than a tournament for strategies that mostly agree, and it prints the largest disagreements in standard notation (`src/notation.ts`).
 
 ## Basics
 
 1. Done: get `tsc` clean and all tests passing.
 2. Done: make the tournament fair: play each pairing as both colors, use the same dice sequences for both sides of a pairing, and report win rates with confidence intervals.
 3. Done: fix the sign errors in the evaluation, searches, and learners, then retrain and compare.
-4. Add a difference-rollout comparison: find positions where two strategies pick different moves, roll out from each choice, and compare the results.
+4. Done: add a difference-rollout comparison.
+5. Done: rebuild MCTS as a tree with chance nodes.
+6. Done: turn on TypeScript strict mode.
 
 ## Nets
 
@@ -84,7 +103,7 @@ Each net needs an evaluation alongside it: prediction error against game outcome
 
 ### Implementation
 
-Write the MLP ourselves on `Float32Array`, with explicit forward and backward passes, and remove convnetjs. These nets are small (198×40×3 is about 8k weights), so this is practical and fast enough in Bun, and it makes every activation and gradient visible.
+Write the MLP ourselves on `Float32Array`, with explicit forward and backward passes (convnetjs is already removed). These nets are small (198×40×3 is about 8k weights), so this is practical and fast enough in Bun, and it makes every activation and gradient visible.
 
 Keep a small interface (`forward`, `backward`, `getActivations`, `save`, `load`) so a library-backed version can replace it later if we try larger architectures.
 
@@ -95,7 +114,6 @@ Train in JS for now. If training gets too slow or we want PyTorch tooling, we ca
 - Save weights as safetensors: a JSON header plus raw float32 bytes. An 8k-weight net is about 32KB, compared to about 1MB as pretty-printed JSON. Python tools can read the same files.
 - Gitignore `*.safetensors` by default. Commit a checkpoint only when we want to keep it permanently, for example the one the UI uses.
 - If larger checkpoints need to be shared or deployed, put them in GitHub release assets or object storage and fetch them by name.
-- Remove `convnet.json` when the new net replaces it.
 
 ## Interpretability
 
