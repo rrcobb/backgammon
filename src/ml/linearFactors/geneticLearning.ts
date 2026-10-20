@@ -1,7 +1,7 @@
 import { useEval } from "../../strategy/strategies";
 import type { Factors } from "../../strategy/factors";
 import { evaluate } from "../../strategy/evaluate";
-import { roundRobinTournament } from "../../evals/tournament";
+import { roundRobinTournament, printTournament } from "../../evals/tournament";
 
 // Configuration
 const GENERATION_COUNT = 10;
@@ -10,7 +10,7 @@ const TOURNAMENT_SIZE = 4;
 const MUTATION_RATE = 0.25;
 const CROSSOVER_RATE = 0.9;
 const MUTATION_RANGE = 0.3;
-const EVALUATE_SIZE = 50;
+const EVALUATE_PAIRS = 25; // pairs of games per matchup
 
 const path = "src/ml/learnedFactors.json";
 // Load initial population
@@ -129,8 +129,11 @@ function tournamentSelect(population: Factors[], fitnesses: number[], tournament
 function evaluatePopulation(population: Factors[]): number[] {
   const strategies = Object.fromEntries(population.map((f, i) => [`gen${i}`, useEval(evaluate(f))]));
 
-  const results = roundRobinTournament(strategies, EVALUATE_SIZE);
-  return results.averageLossRates.map((rate) => 1 - rate);
+  // new dice each generation, so the population doesn't fit one fixed set of games
+  const seed = Math.floor(Math.random() * 2 ** 31);
+  const results = roundRobinTournament(strategies, { pairs: EVALUATE_PAIRS, seed });
+  printTournament(results);
+  return results.averageWinRates;
 }
 
 async function evolvePopulation() {

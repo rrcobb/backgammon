@@ -26,7 +26,7 @@ The property testing makes assertions about whole classes of errors, giving grea
 
 **Benchmarks** of the logic and helpers are key to speeding things up. Because the search strategies are so dependent on performance, there are some microbenchmarks of the different core logic functions, as well as of the strategies overall. These are in `bench/`.
 
-**Play quality** of the strategies is evaluated with a tournament that pits a handful of different strategies against one another, round-robin. Planned: simulate individual games, see differences, and run rollouts. `src/evals/tournament.ts`.
+**Play quality** of the strategies is evaluated with a tournament that pits a handful of different strategies against one another, round-robin (`src/evals/tournament.ts`, `bun run tournament [pairs]`). Games are played in pairs on the same seeded dice, with the strategies swapping colors, so dice luck and any color advantage mostly cancel out. Win rates come with a confidence interval computed over the pairs. Planned: find positions where strategies differ, and roll out from them.
 
 ## Strategies
 

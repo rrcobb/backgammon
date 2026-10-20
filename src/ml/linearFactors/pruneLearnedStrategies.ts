@@ -1,6 +1,6 @@
 import { useEval } from "../../strategy/strategies";
 import { evaluate } from "../../strategy/evaluate";
-import { roundRobinTournament } from "../../evals/tournament";
+import { roundRobinTournament, printTournament } from "../../evals/tournament";
 
 const path = "src/ml/learnedFactors.json";
 // Read and process factors
@@ -55,20 +55,21 @@ function findAllSimilarGroups(factors, similarityThreshold = 0.95) {
 }
 
 const TARGET_SIZE = 15;
-const GAME_COUNT = 200;
+const PAIR_COUNT = 100; // pairs of games per matchup
 
-async function tournamentAndPrune(factors, targetSize = TARGET_SIZE, gamesPerMatchup = GAME_COUNT) {
+async function tournamentAndPrune(factors, targetSize = TARGET_SIZE, pairsPerMatchup = PAIR_COUNT) {
   console.log(`Starting tournament with ${factors.length} strategies...`);
 
   // Run tournament
   const strategies = createStrategies(factors);
-  const results = roundRobinTournament(strategies, gamesPerMatchup);
+  const results = roundRobinTournament(strategies, { pairs: pairsPerMatchup });
+  printTournament(results);
 
   // Get win rates and create initial ranking
   const strategyInfos = results.names.map((name, i) => ({
     name,
     index: parseInt(name.replace("learned", "")),
-    winRate: 1 - results.averageLossRates[i],
+    winRate: results.averageWinRates[i],
     keep: true,
   }));
 
