@@ -62,8 +62,8 @@ function pairedRollouts(afterA: Game, afterB: Game, mover: Player, config: Diffe
     // the game in a Result still has turn set to the mover; the opponent rolls next
     const a = { ...h.cloneGame(afterA), turn: other(mover) };
     const b = { ...h.cloneGame(afterB), turn: other(mover) };
-    const wonA = playOut(a, config.policy, config.policy, seededDice(seed)) === mover ? 1 : 0;
-    const wonB = playOut(b, config.policy, config.policy, seededDice(seed)) === mover ? 1 : 0;
+    const wonA = playOut(a, config.policy, config.policy, seededDice(seed)).winner === mover ? 1 : 0;
+    const wonB = playOut(b, config.policy, config.policy, seededDice(seed)).winner === mover ? 1 : 0;
     winsA += wonA;
     winsB += wonB;
     diffs.push(wonA - wonB);

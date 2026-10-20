@@ -22,21 +22,24 @@ function seededDice(seed: number): Dice {
   return { die, roll: (): Roll => [die(), die()] };
 }
 
-// play from `game` to the end; game.turn is the player to move. Returns the winner.
-function playOut(game: Game, white: AppliedStrategy, black: AppliedStrategy, dice: Dice, firstRoll?: Roll): Player {
+// who won, and how many points: 1, 2 for a gammon, 3 for a backgammon, times the cube
+type Outcome = { winner: Player; points: number };
+
+// play from `game` to the end; game.turn is the player to move
+function playOut(game: Game, white: AppliedStrategy, black: AppliedStrategy, dice: Dice, firstRoll?: Roll): Outcome {
   let current = h.cloneGame(game);
   let roll = firstRoll ?? dice.roll();
-  let winner: Player | false;
-  while (!(winner = h.checkWinner(current))) {
+  let result: ReturnType<typeof h.gameResult>;
+  while (!(result = h.gameResult(current))) {
     const strategy = current.turn === c.WHITE ? white : black;
     [, current] = h.takeTurn(current, roll, strategy);
     roll = dice.roll();
   }
-  return winner;
+  return { winner: result.winner, points: result.points * current.cube };
 }
 
-// play one game from the start; returns the winner
-function playGame(white: AppliedStrategy, black: AppliedStrategy, seed: number): Player {
+// play one game from the start
+function playGame(white: AppliedStrategy, black: AppliedStrategy, seed: number): Outcome {
   const dice = seededDice(seed);
 
   // roll off: the higher die moves first, and plays the two dice as its first roll
@@ -69,4 +72,4 @@ function meanInterval(samples: number[], confidence = 0.95): MeanInterval {
   return { mean, low: mean - half, high: mean + half, n };
 }
 
-export { seededRandom, seededDice, playOut, playGame, meanInterval, type Dice, type MeanInterval };
+export { seededRandom, seededDice, playOut, playGame, meanInterval, type Dice, type MeanInterval, type Outcome };

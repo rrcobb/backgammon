@@ -1,6 +1,8 @@
 import { constants as c } from "../backgammon";
+import type { Player } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
 import { playGame, meanInterval } from "./play";
+import type { MeanInterval, Outcome } from "./play";
 import { forCompare } from "../strategy/strategies";
 
 /*
@@ -33,12 +35,14 @@ interface MatchResult {
   winRate: number;
   confidenceInterval: [number, number];
   significant: boolean; // the interval excludes 50%
+  points: MeanInterval; // points won per game, net: wins count +1/+2/+3, losses negative
 }
 
 interface TournamentResult {
   names: string[];
   results: (MatchResult | null)[][]; // results[i][j]: i's results against j
   averageWinRates: number[]; // each strategy's mean win rate over its opponents
+  averagePoints: number[]; // each strategy's mean points per game over its opponents
   totalGames: number;
   totalDuration: number; // seconds
   config: Required<TournamentConfig>;
@@ -46,7 +50,7 @@ interface TournamentResult {
 
 const DEFAULTS = { seed: 1, confidence: 0.95, progress: true };
 
-function summarize(pairScores: number[], confidence: number): MatchResult {
+function summarize(pairScores: number[], pairPoints: number[], confidence: number): MatchResult {
   const n = pairScores.length;
   const { mean, low, high } = meanInterval(pairScores, confidence);
   return {
@@ -55,6 +59,7 @@ function summarize(pairScores: number[], confidence: number): MatchResult {
     winRate: mean,
     confidenceInterval: [Math.max(0, low), Math.min(1, high)],
     significant: low > 0.5 || high < 0.5,
+    points: meanInterval(pairPoints, confidence),
   };
 }
 
@@ -65,21 +70,27 @@ function invert(r: MatchResult): MatchResult {
     winRate: 1 - r.winRate,
     confidenceInterval: [1 - r.confidenceInterval[1], 1 - r.confidenceInterval[0]],
     significant: r.significant,
+    points: { mean: -r.points.mean, low: -r.points.high, high: -r.points.low, n: r.points.n },
   };
 }
+
+// from `player`'s side: +points for a win, -points for a loss
+const signedPoints = (o: Outcome, player: Player) => (o.winner === player ? o.points : -o.points);
 
 // play `pairs` pairs of games between a and b; results are from a's side
 function compareTwo(a: AppliedStrategy, b: AppliedStrategy, config: TournamentConfig, onPair?: (done: number) => void): MatchResult {
   const { pairs, seed, confidence } = { ...DEFAULTS, ...config };
   const pairScores: number[] = [];
+  const pairPoints: number[] = [];
   for (let p = 0; p < pairs; p++) {
     const pairSeed = seed * 1_000_003 + p;
-    const aWhite = playGame(a, b, pairSeed) === c.WHITE ? 1 : 0;
-    const aBlack = playGame(b, a, pairSeed) === c.BLACK ? 1 : 0;
-    pairScores.push((aWhite + aBlack) / 2);
+    const asWhite = playGame(a, b, pairSeed);
+    const asBlack = playGame(b, a, pairSeed);
+    pairScores.push(((asWhite.winner === c.WHITE ? 1 : 0) + (asBlack.winner === c.BLACK ? 1 : 0)) / 2);
+    pairPoints.push((signedPoints(asWhite, c.WHITE) + signedPoints(asBlack, c.BLACK)) / 2);
     onPair?.(p + 1);
   }
-  return summarize(pairScores, confidence);
+  return summarize(pairScores, pairPoints, confidence);
 }
 
 function roundRobinTournament(strategies: Strategies, config: TournamentConfig): TournamentResult {
@@ -112,15 +123,18 @@ function roundRobinTournament(strategies: Strategies, config: TournamentConfig):
   }
   if (full.progress && process.stdout.isTTY) process.stdout.write("\x1b[2K\r");
 
-  const averageWinRates = names.map((_, i) => {
-    const rates = results[i].filter((r) => r).map((r) => r!.winRate);
-    return rates.length ? rates.reduce((s, x) => s + x, 0) / rates.length : 0.5;
-  });
+  const average = (i: number, f: (r: MatchResult) => number, empty: number) => {
+    const values = results[i].filter((r) => r).map((r) => f(r!));
+    return values.length ? values.reduce((s, x) => s + x, 0) / values.length : empty;
+  };
+  const averageWinRates = names.map((_, i) => average(i, (r) => r.winRate, 0.5));
+  const averagePoints = names.map((_, i) => average(i, (r) => r.points.mean, 0));
 
   return {
     names,
     results,
     averageWinRates,
+    averagePoints,
     totalGames: totalMatches * full.pairs * 2,
     totalDuration: (performance.now() - start) / 1000,
     config: full,
@@ -144,6 +158,7 @@ function colorCell(r: MatchResult | null, width: number): string {
 }
 
 const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
+const signed = (x: number) => `${x >= 0 ? "+" : ""}${x.toFixed(2)}`;
 
 function printTournament(t: TournamentResult) {
   const width = Math.max(9, ...t.names.map((n) => n.length + 1));
@@ -157,11 +172,11 @@ function printTournament(t: TournamentResult) {
     console.log(name.padStart(width) + t.results[i].map((r) => colorCell(r, width)).join(""));
   });
 
-  console.log("\nAverage win rate against the field:");
+  console.log("\nAverage against the field (win rate, points per game):");
   t.names
-    .map((name, i) => ({ name, rate: t.averageWinRates[i] }))
-    .sort((a, b) => b.rate - a.rate)
-    .forEach(({ name, rate }) => console.log(`  ${name.padEnd(width)} ${pct(rate)}`));
+    .map((name, i) => ({ name, rate: t.averageWinRates[i], points: t.averagePoints[i] }))
+    .sort((a, b) => b.points - a.points)
+    .forEach(({ name, rate, points }) => console.log(`  ${name.padEnd(width)} ${pct(rate).padStart(6)}  ${signed(points)}`));
 
   console.log("\nMatchups:");
   for (let i = 0; i < t.names.length; i++) {
@@ -171,7 +186,11 @@ function printTournament(t: TournamentResult) {
       const verdict = !r.significant
         ? "no significant difference"
         : `${r.winRate > 0.5 ? t.names[i] : t.names[j]} is stronger`;
-      console.log(`  ${t.names[i]} vs ${t.names[j]}: ${pct(r.winRate)} [${pct(low)}, ${pct(high)}] over ${r.games} games; ${verdict}`);
+      const p = r.points;
+      console.log(
+        `  ${t.names[i]} vs ${t.names[j]}: ${pct(r.winRate)} [${pct(low)}, ${pct(high)}], ` +
+          `${signed(p.mean)} points/game [${signed(p.low)}, ${signed(p.high)}] over ${r.games} games; ${verdict}`,
+      );
     }
   }
 

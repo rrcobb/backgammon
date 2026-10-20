@@ -514,3 +514,41 @@ describe("positions found while testing mcts", () => {
     expect(moves[0][1].wBar).toBe(1);
   });
 });
+
+describe("game results", () => {
+  function finished(setup: (g: ReturnType<typeof h.newGame>) => void) {
+    const g = h.newGame();
+    g.positions.fill(0);
+    g.wHome = 15;
+    setup(g);
+    return h.gameResult(g);
+  }
+
+  test("an unfinished game has no result", () => {
+    expect(h.gameResult(h.newGame())).toBe(false);
+  });
+
+  test("a single game when the loser has borne off", () => {
+    expect(finished((g) => { g.bHome = 1; g.positions[3] = c.BLACK | 14; })).toEqual({ winner: c.WHITE, points: 1 });
+  });
+
+  test("a gammon when the loser hasn't borne off", () => {
+    expect(finished((g) => { g.positions[3] = c.BLACK | 15; })).toEqual({ winner: c.WHITE, points: 2 });
+  });
+
+  test("a backgammon when the loser is in the winner's home board or on the bar", () => {
+    expect(finished((g) => { g.positions[3] = c.BLACK | 14; g.positions[20] = c.BLACK | 1; })).toEqual({ winner: c.WHITE, points: 3 });
+    expect(finished((g) => { g.positions[3] = c.BLACK | 14; g.bBar = 1; })).toEqual({ winner: c.WHITE, points: 3 });
+  });
+
+  test("black's wins are scored the same way", () => {
+    const g = h.newGame();
+    g.positions.fill(0);
+    g.bHome = 15;
+    g.positions[2] = c.WHITE | 15; // in black's home board
+    expect(h.gameResult(g)).toEqual({ winner: c.BLACK, points: 3 });
+    g.positions[2] = 0;
+    g.positions[12] = c.WHITE | 15;
+    expect(h.gameResult(g)).toEqual({ winner: c.BLACK, points: 2 });
+  });
+});

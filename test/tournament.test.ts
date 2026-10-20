@@ -17,6 +17,8 @@ describe("tournament", () => {
     expect(result.winRate).toBe(0.5);
     expect(result.wins).toBe(20);
     expect(result.significant).toBe(false);
+    // and the points cancel the same way
+    expect(result.points.mean).toBe(0);
   });
 
   it("finds balanced stronger than random", () => {
@@ -26,6 +28,9 @@ describe("tournament", () => {
     const [low, high] = result.confidenceInterval;
     expect(low).toBeLessThanOrEqual(result.winRate);
     expect(high).toBeGreaterThanOrEqual(result.winRate);
+    // gammons make points per game larger than 2 * win rate - 1
+    expect(result.points.mean).toBeGreaterThan(2 * result.winRate - 1);
+    expect(result.points.mean).toBeLessThanOrEqual(3);
   });
 
   it("fills a consistent round robin table", () => {

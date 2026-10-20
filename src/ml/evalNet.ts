@@ -31,7 +31,7 @@ function collect(policy: AppliedStrategy, games: number, seed: number): Sample[]
     };
     const start = h.newGame();
     start.turn = g % 2 === 0 ? c.WHITE : c.BLACK;
-    const winner = playOut(start, recording, recording, dice);
+    const { winner } = playOut(start, recording, recording, dice);
     positions.forEach((p, i) =>
       samples.push({ ...p, whiteWon: winner === c.WHITE ? 1 : 0, progress: i / positions.length }),
     );

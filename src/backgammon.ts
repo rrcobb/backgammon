@@ -105,6 +105,27 @@ function checkWinner(game: Game): Player | false {
   return false;
 }
 
+type GameResult = {
+  winner: Player;
+  points: 1 | 2 | 3; // per unit of cube: a single game, a gammon, or a backgammon
+};
+
+// a gammon: the loser hasn't borne off any checkers. A backgammon: a gammon where
+// the loser also has a checker on the bar or in the winner's home board.
+function gameResult(game: Game): GameResult | false {
+  const winner = checkWinner(game);
+  if (!winner) return false;
+  const loserOff = winner === WHITE ? game.bHome : game.wHome;
+  if (loserOff > 0) return { winner, points: 1 };
+  const loserBar = winner === WHITE ? game.bBar : game.wBar;
+  // white's home board is 18-23, black's is 0-5
+  const [from, to] = winner === WHITE ? [18, 23] : [0, 5];
+  const loser = winner === WHITE ? BLACK : WHITE;
+  let inWinnersHome = false;
+  for (let i = from; i <= to; i++) if ((game.positions[i] & loser) === loser) inWinnersHome = true;
+  return { winner, points: loserBar > 0 || inWinnersHome ? 3 : 2 };
+}
+
 // the player to move; a new game has no player until the roll off
 function toMove(game: Game): Player {
   if (!game.turn) throw new Error("game.turn is not set; roll off before moving");
@@ -432,11 +453,12 @@ const helpers = {
   apply,
   takeTurn,
   checkWinner,
+  gameResult,
   toMove,
   rollOff,
 };
 
 // types
-export type { Player, Game, Result, Die, Roll, Move, Movement, Start, Dest };
+export type { Player, Game, GameResult, Result, Die, Roll, Move, Movement, Start, Dest };
 
 export { helpers, constants };
