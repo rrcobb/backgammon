@@ -7,39 +7,41 @@ export type EvaluationFunction = (game: Game, player: Player) => number;
 type PipCounts = {
   white: number;
   black: number;
-  diff: number;
+  diff: number; // the player's lead: opponent's pips minus the player's
   isRacing: boolean;
 };
 
+// white moves from index 0 up to 23, black from 23 down to 0
 function getPipCounts(game: Game, player: Player): PipCounts {
-  let lastWhite = -1;
-  let firstBlack = 24;
-  let whitePips = 0;
-  let blackPips = 0;
+  let firstWhite = 24;
+  let lastBlack = -1;
+  // a checker on the bar has the full 25 pips to go
+  let whitePips = game.wBar * 25;
+  let blackPips = game.bBar * 25;
 
   for (let i = 0; i < 24; i++) {
     const pos = game.positions[i];
     const count = pos & 0b1111;
 
     if ((pos & c.WHITE) === c.WHITE) {
-      lastWhite = i;
+      if (firstWhite == 24) {
+        firstWhite = i;
+      }
       whitePips += count * (24 - i);
     }
     if ((pos & c.BLACK) === c.BLACK) {
-      if (firstBlack == 24) {
-        firstBlack = i;
-      }
+      lastBlack = i;
       blackPips += count * (i + 1);
     }
   }
 
-  let diff = whitePips - blackPips;
-  diff = player === c.WHITE ? diff : -diff;
+  const whiteLead = blackPips - whitePips;
   return {
     white: whitePips,
     black: blackPips,
-    diff,
-    isRacing: lastWhite < firstBlack,
+    diff: player === c.WHITE ? whiteLead : -whiteLead,
+    // the checkers have passed each other: every black checker is below every white one
+    isRacing: !game.wBar && !game.bBar && lastBlack < firstWhite,
   };
 }
 
@@ -72,13 +74,14 @@ type PositionInfo = {
 };
 
 function getPositionInfo(pos: number, player: Player, f: Factors): PositionInfo {
-  const whitePos = player === c.WHITE ? pos : 23 - pos;
-  const HOME_FIVE_POINT = 4;
-  const dist = Math.abs(whitePos - HOME_FIVE_POINT);
+  // the point number from the player's side: 1-6 is their home board, 19-24 is the opponent's
+  const point = player === c.WHITE ? 24 - pos : pos + 1;
+  const FIVE_POINT = 5;
+  const dist = Math.abs(point - FIVE_POINT);
 
   return {
-    isHome: whitePos <= 5,
-    isAnchor: whitePos >= 18 && whitePos <= 23,
+    isHome: point <= 6,
+    isAnchor: point >= 19,
     distanceValue: 2.0 * Math.exp(-dist / f.positionDecay),
   };
 }
@@ -189,9 +192,9 @@ function blotHitChance(game, blotPosition, player) {
     if (!probMap[dist]) continue;
     const hitFromPos = blotPosition - dist * direction;
 
-    // check opponent bar
-    if (hitFromPos == -1 && opponent == c.BLACK && game.bBar) totalProb += probMap[dist];
-    if (hitFromPos == 24 && opponent == c.WHITE && game.wBar) totalProb += probMap[dist];
+    // check opponent bar: white enters from below index 0, black from above index 23
+    if (hitFromPos == 24 && opponent == c.BLACK && game.bBar) totalProb += probMap[dist];
+    if (hitFromPos == -1 && opponent == c.WHITE && game.wBar) totalProb += probMap[dist];
     if (hitFromPos <= -1 || hitFromPos >= 24) continue;
 
     // If there's an opponent piece at this distance
