@@ -10,19 +10,19 @@
   },
   "dependencies": {
     "convnetjs": "^0.3.0",
-    "esbuild": "0.24.0",
-    "fast-check": "^3.22.0",
-    "mitata": "^1.0.10",
+    "esbuild": "0.28.2",
+    "fast-check": "^4.10.2",
+    "mitata": "^1.0.34",
     "perfect-arrows": "^0.3.7",
-    "reveal.js": "^5.1.0"
+    "reveal.js": "^6.0.2"
   },
   "devDependencies": {
-    "@types/bun": "^1.1.11",
-    "knip": "^5.33.3",
-    "typescript": "^5.6.3"
+    "@types/bun": "^1.4.3",
+    "knip": "^6.42.1",
+    "typescript": "^7.0.2"
   },
   "knip": {
-    "entry": ["test/*.test.ts", "src/ui/render.ts", "src/ml/*.ts"],
+    "entry": ["test/*.test.ts", "test/scoring-snapshot.ts", "src/ui/render.ts", "slides.js", "src/evals/*.ts", "src/ml/**/*.ts", "bench/*.ts"],
     "project": ["**/*.{js,ts}"],
     "exclude": ["binaries"]
   }
