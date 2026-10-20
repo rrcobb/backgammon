@@ -146,10 +146,34 @@ All 100k games unless noted, α 0.1 and λ 0.7 unless noted. Head to head at 0-p
 
 Tanh is significantly weaker than three of the others; no other pair differs significantly. More hidden units and a decaying learning rate didn't help within 100k games.
 
-1. TD-Gammon 0.0: 198 inputs in the TD-Gammon encoding (including whose turn it is), one hidden layer of 40–80 units, sigmoid output for P(white wins). Self-play, γ=1, TD(λ) with eligibility traces.
-2. The same net with more outputs: win, gammon win, gammon loss (and backgammon). These give equity, which the learning mode and a future doubling cube both need.
-3. Variants to compare: hand-crafted features added to the raw inputs (as TD-Gammon 2 did), wider or deeper hidden layers, and other activations.
-4. Use the trained net as the evaluation inside 1-ply and 2-ply sampled expectimax.
+### Gammons
+
+Games score 1, 2 (gammon), or 3 (backgammon) points, and tournaments report points per game. Nets can have five outputs (`--outputs=5`): white wins, white gammons, white backgammons, black gammons, black backgammons. Strategies choose by equity, the expected points per game.
+
+The 40-hidden five-output net (100k games) against the one-output nets, 200 pairs:
+
+| | win rate | points per game |
+|---|---|---|
+| vs one-output, 100k games | 50.2% [45.7%, 54.8%] | +0.24 [+0.08, +0.39] |
+| vs one-output, 200k games | 46.8% [42.0%, 51.5%] | +0.20 [+0.04, +0.35] |
+
+It wins about as many games and scores more points.
+
+### Cube
+
+Money play. The game tracks the cube's value and owner; before each roll except the opening, the player on roll may double if the cube is centered or theirs. A drop ends the game for the cube's value; a take doubles the cube and passes it. Strategies have an optional `cube` (double, take); without one they never double and always take. Not in the UI yet.
+
+Nets decide from their cubeless equity E for the doubler, at their search depth: double when 0.4 ≤ E ≤ 1 (above 1 it's too good to double), take when E ≤ 0.6. `net:<path>+cube` in the eval tools.
+
+- The 200k one-output net with the cube vs itself without, 200 pairs: +0.62 points per game [+0.54, +0.70]. The moves are the same, so this is all from doubling against an opponent that always takes.
+
+Next for the cube: compare thresholds in cube-vs-cube play, and use the five-output nets' equity.
+
+### Other net ideas
+
+- Hand-crafted features added to the raw inputs, as TD-Gammon 2 did.
+- Deeper nets.
+- Longer training for the 80-hidden nets.
 
 Each net needs an evaluation alongside it: prediction error against game outcomes, broken down by game stage, and win rate against the existing strategies in the tournament.
 
@@ -192,4 +216,4 @@ For a position and roll, show:
 
 - Real MCTS with chance nodes for the dice, or truncated rollouts that stop after a few plies and use the net's evaluation.
 - LLM players in the tournament, using a text format for positions.
-- Doubling cube and match play, after the net has gammon outputs.
+- Match play (the cube is money play only).
