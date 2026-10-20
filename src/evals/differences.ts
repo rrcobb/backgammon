@@ -1,7 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import type { Game, Move, Player, Roll } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
-import { Strategies } from "../strategy/strategies";
+import { Strategies, isStrategyName } from "../strategy/strategies";
 import { formatMove, formatPosition } from "../notation";
 import { seededDice, playOut, meanInterval, type MeanInterval } from "./play";
 
@@ -160,8 +160,7 @@ function printDifferences(nameA: string, nameB: string, policyName: string, conf
 if (import.meta.main) {
   const [nameA, nameB, positionsArg, rolloutsArg, policyArg] = process.argv.slice(2);
   const policyName = policyArg ?? "learned";
-  const unknown = [nameA, nameB, policyName].filter((n) => !n || !(n in Strategies));
-  if (unknown.length) {
+  if (!isStrategyName(nameA) || !isStrategyName(nameB) || !isStrategyName(policyName)) {
     console.error(`usage: bun src/evals/differences.ts <A> <B> [positions=100] [rollouts=100] [policy=learned]`);
     console.error(`strategies: ${Object.keys(Strategies).join(", ")}`);
     process.exit(1);

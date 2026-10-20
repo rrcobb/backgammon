@@ -91,10 +91,9 @@ function cloneGame(game: Game): Game {
 // for use as a set key. see bench/keys
 function movesKey(moves: Movement[]) {
   let result = "";
-  for (let i = 0; i < moves.length; i++) {
-    for (let j = 0; j < moves[i].length; j++) {
-      result += String.fromCharCode(moves[i][j]);
-    }
+  for (const movement of moves) {
+    if (!movement) continue;
+    result += String.fromCharCode(movement[0], movement[1]);
   }
   return result;
 }
@@ -103,6 +102,12 @@ function checkWinner(game: Game): Player | false {
   if (game.bHome == 15) return BLACK;
   if (game.wHome == 15) return WHITE;
   return false;
+}
+
+// the player to move; a new game has no player until the roll off
+function toMove(game: Game): Player {
+  if (!game.turn) throw new Error("game.turn is not set; roll off before moving");
+  return game.turn;
 }
 
 type Die = 1 | 2 | 3 | 4 | 5 | 6;
@@ -154,8 +159,9 @@ type Move = Play | DoublePlay;
 const nullMove: Move = [null, null];
 
 function apply(game: Game, movement: Movement): void {
+  if (!movement) return;
   let [start, dest] = movement;
-  const player = game.turn;
+  const player = toMove(game);
   const opponent = player == BLACK ? WHITE : BLACK;
   if (start == BAR) {
     // move off the bar
@@ -210,6 +216,7 @@ function isDest(dest: number): dest is Dest {
 // returns: series of plays and the updated game state
 type Result = [Move, Game];
 type TempResult = [Movement[], Game, Die[]];
+type Seen = Set<string>;
 type ResultArray = TempResult[] & { minRolls: number };
 
 function validMoves(game: Game, r: Roll): Result[] {
@@ -217,8 +224,8 @@ function validMoves(game: Game, r: Roll): Result[] {
   counts.validMoves++
   // doubles act twice
   const doubles = r[0] == r[1];
-  let rolls = doubles ? [r[0], r[0], r[0], r[0]] : r;
-  const player = game.turn;
+  let rolls: Die[] = doubles ? [r[0], r[0], r[0], r[0]] : r;
+  const player = toMove(game);
   const opponent = player == BLACK ? WHITE : BLACK;
 
   // players play in opposite directions
@@ -226,7 +233,7 @@ function validMoves(game: Game, r: Roll): Result[] {
   const end = player == BLACK ? 0 : 23;
   const enter = player == BLACK ? 23 : 0;
   const homeboard = player == BLACK ? 5 : 18;
-  const results: ResultArray = [] as ResultArray;
+  const results = [] as unknown as ResultArray;
   // have to use as many rolls as possible
   // track the max rolls we've used / min rolls available we've seen
   results.minRolls = rolls.length;
@@ -256,7 +263,7 @@ function validMoves(game: Game, r: Roll): Result[] {
   }
 
   // ignore exact sequences of moves we've seen
-  const seen = new Set();
+  const seen: Seen = new Set();
 
   // iterate through the positions
   for (let start = enter as Start; start != end; start += direction) {
@@ -292,7 +299,7 @@ function validMoves(game: Game, r: Roll): Result[] {
 }
 
 // prettier-ignore
-function boardMoves(m, g, rolls, start, player, opponent, direction, seen, results) {
+function boardMoves(m: Movement[], g: Game, rolls: Die[], start: Start, player: Player, opponent: Player, direction: number, seen: Seen, results: ResultArray) {
   // if the position is owned by the player
   if (checkStart(g, start, player)) {
     for (var j = 0; j < rolls.length; j++) {
@@ -307,7 +314,7 @@ function boardMoves(m, g, rolls, start, player, opponent, direction, seen, resul
   }
 }
 
-function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar, results): Result[] | undefined {
+function handleBar(game: Game, player: Player, opponent: Player, rolls: Die[], doubles: boolean, direction: number, enter: number, bar: number, results: ResultArray): Result[] | undefined {
   for (let i = 0; i < rolls.length; i++) {
     const roll = rolls[i];
     const dest = (roll - 1) * direction + enter;
@@ -348,7 +355,7 @@ function handleBar(game, player, opponent, rolls, doubles, direction, enter, bar
   }
 }
 
-function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) {
+function bearOff(m: Movement[], g: Game, rolls: Die[], player: Player, homeboard: number, end: number, direction: number, seen: Seen, results: ResultArray) {
   if (isBearingOff(player, g)) {
     for (let i = 0; i < rolls.length; i++) {
       const roll = rolls[i];
@@ -370,7 +377,7 @@ function bearOff(m, g, rolls, player, homeboard, end, direction, seen, results) 
   }
 }
 
-function addMovement(movement, movements, game, available, seen, results, rollIndex) {
+function addMovement(movement: Movement, movements: Movement[], game: Game, available: Die[], seen: Seen, results: ResultArray, rollIndex: number) {
   const moves: Movement[] = movements.concat([movement]);
   const key = movesKey(moves);
   if (seen.has(key)) return; // skip if we've done these exact moves before
@@ -424,6 +431,7 @@ const helpers = {
   apply,
   takeTurn,
   checkWinner,
+  toMove,
   rollOff,
 };
 

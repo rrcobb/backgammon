@@ -1,7 +1,7 @@
 import { constants as c } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
 import { playGame, meanInterval } from "./play";
-import { Strategies as AllStrategies, forCompare } from "../strategy/strategies";
+import { Strategies as AllStrategies, forCompare, isStrategyName } from "../strategy/strategies";
 
 /*
   Tournament between strategies.
@@ -182,12 +182,12 @@ function printTournament(t: TournamentResult) {
 if (import.meta.main) {
   const [pairsArg, ...names] = process.argv.slice(2);
   const pairs = Number(pairsArg ?? 100);
-  const unknown = names.filter((n) => !(n in AllStrategies));
+  const unknown = names.filter((n) => !isStrategyName(n));
   if (unknown.length) {
     console.error(`Unknown strategies: ${unknown.join(", ")}. Choose from: ${Object.keys(AllStrategies).join(", ")}`);
     process.exit(1);
   }
-  const strategies = names.length ? Object.fromEntries(names.map((n) => [n, AllStrategies[n]])) : forCompare;
+  const strategies = names.length ? Object.fromEntries(names.filter(isStrategyName).map((n) => [n, AllStrategies[n]])) : forCompare;
   printTournament(roundRobinTournament(strategies, { pairs }));
 }
 

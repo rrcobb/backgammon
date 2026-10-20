@@ -12,13 +12,9 @@ export type AppliedStrategy = ((game: Game, roll: Roll) => Result) & {
   factors?: Factors;
 };
 
+// validMoves always returns at least one option (a pass when nothing can move)
 function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {
-  const options = h.validMoves(game, roll);
-  let choice;
-  if (options.length) {
-    choice = strategy(options);
-  }
-  return choice;
+  return strategy(h.validMoves(game, roll));
 }
 
 function makeApplied(strategy: Strategy): AppliedStrategy {
@@ -30,12 +26,10 @@ function makeApplied(strategy: Strategy): AppliedStrategy {
 // strategies use an evaluation function (depth = 0)
 function useEval(evalFn: EvaluationFunction): AppliedStrategy {
   return makeApplied((options: Result[]) => {
-    if (!options) return;
-
-    let best = null
+    let best = options[0];
     let bestScore = -Infinity;
     for (let current of options) {
-      const player = current[1].turn;
+      const player = h.toMove(current[1]);
       const score = evalFn(current[1], player)
       if (score > bestScore) {
         best = current;
@@ -57,7 +51,7 @@ function useFactors(f: Factors) {
   Add some global counters to keep track of calls to different functions.
 */
 export const counts = { validMoves: 0, eCacheHit: 0, evalFunc: 0, expectimax: 0, evaluate: 0 };
-export const resetCounts = () => Object.keys(counts).map((key) => (counts[key] = 0));
+export const resetCounts = () => (Object.keys(counts) as (keyof typeof counts)[]).forEach((key) => (counts[key] = 0));
 
 // The game states in a Result still have `turn` set to the player who just
 // moved; takeTurn is what switches it. Searches call this before generating
@@ -103,8 +97,8 @@ function useExpectimax(evalFunc: EvaluationFunction, startDepth: number) {
 
   function _expecti(options: Result[]): Result {
     let maxScore = -Infinity;
-    let maxOption = null;
-    const player = options[0][1].turn;
+    let maxOption = options[0];
+    const player = h.toMove(options[0][1]);
     for (let option of options) {
       let [move, game] = option;
       let score = expectimax(game, startDepth - 1, false, player);
@@ -164,7 +158,7 @@ function bestN<T>(list: Array<T>, sampleSize: number, metric: (a: T) => number):
 }
 
 function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nSampleRolls: number, sampleMoves: number) {
-  const evaluateOption = ([move, game]) => evalFunc(game, game.turn);
+  const evaluateOption = ([, game]: Result) => evalFunc(game, h.toMove(game));
 
   function expectimax(game: Game, depth: number, isMaxPlayer: boolean, player: Player): number {
     counts.expectimax++;
@@ -201,9 +195,9 @@ function useSpeedExpectimax(evalFunc: EvaluationFunction, startDepth: number, nS
 
   function _speedExpecti(options: Result[]): Result {
     let maxScore = -Infinity;
-    let maxOption = null;
+    let maxOption = options[0];
     let sampleOptions = bestN(options, sampleMoves, evaluateOption);
-    const player = options[0][1].turn;
+    const player = h.toMove(options[0][1]);
     for (let option of sampleOptions) {
       let [move, game] = option;
       let score = expectimax(game, startDepth - 1, false, player);
@@ -329,4 +323,7 @@ const Strategies = {
 const forCompare = { learnedFastExp, fastOnePly, learned };
 // export these to check how expectimax helps (or..doesn't)
 // const forCompare = { prev, prevPrev, learned, learnedFastExp  }
-export { Strategies, forCompare, makeApplied, useExpectimax, useSpeedExpectimax, useEval, random };
+type StrategyName = keyof typeof Strategies;
+const isStrategyName = (name: string | undefined): name is StrategyName => !!name && name in Strategies;
+
+export { Strategies, forCompare, makeApplied, useExpectimax, useSpeedExpectimax, useEval, random, isStrategyName, type StrategyName };

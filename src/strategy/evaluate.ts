@@ -133,7 +133,7 @@ type PrimeAnalysis = {
 
 function analyzePrimes(game: Game, player: Player): PrimeAnalysis {
   const primes: Prime[] = [];
-  let currentPrime = null;
+  let currentPrime: Prime | null = null;
   let count = 0;
 
   for (let i = 0; i < 24; i++) {
@@ -152,7 +152,8 @@ function analyzePrimes(game: Game, player: Player): PrimeAnalysis {
     }
   }
 
-  if (currentPrime?.length >= 3) {
+  // a run that reaches the end of the board, with the same rule as above
+  if (currentPrime && currentPrime.length >= 2) {
     primes.push(currentPrime);
     count += currentPrime.length - 2;
   }
@@ -161,7 +162,7 @@ function analyzePrimes(game: Game, player: Player): PrimeAnalysis {
 }
 
 function generateHitProbabilities() {
-  const probs = {};
+  const probs: Record<number, number> = {};
   for (let d = 1; d <= 24; d++) {
     probs[d] = 0;
   } // init
@@ -182,7 +183,7 @@ function generateHitProbabilities() {
 
 const probMap = generateHitProbabilities();
 
-function blotHitChance(game, blotPosition, player) {
+function blotHitChance(game: Game, blotPosition: number, player: Player): number {
   const opponent = player === c.WHITE ? c.BLACK : c.WHITE;
   const direction = opponent === c.BLACK ? -1 : 1;
   let totalProb = 0;
