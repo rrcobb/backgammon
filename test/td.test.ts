@@ -3,7 +3,7 @@ import { constants as c, helpers as h } from "../src/backgammon";
 import { MLP } from "../src/ml/mlp";
 import { INPUT_SIZE } from "../src/ml/encoding";
 import { trainGame } from "../src/ml/td";
-import { useNet, whiteWins } from "../src/strategy/net";
+import { useNet, useNetSearch, searchValue, whiteWins } from "../src/strategy/net";
 import type { Analysis } from "../src/strategy/strategies";
 import { seededRandom } from "../src/evals/play";
 
@@ -45,5 +45,25 @@ describe("net strategy", () => {
     game.wHome = 15;
     game.positions[0] = c.BLACK | 15;
     expect(whiteWins(smallNet(), game, c.BLACK, new Float32Array(INPUT_SIZE))).toBe(1);
+  });
+});
+
+describe("net search", () => {
+  test("depth 0 is the net's estimate", () => {
+    const net = smallNet();
+    const game = h.newGame();
+    const x = new Float32Array(INPUT_SIZE);
+    expect(searchValue(net, game, c.WHITE, 0, x)).toBeCloseTo(whiteWins(net, game, c.WHITE, x), 6);
+  });
+
+  test("1-ply values are probabilities, and the move played is the best searched", () => {
+    const game = h.newGame();
+    game.turn = c.WHITE;
+    const reports: Analysis[] = [];
+    const result = useNetSearch(smallNet(), 1, 4)(game, [3, 1], (a) => reports.push(a));
+    const [analysis] = reports;
+    expect(analysis.candidates.length).toBe(4);
+    expect(analysis.candidates[0].move).toEqual(result[0]);
+    expect(analysis.candidates.every((cand) => cand.value >= 0 && cand.value <= 1)).toBe(true);
   });
 });
