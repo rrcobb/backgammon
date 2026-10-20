@@ -6,7 +6,8 @@
     "watch": "watchexec bun src/ui/build.js",
     "check": "tsc --noEmit",
     "test": "bun test",
-    "tournament": "bun src/evals/tournament.ts"
+    "tournament": "bun src/evals/tournament.ts",
+    "differences": "bun src/evals/differences.ts"
   },
   "dependencies": {
     "convnetjs": "^0.3.0",
