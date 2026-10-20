@@ -7,7 +7,7 @@ import { useNet, useNetSearch, searchValue, whiteWins } from "../src/strategy/ne
 import type { Analysis } from "../src/strategy/strategies";
 import { seededRandom } from "../src/evals/play";
 
-const config = { games: 1, hidden: 10, alpha: 0.1, lambda: 0.7, evalEvery: 1, evalPairs: 1, out: "" };
+const config = { alpha: 0.1, lambda: 0.7 };
 
 function smallNet() {
   return new MLP([INPUT_SIZE, 10, 1], ["sigmoid", "sigmoid"]).randomize(0.1, seededRandom(5));

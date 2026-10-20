@@ -1,6 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import type { Game, Player, Roll } from "../backgammon";
 import { MLP, toSafetensors, fromSafetensors } from "./mlp";
+import type { Activation } from "./mlp";
 import { encode, INPUT_SIZE } from "./encoding";
 import { useNet, moveValues } from "../strategy/net";
 import { Strategies } from "../strategy/strategies";
@@ -23,7 +24,9 @@ import { compareTwo } from "../evals/tournament";
 type TDConfig = {
   games: number;
   hidden: number;
+  activation: Activation; // hidden layer; the output is always a sigmoid
   alpha: number;
+  alphaEnd?: number; // if set, alpha decays geometrically from alpha to alphaEnd over the run
   lambda: number;
   evalEvery: number; // games between evaluations and checkpoints
   evalPairs: number;
@@ -33,8 +36,8 @@ type TDConfig = {
 
 const other = (p: Player): Player => (p === c.WHITE ? c.BLACK : c.WHITE);
 
-function trainGame(net: MLP, config: TDConfig, traces: Float32Array, grad: Float32Array, x: Float32Array): number {
-  const { alpha, lambda } = config;
+function trainGame(net: MLP, rates: { alpha: number; lambda: number }, traces: Float32Array, grad: Float32Array, x: Float32Array): number {
+  const { alpha, lambda } = rates;
   const params = net.params;
   traces.fill(0);
 
@@ -87,24 +90,25 @@ async function train(config: TDConfig) {
     startGames = Number(loaded.metadata.games ?? 0);
     console.log(`resumed from ${config.resume} after ${startGames} games`);
   } else {
-    net = new MLP([INPUT_SIZE, config.hidden, 1], ["sigmoid", "sigmoid"]).randomize(0.1);
+    net = new MLP([INPUT_SIZE, config.hidden, 1], [config.activation, "sigmoid"]).randomize(0.1);
   }
 
   const traces = new Float32Array(net.params.length);
   const grad = new Float32Array(net.params.length);
   const x = new Float32Array(INPUT_SIZE);
   console.log(
-    `training ${config.games} games: ${net.sizes.join("-")} net, ${net.params.length} params, alpha ${config.alpha}, lambda ${config.lambda}`,
+    `training ${config.games} games: ${net.sizes.join("-")} ${net.activations[0]} net, ${net.params.length} params, alpha ${config.alpha}${config.alphaEnd ? ` decaying to ${config.alphaEnd}` : ""}, lambda ${config.lambda}`,
   );
 
   let start = performance.now();
   let moveCount = 0;
+  const alphaAt = (g: number) => (config.alphaEnd ? config.alpha * (config.alphaEnd / config.alpha) ** (g / config.games) : config.alpha);
   for (let g = 1; g <= config.games; g++) {
-    moveCount += trainGame(net, config, traces, grad, x);
+    moveCount += trainGame(net, { alpha: alphaAt(g), lambda: config.lambda }, traces, grad, x);
 
     if (g % 1000 === 0) {
       const secs = (performance.now() - start) / 1000;
-      console.log(`[game ${startGames + g}] ${(1000 / secs).toFixed(0)} games/s, ${(moveCount / 1000).toFixed(1)} moves/game`);
+      console.log(`[game ${startGames + g}] ${(1000 / secs).toFixed(0)} games/s, ${(moveCount / 1000).toFixed(1)} moves/game, alpha ${alphaAt(g).toFixed(4)}`);
       start = performance.now();
       moveCount = 0;
     }
@@ -119,14 +123,14 @@ async function train(config: TDConfig) {
       const vsLearned = compareTwo(player, Strategies.learned, { pairs: config.evalPairs, seed: 11 });
       console.log(`  eval after ${total} games: vs random ${pct(vsRandom)}, vs learned ${pct(vsLearned)}`);
 
-      const metadata = { games: String(total), alpha: String(config.alpha), lambda: String(config.lambda) };
+      const metadata = { games: String(total), alpha: String(alphaAt(g)), lambda: String(config.lambda) };
       await save(net, `${config.out}-g${total}.safetensors`, metadata);
       await save(net, `${config.out}-latest.safetensors`, metadata);
     }
   }
 }
 
-// bun src/ml/td.ts --games=100000 --hidden=40 --alpha=0.1 --lambda=0.7 --resume=checkpoints/x.safetensors
+// bun src/ml/td.ts --games=100000 --hidden=40 --activation=sigmoid --alpha=0.1 --alphaEnd=0.01 --lambda=0.7 --name=td-h40 --resume=checkpoints/x.safetensors
 if (import.meta.main) {
   const args = Object.fromEntries(
     process.argv.slice(2).map((a) => {
@@ -135,14 +139,18 @@ if (import.meta.main) {
     }),
   );
   const hidden = Number(args.hidden ?? 40);
+  const activation = (args.activation ?? "sigmoid") as Activation;
+  if (!["sigmoid", "relu", "tanh"].includes(activation)) throw new Error(`unknown activation ${activation}`);
   await train({
     games: Number(args.games ?? 10000),
     hidden,
+    activation,
     alpha: Number(args.alpha ?? 0.1),
+    alphaEnd: args.alphaEnd ? Number(args.alphaEnd) : undefined,
     lambda: Number(args.lambda ?? 0.7),
     evalEvery: Number(args.evalEvery ?? 5000),
     evalPairs: Number(args.evalPairs ?? 100),
-    out: args.out ?? `checkpoints/td-h${hidden}`,
+    out: args.out ?? `checkpoints/${args.name ?? `td-h${hidden}`}`,
     resume: args.resume,
   });
 }
