@@ -1,7 +1,7 @@
 import { constants as c, helpers as h } from "../backgammon";
 import type { Game, Move, Player, Roll } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
-import { Strategies, isStrategyName } from "../strategy/strategies";
+import { resolveStrategy } from "./resolve";
 import { formatMove, formatPosition } from "../notation";
 import { seededDice, playOut, meanInterval, type MeanInterval } from "./play";
 
@@ -156,24 +156,29 @@ function printDifferences(nameA: string, nameB: string, policyName: string, conf
   }
 }
 
-// bun src/evals/differences.ts <A> <B> [positions] [rollouts] [policy]
+// bun src/evals/differences.ts <A> <B> [positions] [rollouts] [policy]; any of them can be net:<checkpoint>
 if (import.meta.main) {
   const [nameA, nameB, positionsArg, rolloutsArg, policyArg] = process.argv.slice(2);
-  const policyName = policyArg ?? "learned";
-  if (!isStrategyName(nameA) || !isStrategyName(nameB) || !isStrategyName(policyName)) {
+  if (!nameA || !nameB) {
     console.error(`usage: bun src/evals/differences.ts <A> <B> [positions=100] [rollouts=100] [policy=learned]`);
-    console.error(`strategies: ${Object.keys(Strategies).join(", ")}`);
+    process.exit(1);
+  }
+  let a, b, policy;
+  try {
+    [a, b, policy] = [nameA, nameB, policyArg ?? "learned"].map(resolveStrategy);
+  } catch (e) {
+    console.error((e as Error).message);
     process.exit(1);
   }
   const config = {
     positions: Number(positionsArg ?? 100),
     rollouts: Number(rolloutsArg ?? 100),
-    policy: Strategies[policyName],
+    policy: policy.strategy,
     progress: true,
   };
   const start = performance.now();
-  const result = compareByRollouts(Strategies[nameA], Strategies[nameB], config);
-  printDifferences(nameA, nameB, policyName, config, result);
+  const result = compareByRollouts(a.strategy, b.strategy, config);
+  printDifferences(a.label, b.label, policy.label, config, result);
   console.log(`\n${((performance.now() - start) / 1000).toFixed(1)}s`);
 }
 

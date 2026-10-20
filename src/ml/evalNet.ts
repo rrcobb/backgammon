@@ -3,8 +3,8 @@ import type { Game, Player } from "../backgammon";
 import { fromSafetensors, type MLP } from "./mlp";
 import { INPUT_SIZE } from "./encoding";
 import { whiteWins } from "../strategy/net";
-import { Strategies, isStrategyName } from "../strategy/strategies";
 import type { AppliedStrategy } from "../strategy/strategies";
+import { resolveStrategy } from "../evals/resolve";
 import { seededDice, playOut } from "../evals/play";
 
 /*
@@ -63,19 +63,19 @@ function evaluateNet(net: MLP, samples: Sample[]) {
 const fmt = (s: Score) =>
   `brier ${s.brier.toFixed(3)}, picks the winner ${(100 * s.accuracy).toFixed(1)}%, mean P(white) ${s.meanPrediction.toFixed(2)} (${s.n} positions)`;
 
-// bun src/ml/evalNet.ts <checkpoint.safetensors>... [--games=300] [--policy=learned]
+// bun src/ml/evalNet.ts <checkpoint.safetensors>... [--games=300] [--policy=learned or net:<checkpoint>]
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const flags = Object.fromEntries(args.filter((a) => a.startsWith("--")).map((a) => a.slice(2).split("=")));
   const paths = args.filter((a) => !a.startsWith("--"));
-  const policyName = flags.policy ?? "learned";
-  if (!paths.length || !isStrategyName(policyName)) {
-    console.error("usage: bun src/ml/evalNet.ts <checkpoint.safetensors>... [--games=300] [--policy=learned]");
+  if (!paths.length) {
+    console.error("usage: bun src/ml/evalNet.ts <checkpoint.safetensors>... [--games=300] [--policy=learned or net:<checkpoint>]");
     process.exit(1);
   }
+  const policy = resolveStrategy(flags.policy ?? "learned");
   const games = Number(flags.games ?? 300);
-  const samples = collect(Strategies[policyName], games, 1);
-  console.log(`${games} games of ${policyName} vs ${policyName}, ${samples.length} positions. Always guessing 50% scores brier 0.250.`);
+  const samples = collect(policy.strategy, games, 1);
+  console.log(`${games} games of ${policy.label} vs ${policy.label}, ${samples.length} positions. Always guessing 50% scores brier 0.250.`);
   for (const path of paths) {
     const { net, metadata } = fromSafetensors(new Uint8Array(await Bun.file(path).arrayBuffer()));
     const r = evaluateNet(net, samples);

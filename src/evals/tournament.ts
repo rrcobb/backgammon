@@ -1,7 +1,7 @@
 import { constants as c } from "../backgammon";
 import type { AppliedStrategy } from "../strategy/strategies";
 import { playGame, meanInterval } from "./play";
-import { Strategies as AllStrategies, forCompare, isStrategyName } from "../strategy/strategies";
+import { forCompare } from "../strategy/strategies";
 
 /*
   Tournament between strategies.
@@ -178,16 +178,18 @@ function printTournament(t: TournamentResult) {
   console.log(`\n${t.totalGames} games in ${t.totalDuration.toFixed(1)}s.`);
 }
 
-// bun src/evals/tournament.ts [pairs] [strategy names...]
+// bun src/evals/tournament.ts [pairs] [strategy names, or net:<checkpoint>...]
 if (import.meta.main) {
+  const { resolveStrategy } = await import("./resolve");
   const [pairsArg, ...names] = process.argv.slice(2);
   const pairs = Number(pairsArg ?? 100);
-  const unknown = names.filter((n) => !isStrategyName(n));
-  if (unknown.length) {
-    console.error(`Unknown strategies: ${unknown.join(", ")}. Choose from: ${Object.keys(AllStrategies).join(", ")}`);
+  let strategies: Strategies = forCompare;
+  try {
+    if (names.length) strategies = Object.fromEntries(names.map(resolveStrategy).map((r) => [r.label, r.strategy]));
+  } catch (e) {
+    console.error((e as Error).message);
     process.exit(1);
   }
-  const strategies = names.length ? Object.fromEntries(names.filter(isStrategyName).map((n) => [n, AllStrategies[n]])) : forCompare;
   printTournament(roundRobinTournament(strategies, { pairs }));
 }
 
