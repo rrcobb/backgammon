@@ -2,6 +2,7 @@ import { Game, Player, Roll, constants as c, helpers as h } from "../../backgamm
 import { evaluate } from "../../strategy/evaluate";
 import { Factors, factors as f } from "../../strategy/factors";
 import { AppliedStrategy, useEval, Strategies } from "../../strategy/strategies";
+import { compareTwo } from "../../evals/tournament";
 import { default as learnedFactors } from "../learnedFactors.json";
 
 type Position = { game: Game; score: number; roll: Roll };
@@ -101,7 +102,8 @@ function updateFactors(factors: Factors, gameHistory: Position[], outcome: GameO
 }
 
 function trainFactors(): Factors {
-  const initialFactors = f.learned;
+  // start from the hand-tuned weights; the older learned weights were trained against a buggy evaluation
+  const initialFactors = f.balancedFactors;
   const initialLearningRate = 0.008;
   const numGames = 8000;
   const validationInterval = 500;
@@ -130,75 +132,45 @@ function trainFactors(): Factors {
 
     const opponent = opponents[Math.floor(Math.random() * opponents.length)];
 
+    // alternate the learner's color, and pick who moves first at random
+    const learner: Player = count % 2 ? c.BLACK : c.WHITE;
     let game = h.newGame();
-    game.turn = c.WHITE as Player;
+    game.turn = Math.random() < 0.5 ? c.WHITE : c.BLACK;
 
-    const maxMoves = 200;
+    const maxMoves = 400;
     let moveCount = 0;
 
     while (!h.checkWinner(game) && moveCount < maxMoves) {
       moveCount++;
-      let roll = h.generateRoll();
-      let result = currentStrategy(game, roll);
-      if (result) {
-        game = result[1];
-        gameHistory.push({
-          game,
-          roll,
-          score: currentEval(game, game.turn),
-        });
+      const mover = game.turn;
+      const roll = h.generateRoll();
+      const result = (mover === learner ? currentStrategy : opponent)(game, roll);
+      const next = result ? result[1] : h.cloneGame(game);
+      if (mover === learner && result) {
+        // copy before switching turns, so the position is scored from the learner's side
+        gameHistory.push({ game: h.cloneGame(next), roll, score: currentEval(next, learner) });
       }
-      game.turn = (game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-
-      if (h.checkWinner(game)) break;
-
-      roll = h.generateRoll();
-      result = opponent(game, roll);
-      if (result) {
-        game = result[1];
-      }
-      game.turn = (game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
+      next.turn = mover === c.WHITE ? c.BLACK : c.WHITE;
+      game = next;
     }
 
-    const outcome = moveCount >= maxMoves ? -1 : h.checkWinner(game) == c.WHITE ? 1 : -1;
+    const winner = h.checkWinner(game);
+    if (!winner) continue; // hit the move cap; no outcome to learn from
+    const outcome: GameOutcome = winner === learner ? 1 : -1;
 
     currentFactors = updateFactors(currentFactors, gameHistory, outcome, getLR(initialLearningRate, gamesSinceImprovement));
 
     if (count % validationInterval === 0) {
-      const validationGames = 500;
-      let wins = 0;
-
-      const validationOpps = 5;
-      const validationFactors = learnedFactors.slice(learnedFactors.length - validationOpps, learnedFactors.length); // last 5
-
-      // Validate against strategies from the past
-      for (let i = 0; i < validationGames; i++) {
-        // Play against balanced strategy
-        let vGame = h.newGame();
-        vGame.turn = c.WHITE as Player;
-        const strategy = useEval(evaluate(currentFactors));
-        const validationOpp = useEval(evaluate(validationFactors[i % validationOpps]));
-
-        while (!h.checkWinner(vGame)) {
-          let roll = h.generateRoll();
-          let result = strategy(vGame, roll);
-          if (result) vGame = result[1];
-          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-
-          if (h.checkWinner(vGame)) break;
-
-          roll = h.generateRoll();
-          result = validationOpp(vGame, roll);
-          if (result) vGame = result[1];
-          vGame.turn = (vGame.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
-        }
-
-        if (h.checkWinner(vGame) === c.WHITE) wins++;
-      }
-
-      const validationWinRate = wins / validationGames;
+      // paired games on fixed dice, so checkpoints are compared on the same games
+      const validationOpps = [Strategies.balanced, Strategies.runner, Strategies.learned, useEval(evaluate(f.prevLearned))];
+      const strategy = useEval(evaluate(currentFactors));
+      const rates = validationOpps.map((opp) => compareTwo(strategy, opp, { pairs: 60, seed: 7 }).winRate);
+      const validationWinRate = rates.reduce((sum, r) => sum + r, 0) / rates.length;
+      const names = ["balanced", "runner", "learned", "prevLearned"];
       console.log(
-        `Validation win rates: ${(validationWinRate * 100).toFixed(1)}%` 
+        `[game ${count}/${numGames}] validation win rate ${(validationWinRate * 100).toFixed(1)}% (` +
+          names.map((n, i) => `${n} ${(rates[i] * 100).toFixed(1)}%`).join(", ") +
+          ")",
       );
 
       // Take the average of both win rates for determining improvement
