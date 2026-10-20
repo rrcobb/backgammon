@@ -183,9 +183,11 @@ function printTournament(t: TournamentResult) {
     for (let j = i + 1; j < t.names.length; j++) {
       const r = t.results[i][j]!;
       const [low, high] = r.confidenceInterval;
-      const verdict = !r.significant
-        ? "no significant difference"
-        : `${r.winRate > 0.5 ? t.names[i] : t.names[j]} is stronger`;
+      const better = (x: boolean) => (x ? t.names[i] : t.names[j]);
+      const wins = r.significant ? `${better(r.winRate > 0.5)} wins more` : "no significant difference in wins";
+      const pointsSignificant = r.points.low > 0 || r.points.high < 0;
+      const points = pointsSignificant ? `${better(r.points.mean > 0)} scores more` : "no significant difference in points";
+      const verdict = `${wins}; ${points}`;
       const p = r.points;
       console.log(
         `  ${t.names[i]} vs ${t.names[j]}: ${pct(r.winRate)} [${pct(low)}, ${pct(high)}], ` +
