@@ -1,11 +1,15 @@
 import { byId, containerHeader } from './_components';
 import { constants as c, helpers as h } from '../backgammon';
 import type { Game, Move, Player } from '../backgammon';
+import { factors as allFactors } from '../strategy/factors';
 import type { Factors } from '../strategy/factors';
-import type { AppliedStrategy } from '../strategy/strategies';
+import type { AppliedStrategy, Analysis } from '../strategy/strategies';
 import { evaluate, getPipCounts, getBlots, analyzePrimes, getBoardStrength } from '../strategy/evaluate'
 import type { BlotAnalysis } from '../strategy/evaluate'
-import type { Turn } from './render';
+import type { Turn, TurnRecord } from './render';
+
+// every move is also scored by one fixed evaluation, so different strategies can be compared
+const REFERENCE = { name: 'learned', factors: allFactors.learned };
 
 type PositionInfo = {
   game: Game;
@@ -15,8 +19,10 @@ type PositionInfo = {
   strength: ReturnType<typeof getBoardStrength>;
 };
 
-// analysis of `turn`, the turn just played (or the start position before the first turn)
-function renderStrategicInfo(turn: Turn | undefined, turnHistory: Turn[], wstrat: AppliedStrategy, bstrat: AppliedStrategy) {
+// analysis of `turn`, the turn just played (or the start position before the first turn).
+// `record` is what the strategy reported when it played; turns restored from a link don't have one,
+// and fall back to the currently selected strategies.
+function renderStrategicInfo(turn: Turn | undefined, turnHistory: Turn[], record: TurnRecord | undefined, wstrat: AppliedStrategy, bstrat: AppliedStrategy) {
   const container = byId('strategic-info');
 
   const header = container.querySelector('.section-header');
@@ -44,11 +50,19 @@ function renderStrategicInfo(turn: Turn | undefined, turnHistory: Turn[], wstrat
 
   const game = turn.game;
   const player = turn.player === 'w' ? c.WHITE : c.BLACK; // who just moved
-  const strat = player == c.WHITE ? wstrat : bstrat;
+  const strat = record?.strategy ?? (player == c.WHITE ? wstrat : bstrat);
+  const name = strat.sname ?? 'strategy';
   infoBox.appendChild(stats(game));
 
-  const f = strat.factors;
-  if (!f) return; // the breakdown only applies to strategies built on the factor evaluation
+  // the position the move was chosen from; the first turn starts from the opening position
+  const index = turnHistory.indexOf(turn);
+  const before = index > 0 ? turnHistory[index - 1].game : h.newGame();
+  infoBox.appendChild(heading(`Moves for ${turn.roll[0]}-${turn.roll[1]}`));
+  infoBox.appendChild(movesTable(before, turn, player, name, record?.analysis, !!record));
+
+  // the factor breakdown is the strategy's own for factor strategies, and the reference's otherwise
+  const f = strat.factors ?? REFERENCE.factors;
+  infoBox.appendChild(heading(strat.factors ? `How ${name} scores this position` : `How ${REFERENCE.name} (the reference) scores this position`));
   const blots = getBlots(game, player)
   const info: PositionInfo = {
     game,
@@ -58,9 +72,13 @@ function renderStrategicInfo(turn: Turn | undefined, turnHistory: Turn[], wstrat
     strength: getBoardStrength(game, player, blots, f),
   }
   infoBox.appendChild(factors(info, player, f));
+}
 
-  const before = turnHistory[turnHistory.indexOf(turn) - 1];
-  if (before) infoBox.appendChild(moveRankings(before.game, turn, player, f));
+function heading(text: string) {
+  const div = document.createElement('div');
+  div.classList.add('analysis-heading');
+  div.innerText = text;
+  return div;
 }
 
 function stats(game: Game) {
@@ -173,27 +191,64 @@ const moveText = (move: Move) =>
     .map(([from, to]) => `${from === c.BAR ? 'bar' : from + 1}→${to === c.HOME ? 'home' : to + 1}`)
     .join(', ') || 'no move';
 
-// the moves available on `turn`, ranked by the mover's evaluation; marks the move played
-function moveRankings(before: Game, turn: Turn, player: Player, f: Factors) {
+const formatValue = (value: number, percent?: boolean) =>
+  Number.isNaN(value) ? '—' : percent ? `${(value * 100).toFixed(1)}%` : signed(value, 2);
+
+const MAX_ROWS = 5;
+
+// the moves available on `turn`: the strategy's own values where it reported them,
+// the reference evaluation for every move, and which move was played
+function movesTable(before: Game, turn: Turn, player: Player, name: string, analysis: Analysis | undefined, recorded: boolean) {
   const div = document.createElement('div');
   div.classList.add('move-rankings');
 
   const start = h.cloneGame(before);
   start.turn = player;
-  const evalFn = evaluate(f);
-  const ranked = h
-    .validMoves(start, turn.roll)
-    .map(([move, next]) => ({ move, score: evalFn(next, player) }))
-    .sort((a, b) => b.score - a.score);
+  const referenceEval = evaluate(REFERENCE.factors);
+  const reference = new Map(
+    h.validMoves(start, turn.roll).map(([move, next]) => [moveText(move), referenceEval(next, player)] as const),
+  );
+  const own = new Map((analysis?.candidates ?? []).map((cand) => [moveText(cand.move), cand] as const));
 
+  // the strategy's ranking when it has one, then the rest by the reference
+  const byReference = [...reference.keys()].sort((a, b) => reference.get(b)! - reference.get(a)!);
+  const order = [...own.keys(), ...byReference.filter((m) => !own.has(m))];
   const played = moveText(turn.move);
-  ranked.slice(0, 3).forEach(({ move, score }, i) => {
-    const moveDiv = document.createElement('div');
-    const text = moveText(move);
-    moveDiv.innerText = `${i + 1}. ${text} (${signed(score, 2)})${text === played ? ' ← played' : ''}`;
-    div.appendChild(moveDiv);
-  });
+  const rows = order.slice(0, MAX_ROWS);
+  if (!rows.includes(played)) rows.push(played);
 
+  const table = document.createElement('table');
+  table.classList.add('stats-table', 'moves-table');
+  const headerRow = table.createTHead().insertRow();
+  headerRow.insertCell().innerText = 'Move';
+  if (analysis) headerRow.insertCell().innerText = name;
+  headerRow.insertCell().innerText = `${REFERENCE.name} evaluation`;
+
+  const body = table.createTBody();
+  for (const text of rows) {
+    const row = body.insertRow();
+    if (text === played) row.classList.add('played');
+    row.insertCell().innerText = text + (text === played ? ' ← played' : '');
+    if (analysis) {
+      const cand = own.get(text);
+      row.insertCell().innerText = cand
+        ? formatValue(cand.value, analysis.percent) + (cand.detail ? ` (${cand.detail})` : '')
+        : 'not considered';
+    }
+    row.insertCell().innerText = formatValue(reference.get(text) ?? NaN);
+  }
+  div.appendChild(table);
+
+  const note = document.createElement('div');
+  note.classList.add('analysis-note');
+  if (analysis) {
+    note.innerText = `${name}'s values: ${analysis.measure}. Ordered by ${name}'s ranking.`;
+  } else if (recorded) {
+    note.innerText = `${name} doesn't report an analysis; moves are ranked by the reference.`;
+  } else {
+    note.innerText = `No analysis recorded for this turn (analyses aren't saved in the link); moves are ranked by the reference.`;
+  }
+  div.appendChild(note);
   return div;
 }
 

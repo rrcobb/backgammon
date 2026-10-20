@@ -1014,3 +1014,18 @@ button#reset {
     min-height: 7em;
   }
 }
+
+.analysis-heading {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 10px 0 4px;
+}
+
+.analysis-note {
+  font-size: 11px;
+  color: #666;
+}
+
+.moves-table tr.played td {
+  font-weight: 600;
+}

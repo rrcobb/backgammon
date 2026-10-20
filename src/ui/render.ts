@@ -1,7 +1,7 @@
 import type { Player, Game, Move, Roll, Result } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { Strategies } from "../strategy/strategies";
-import type { AppliedStrategy } from "../strategy/strategies";
+import type { AppliedStrategy, Analysis } from "../strategy/strategies";
 import { renderHistory, renderInfo, renderPlayerTurn } from "./history";
 import { showArrow, clearArrows } from './arrows'
 import { saveGameHistoryToUrl, restoreFromUrl } from './url';
@@ -22,6 +22,11 @@ export type UIState = {
   gameHistory: Turn[];
   backCount: number; // how many turns back from the latest we're viewing
 }
+
+// the strategy that played a turn, and what it reported about its choice
+export type TurnRecord = { strategy: AppliedStrategy; analysis?: Analysis };
+// kept beside the history, not in it, so analyses stay out of the URL
+const turnRecords = new WeakMap<Turn, TurnRecord>();
 
 // the page sets the strategies on load, from the URL or the defaults
 export const state: UIState = {
@@ -209,7 +214,7 @@ function renderTurn(turn: Turn | undefined, turnHistory: Turn[]) {
   if (turn?.roll) { renderRoll(turn.roll); }
   renderHistory(turnHistory, state.backCount);
   renderInfo(turn, turnHistory);
-  renderStrategicInfo(turn, turnHistory, state.whiteStrategy, state.blackStrategy);
+  renderStrategicInfo(turn, turnHistory, turn && turnRecords.get(turn), state.whiteStrategy, state.blackStrategy);
 }
 
 function initGame() {
@@ -276,9 +281,7 @@ export function isHuman(strategy: AppliedStrategy) {
 
 const other = (p: Player): Player => (p === c.WHITE ? c.BLACK : c.WHITE);
 
-async function getNextMove(game: Game, roll: Roll): Promise<Result> {
-  const strat = state.game.turn == c.WHITE ? state.whiteStrategy : state.blackStrategy;
-  
+async function getNextMove(game: Game, roll: Roll, strat: AppliedStrategy, report: (a: Analysis) => void): Promise<Result> {
   if (isHuman(strat)) {
     playerUI.currentValidMoves = h.validMoves(game, roll);
     
@@ -302,18 +305,21 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
     });
   }
   
-  return h.takeTurn(game, roll, strat);
+  return h.takeTurn(game, roll, strat, report);
 }
 
 async function handleTurn(roll: Roll) {
   state.turnNo++;
   const player = h.toMove(state.game) == c.WHITE ? "w" : "b";
+  const strategy = player == "w" ? state.whiteStrategy : state.blackStrategy;
 
-  const [move, next] = await getNextMove(state.game, roll);
+  let analysis: Analysis | undefined;
+  const [move, next] = await getNextMove(state.game, roll, strategy, (a) => (analysis = a));
 
   state.game = next;
 
   const turn: Turn = {turnNo: state.turnNo, move, player, roll, game: state.game}
+  turnRecords.set(turn, { strategy, analysis });
   state.gameHistory.push(turn) 
   saveGameHistoryToUrl(state.gameHistory, state);
 
