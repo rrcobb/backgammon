@@ -243,11 +243,11 @@ function validMoves(game: Game, r: Roll): Result[] {
       const [move, next] = results[0]; // the next game state
       const nextbar = player == BLACK ? next.bBar : next.wBar;
       if (nextbar) {
-        // still pieces on the bar, so we can only use one move
-        return [[[move[0], null], next]];
+        // still pieces on the bar, so the entries are the whole move
+        return [[(move.length > 1 ? move : [move[0], null]) as Move, next]];
       } else {
-        // bar is clear, we used those rolls up
-        results.minRolls = rolls.length - results[0][2].length;
+        // bar is clear; the rest of the move can use the rolls that are left
+        results.minRolls = results[0][2].length;
       }
     } else  {
       // bar had pieces, but no move is possible
@@ -279,13 +279,15 @@ function validMoves(game: Game, r: Roll): Result[] {
   }
 
   // shape results and filter out moves that don't use the max number of rolls
-  const final = [];
+  const final: Result[] = [];
   for (var k = 0; k < results.length; k++) {
     const [m, g, available] = results[k];
     if (available.length <= results.minRolls) {
-      final.push([m, g]);
+      final.push([m as Move, g]);
     }
   }
+  // no legal move: the only option is to pass
+  if (!final.length) return [[nullMove, cloneGame(game)]];
   return final;
 }
 

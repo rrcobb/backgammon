@@ -284,7 +284,8 @@ async function getNextMove(game: Game, roll: Roll): Promise<Result> {
     
     return new Promise(resolve => {
       let nextTurn = playerUI.currentValidMoves[0]
-      if (!nextTurn || nextTurn[0] == null) {
+      // no legal move: validMoves returns a single pass, [null, null]
+      if (!nextTurn || nextTurn[0].every((m) => m === null)) {
         let next = nextTurn ? nextTurn[1] : h.cloneGame(state.game);
         next.turn = (state.game.turn == c.BLACK ? c.WHITE : c.BLACK) as Player;
         resolve([c.nullMove, next]); 

@@ -485,3 +485,32 @@ test("bearing off with higher roll than needed", () => {
    [[18, 23], [18, 22]]  // 6->3, 6->2
  ]));
 });
+
+describe("positions found while testing mcts", () => {
+  // black's last checker, with 14 borne off
+  function blackLastChecker(positions: Record<number, number>, bBar = 0) {
+    const game = h.newGame();
+    game.positions.fill(0);
+    for (const [i, v] of Object.entries(positions)) game.positions[Number(i)] = v;
+    game.bHome = 14;
+    game.bBar = bBar;
+    game.turn = c.BLACK;
+    return game;
+  }
+
+  test("a blocked player gets a single pass", () => {
+    // black on 20 with 4-2: 16 and 18 are white points
+    const game = blackLastChecker({ 16: c.WHITE | 2, 18: c.WHITE | 9, 22: c.WHITE | 4, 20: c.BLACK | 1 });
+    const moves = h.validMoves(game, [4, 2]);
+    expect(moves.length).toBe(1);
+    expect(moves[0][0]).toEqual(c.nullMove);
+  });
+
+  test("entering from the bar with doubles keeps the moves that follow", () => {
+    // black enters on 22 with a 2, hits the blot on 20, and 18 is a white point
+    const game = blackLastChecker({ 18: c.WHITE | 13, 19: c.WHITE | 1, 20: c.WHITE | 1 }, 1);
+    const moves = h.validMoves(game, [2, 2]);
+    expect(moves.map(([m]) => m)).toEqual([[[c.BAR, 22], [22, 20]]]);
+    expect(moves[0][1].wBar).toBe(1);
+  });
+});

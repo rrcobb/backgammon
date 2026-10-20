@@ -63,6 +63,45 @@ describe("validMoves blocked points", () => {
   });
 });
 
+describe("validMoves passes only when nothing can move", () => {
+  const isPass = ([move]) => move.every((m) => m === null);
+
+  it("always returns at least one option", () => {
+    fc.assert(
+      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+        return h.validMoves(game, roll).length > 0;
+      }),
+    );
+  });
+
+  it("doesn't pass when a checker can enter from the bar or move to an open point", () => {
+    fc.assert(
+      fc.property(arbitraryGame, fc.constantFrom(...c.ALL_ROLLS), (game, roll) => {
+        const player = game.turn;
+        const opponent = player === c.WHITE ? c.BLACK : c.WHITE;
+        const direction = player === c.WHITE ? 1 : -1;
+        const open = (i) => i >= 0 && i < 24 && ((game.positions[i] & opponent) === 0 || game.positions[i] === (opponent | 1));
+        const bar = player === c.WHITE ? game.wBar : game.bBar;
+
+        let canMove = false;
+        for (const die of roll) {
+          if (bar) {
+            const entry = player === c.WHITE ? die - 1 : 24 - die;
+            if (open(entry)) canMove = true;
+          } else {
+            for (let i = 0; i < 24; i++) {
+              if ((game.positions[i] & player) === player && open(i + die * direction)) canMove = true;
+            }
+          }
+        }
+
+        const moves = h.validMoves(game, roll);
+        return !canMove || !moves.some(isPass);
+      }),
+    );
+  });
+});
+
 describe("validMoves correct number of pieces", () => {
   it("should never move in such a way that either player has more or less than 15 pieces", () => {
     fc.assert(
