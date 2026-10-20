@@ -214,7 +214,7 @@ function renderTurn(turn: Turn | undefined, turnHistory: Turn[]) {
   if (turn?.roll) { renderRoll(turn.roll); }
   renderHistory(turnHistory, state.backCount);
   renderInfo(turn, turnHistory);
-  renderStrategicInfo(turn, turnHistory, turn && turnRecords.get(turn), state.whiteStrategy, state.blackStrategy);
+  renderStrategicInfo(turn, turn && turnRecords.get(turn), state.whiteStrategy, state.blackStrategy);
 }
 
 function initGame() {

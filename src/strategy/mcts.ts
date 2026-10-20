@@ -156,7 +156,7 @@ function useMCTS(options: MCTSOptions): AppliedStrategy {
     const moves = h.validMoves(game, roll);
     if (moves.length === 1) {
       const [move, next] = moves[0];
-      report?.({ measure, percent: true, candidates: [{ move, game: next, value: NaN, detail: "the only move; no search" }] });
+      report?.({ measure, percent: true, candidates: [{ move, game: next, value: NaN, detail: "only move" }] });
       return moves[0];
     }
     const root = search(game, roll, options);

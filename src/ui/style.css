@@ -1021,11 +1021,6 @@ button#reset {
   margin: 10px 0 4px;
 }
 
-.analysis-note {
-  font-size: 11px;
-  color: #666;
-}
-
 .moves-table tr.played td {
   font-weight: 600;
 }
