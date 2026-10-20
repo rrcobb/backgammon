@@ -24,6 +24,16 @@ describe("resolveStrategy", () => {
     expect(strategy(game, [3, 1])[0]).toBeDefined();
   });
 
+  test("reads cube thresholds", () => {
+    const dir = mkdtempSync(join(tmpdir(), "backgammon-"));
+    const path = join(dir, "tiny.safetensors");
+    writeFileSync(path, toSafetensors(new MLP([INPUT_SIZE, 4, 1], ["sigmoid", "sigmoid"]).randomize()));
+    expect(resolveStrategy(`net:${path}+cube`).strategy.cube).toBeDefined();
+    expect(resolveStrategy(`net:${path}@1+cube=0.5,0.7`).label).toBe("net:tiny@1+cube=0.5,0.7");
+    expect(resolveStrategy(`net:${path}`).strategy.cube).toBeUndefined();
+    expect(() => resolveStrategy(`net:${path}+cube=x`)).toThrow(/bad cube thresholds/);
+  });
+
   test("names the problem for unknown names and missing files", () => {
     expect(() => resolveStrategy("nope")).toThrow(/unknown strategy nope/);
     expect(() => resolveStrategy("net:/no/such/file.safetensors")).toThrow(/can't read net checkpoint/);
