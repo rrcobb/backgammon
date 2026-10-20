@@ -45,12 +45,12 @@ function getPipCounts(game: Game, player: Player): PipCounts {
 
 export type HitChance = number;
 export type BlotAnalysis = {
-  blots: Map<number, HitChance>;
+  blots: Record<number, HitChance>;
   totalPenalty: number;
 };
 
 function getBlots(game: Game, player: Player): BlotAnalysis {
-  const blots: Map<number, HitChance> = {};
+  const blots: Record<number, HitChance> = {};
   let totalPenalty = 0;
 
   for (let i = 0; i < 24; i++) {

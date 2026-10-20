@@ -167,7 +167,7 @@ export function renderScoreboard() {
   scoreboard.appendChild(content);
 }
 
-function renderEmptyState(scoreboard: HTMLElement, text: string) {
+function renderEmptyState(scoreboard: HTMLElement) {
   const table = document.createElement("table");
   table.classList.add('section-content');
   table.classList.add("stats-table");

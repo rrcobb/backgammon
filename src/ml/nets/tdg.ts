@@ -7,7 +7,7 @@ globalThis.cnnutil = cnnutil;
 
 import * as fc from "fast-check";
 import { helpers as h, constants as c } from '../../backgammon'
-import { Strategies } from '../../strategy/strategies.ts'
+import { Strategies } from '../../strategy/strategies'
 import { genGameWithHome, genGame } from '../../../test/helpers'
 
 const input_size = 212
@@ -184,7 +184,7 @@ function checkNeuronWeights(net) {
     
     // Count tiny weights
     const dead = layer.filters.filter(f => 
-      Object.values(f.w).every(w => Math.abs(w) < 1e-6)
+      Object.values(f.w).every((w: number) => Math.abs(w) < 1e-6)
     ).length;
     
     console.log(`Layer ${i}: ${dead}/${layer.filters.length} neurons have tiny weights`);

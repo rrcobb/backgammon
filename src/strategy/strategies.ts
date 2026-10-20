@@ -1,6 +1,7 @@
 import type { Result, Player, Game, Roll } from "../backgammon";
 import { constants as c, helpers as h } from "../backgammon";
 import { factors as f, EvaluationFunction } from "./factors";
+import type { Factors } from "./factors";
 import { evaluate } from "./evaluate";
 import { useMCTS } from "./mcts";
 
@@ -8,6 +9,7 @@ export type Strategy = (options: Result[]) => Result;
 export type AppliedStrategy = ((game: Game, roll: Roll) => Result) & {
   description?: string;
   sname?: string;
+  factors?: Factors;
 };
 
 function applyStrategy(game: Game, roll: Roll, strategy: Strategy): Result {

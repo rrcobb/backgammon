@@ -1,6 +1,6 @@
 import { expect } from "bun:test";
 import * as fc from "fast-check";
-import { helpers as h, constants as c } from "../src/backgammon.ts";
+import { helpers as h, constants as c } from "../src/backgammon";
 
 // generate a number from 0-25
 // 0-23 are the positions 24 is bar, 25 is home

@@ -1,8 +1,10 @@
 import { containerHeader } from './_components';
 import { constants as c, helpers as h } from '../backgammon';
+import type { Player } from '../backgammon';
+import type { Factors } from '../strategy/factors';
 import { getPipCounts, getBlots, analyzePrimes, getBoardStrength } from '../strategy/evaluate'
 
-function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
+function renderStrategicInfo(game, turnhistory, wstrat, bstrat) {
   const container = document.getElementById('strategic-info');
 
   const header = container.querySelector('.section-header');
@@ -23,7 +25,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
   infoBox.innerHTML = '';
 
   const player = game?.turn == c.WHITE ? c.BLACK : c.WHITE; // look at previous turn
-  let strat = player == c.WHITE ? bstrat : wstrat;
+  let strat = player == c.WHITE ? wstrat : bstrat;
   let f = strat?.factors;
   if (!game) {
     game = h.newGame(); // before the game has really started
@@ -41,7 +43,7 @@ function renderStrategicInfo(game, turnhistory, bstrat, wstrat) {
 
   infoBox.appendChild(stats(game));
   if (!f) return;
-  infoBox.appendChild(factors(info, strat, f));
+  infoBox.appendChild(factors(info, player, f));
   const prev = turnhistory[game.turnNo - 1];
   const rankings = moveRankings(prev, strat);
   if (rankings) {
@@ -68,8 +70,8 @@ function stats(game) {
   const { white, black, diff, isRacing } = getPipCounts(game, game.turn);
   const pipRow = tbody.insertRow();
   pipRow.insertCell().innerHTML = 'Pips';
-  pipRow.insertCell().innerHTML = black;
-  pipRow.insertCell().innerHTML = white;
+  pipRow.insertCell().innerHTML = String(black);
+  pipRow.insertCell().innerHTML = String(white);
   
   // Home counts
   const homeRow = tbody.insertRow();
@@ -110,7 +112,7 @@ function formatPrimeDisplay(primes) {
     .join(', ');
 }
 
-function formatBlotsDisplay(blots) {
+function formatBlotsDisplay(blots: Record<number, number>) {
   const blotlist = Object.entries(blots)
   if (blotlist.length == 0) return 'none';
   return blotlist
@@ -118,7 +120,7 @@ function formatBlotsDisplay(blots) {
     .join('\n');
 }
 
-function factors(info, player, f: Factors) {
+function factors(info, player: Player, f: Factors) {
   const div = document.createElement('div');
   div.classList.add('factor-analysis');
 

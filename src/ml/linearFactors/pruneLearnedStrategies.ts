@@ -1,6 +1,6 @@
-import { useEval } from "../strategy/strategies";
-import { evaluate } from "../strategy/evaluate";
-import { roundRobinTournament } from "../evals/tournament";
+import { useEval } from "../../strategy/strategies";
+import { evaluate } from "../../strategy/evaluate";
+import { roundRobinTournament } from "../../evals/tournament";
 
 const path = "src/ml/learnedFactors.json";
 // Read and process factors

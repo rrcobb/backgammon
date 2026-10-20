@@ -1,8 +1,8 @@
-import { Game, Player, Roll, constants as c, helpers as h } from "../backgammon";
-import { evaluate } from "../strategy/evaluate";
-import { Factors, factors as f } from "../strategy/factors";
-import { AppliedStrategy, useEval, Strategies } from "../strategy/strategies";
-import { default as learnedFactors } from "./learnedFactors.json";
+import { Game, Player, Roll, constants as c, helpers as h } from "../../backgammon";
+import { evaluate } from "../../strategy/evaluate";
+import { Factors, factors as f } from "../../strategy/factors";
+import { AppliedStrategy, useEval, Strategies } from "../../strategy/strategies";
+import { default as learnedFactors } from "../learnedFactors.json";
 
 type Position = { game: Game; score: number; roll: Roll };
 type GameOutcome = 1 | -1; // 1 for win, -1 for loss
